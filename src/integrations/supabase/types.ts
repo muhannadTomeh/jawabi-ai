@@ -54,7 +54,6 @@ export type Database = {
       }
       chatbots: {
         Row: {
-          bot_mode: string
           business_category: string | null
           business_description: string | null
           business_location: string | null
@@ -69,7 +68,6 @@ export type Database = {
           name: string
           onboarding_completed: boolean
           onboarding_step: number
-          owner_telegram_chat_id: string | null
           public_slug: string | null
           tone: string
           updated_at: string
@@ -77,7 +75,6 @@ export type Database = {
           welcome_message: string
         }
         Insert: {
-          bot_mode?: string
           business_category?: string | null
           business_description?: string | null
           business_location?: string | null
@@ -92,7 +89,6 @@ export type Database = {
           name: string
           onboarding_completed?: boolean
           onboarding_step?: number
-          owner_telegram_chat_id?: string | null
           public_slug?: string | null
           tone?: string
           updated_at?: string
@@ -100,7 +96,6 @@ export type Database = {
           welcome_message?: string
         }
         Update: {
-          bot_mode?: string
           business_category?: string | null
           business_description?: string | null
           business_location?: string | null
@@ -115,7 +110,6 @@ export type Database = {
           name?: string
           onboarding_completed?: boolean
           onboarding_step?: number
-          owner_telegram_chat_id?: string | null
           public_slug?: string | null
           tone?: string
           updated_at?: string
@@ -123,68 +117,6 @@ export type Database = {
           welcome_message?: string
         }
         Relationships: []
-      }
-      conversation_locks: {
-        Row: {
-          chatbot_id: string
-          external_id: string
-          locked_at: string
-        }
-        Insert: {
-          chatbot_id: string
-          external_id: string
-          locked_at?: string
-        }
-        Update: {
-          chatbot_id?: string
-          external_id?: string
-          locked_at?: string
-        }
-        Relationships: []
-      }
-      conversation_takeovers: {
-        Row: {
-          active: boolean
-          channel: string
-          chatbot_id: string
-          created_at: string
-          external_id: string
-          id: string
-          last_human_at: string
-          source: string | null
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          channel: string
-          chatbot_id: string
-          created_at?: string
-          external_id: string
-          id?: string
-          last_human_at?: string
-          source?: string | null
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          channel?: string
-          chatbot_id?: string
-          created_at?: string
-          external_id?: string
-          id?: string
-          last_human_at?: string
-          source?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversation_takeovers_chatbot_id_fkey"
-            columns: ["chatbot_id"]
-            isOneToOne: false
-            referencedRelation: "chatbots"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       customers: {
         Row: {
@@ -250,9 +182,8 @@ export type Database = {
           id: string
           low_confidence_threshold: number
           sale_message: string
-          takeover_mode_enabled: boolean
-          takeover_timeout_minutes: number
           trigger_keywords: string[]
+          trigger_on_low_confidence: boolean
           trigger_on_sale: boolean
           updated_at: string
         }
@@ -265,9 +196,8 @@ export type Database = {
           id?: string
           low_confidence_threshold?: number
           sale_message?: string
-          takeover_mode_enabled?: boolean
-          takeover_timeout_minutes?: number
           trigger_keywords?: string[]
+          trigger_on_low_confidence?: boolean
           trigger_on_sale?: boolean
           updated_at?: string
         }
@@ -280,9 +210,8 @@ export type Database = {
           id?: string
           low_confidence_threshold?: number
           sale_message?: string
-          takeover_mode_enabled?: boolean
-          takeover_timeout_minutes?: number
           trigger_keywords?: string[]
+          trigger_on_low_confidence?: boolean
           trigger_on_sale?: boolean
           updated_at?: string
         }
@@ -303,7 +232,6 @@ export type Database = {
           chatbot_id: string
           content: string | null
           created_at: string
-          embedding: string | null
           file_name: string | null
           file_url: string | null
           id: string
@@ -319,7 +247,6 @@ export type Database = {
           chatbot_id: string
           content?: string | null
           created_at?: string
-          embedding?: string | null
           file_name?: string | null
           file_url?: string | null
           id?: string
@@ -335,7 +262,6 @@ export type Database = {
           chatbot_id?: string
           content?: string | null
           created_at?: string
-          embedding?: string | null
           file_name?: string | null
           file_url?: string | null
           id?: string
@@ -487,56 +413,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      pending_sale_orders: {
-        Row: {
-          channel: string
-          chatbot_id: string
-          created_at: string
-          customer_external_id: string
-          customer_name: string | null
-          id: string
-          owner_chat_id: string
-          owner_message_id: number | null
-          status: string
-          summary: string | null
-          updated_at: string
-        }
-        Insert: {
-          channel: string
-          chatbot_id: string
-          created_at?: string
-          customer_external_id: string
-          customer_name?: string | null
-          id?: string
-          owner_chat_id: string
-          owner_message_id?: number | null
-          status?: string
-          summary?: string | null
-          updated_at?: string
-        }
-        Update: {
-          channel?: string
-          chatbot_id?: string
-          created_at?: string
-          customer_external_id?: string
-          customer_name?: string | null
-          id?: string
-          owner_chat_id?: string
-          owner_message_id?: number | null
-          status?: string
-          summary?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "pending_sale_orders_chatbot_id_fkey"
-            columns: ["chatbot_id"]
-            isOneToOne: false
-            referencedRelation: "chatbots"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       profiles: {
         Row: {
@@ -819,15 +695,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      acquire_conversation_lock: {
-        Args: {
-          p_chatbot_id: string
-          p_external_id: string
-          p_stale_seconds?: number
-          p_timeout_ms?: number
-        }
-        Returns: boolean
-      }
       get_chatbot_by_slug: {
         Args: { _slug: string }
         Returns: {
@@ -846,23 +713,6 @@ export type Database = {
         Returns: boolean
       }
       is_chatbot_owner: { Args: { chatbot_id: string }; Returns: boolean }
-      match_knowledge_items: {
-        Args: {
-          match_count?: number
-          p_chatbot_id: string
-          query_embedding: string
-        }
-        Returns: {
-          answer: string
-          content: string
-          file_url: string
-          id: string
-          question: string
-          similarity: number
-          title: string
-          type: string
-        }[]
-      }
       record_customer_contact: {
         Args: {
           _channel: string
@@ -874,10 +724,6 @@ export type Database = {
           _username?: string
         }
         Returns: string
-      }
-      release_conversation_lock: {
-        Args: { p_chatbot_id: string; p_external_id: string }
-        Returns: undefined
       }
     }
     Enums: {

@@ -19,7 +19,6 @@ import NotificationsPage from "@/pages/Notifications";
 import CustomersPage from "@/pages/Customers";
 import NotFound from "@/pages/NotFound";
 import PublicChat from "@/pages/PublicChat";
-import OAuthConsent from "@/pages/OAuthConsent";
 
 const queryClient = new QueryClient();
 
@@ -33,9 +32,6 @@ const App = () => (
           <Routes>
             {/* Auth route */}
             <Route path="/auth" element={<AuthPage />} />
-
-            {/* OAuth consent screen for MCP / agent integrations */}
-            <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             
             {/* Public landing */}
             <Route path="/" element={<Landing />} />

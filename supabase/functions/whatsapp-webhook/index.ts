@@ -86,21 +86,11 @@ async function generateAIResponse(
   knowledgeContext: string,
   chatbot: { name: string; tone: string; language: string; fallback_message: string; custom_instructions: string; dialect: string },
   conversationHistory: { role: string; content: string }[],
-  senderName: string | undefined,
-  supabase: ReturnType<typeof createClient>
+  senderName?: string
 ): Promise<string> {
-  // Unified LLM config from admin panel (single source of truth)
-  const { data: llmCfg } = await supabase
-    .from("llm_settings")
-    .select("model, custom_api_key")
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  const model = (llmCfg as any)?.model || "google/gemini-2.5-flash";
-  const apiKey = (llmCfg as any)?.custom_api_key || Deno.env.get("LOVABLE_API_KEY");
-  if (!apiKey) {
-    console.error("No AI API key configured, using fallback");
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) {
+    console.error("LOVABLE_API_KEY not configured, using fallback");
     return chatbot.fallback_message;
   }
 
@@ -144,11 +134,11 @@ ${knowledgeContext ? `قاعدة المعرفة:\n${knowledgeContext}` : ""}
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model,
+        model: "google/gemini-2.5-flash",
         messages,
       }),
     });
@@ -185,14 +175,12 @@ Deno.serve(async (req) => {
     const challenge = url.searchParams.get("hub.challenge");
 
     if (mode === "subscribe" && token && challenge) {
-      const { data: channels } = await supabase
+      const { data: channel } = await supabase
         .from("channels")
         .select("*")
-        .eq("platform", "whatsapp");
-
-      const channel = channels?.find(
-        (c: any) => c.config?.verify_token === token
-      );
+        .eq("platform", "whatsapp")
+        .filter("config->verify_token", "eq", token)
+        .maybeSingle();
 
       if (channel) {
         console.log("WhatsApp webhook verified for channel:", channel.id);
@@ -250,18 +238,35 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Fetch all knowledge items once (fallback source)
-        const { data: allKnowledgeItems } = await supabase
+        // Build knowledge context once for all messages
+        const { data: knowledgeItems } = await supabase
           .from("knowledge_items")
           .select("*")
           .eq("chatbot_id", chatbot.id);
 
-        // Fetch handover settings once
-        const { data: handover } = await supabase
-          .from("handover_settings")
-          .select("*")
-          .eq("chatbot_id", chatbot.id)
-          .maybeSingle();
+        let knowledgeContext = "";
+        if (knowledgeItems && knowledgeItems.length > 0) {
+          const faqs = knowledgeItems
+            .filter((i) => i.type === "faq" && i.question && i.answer)
+            .map((i) => `سؤال: ${i.question}\nجواب: ${i.answer}`)
+            .join("\n\n");
+          const texts = knowledgeItems
+            .filter((i) => i.type === "text" && i.content)
+            .map((i) => `${i.title}: ${i.content}`)
+            .join("\n\n");
+          const images = knowledgeItems
+            .filter((i) => i.type === "image" && i.file_url)
+            .map(
+              (i) =>
+                `صورة بعنوان "${i.title}":\nالوصف: ${i.content || "بدون وصف"}\nرابط الإرسال: [IMAGE:${i.file_url}]`
+            )
+            .join("\n\n");
+          if (faqs) knowledgeContext += faqs + "\n\n";
+          if (texts) knowledgeContext += texts;
+          if (images) {
+            knowledgeContext += `\n\n## الصور المتاحة:\n${images}\n\nعندما يطلب المستخدم رؤية صورة أو حين تكون الصورة هي أفضل إجابة، أرسلها بإضافة [IMAGE:<الرابط>] في ردك تماماً كما هي، ولا تخترع روابط.`;
+          }
+        }
 
         for (const message of value.messages) {
           if (message.type !== "text" || !message.text?.body) continue;
@@ -269,32 +274,6 @@ Deno.serve(async (req) => {
           const senderPhone = message.from;
           const userMessage = message.text.body;
           const senderName = contactNames[senderPhone];
-
-          // Serialize concurrent messages from the same phone+chatbot.
-          let lockAcquired = false;
-          const releaseLock = async () => {
-            if (!lockAcquired) return;
-            lockAcquired = false;
-            try {
-              await supabase.rpc("release_conversation_lock", {
-                p_chatbot_id: chatbot.id,
-                p_external_id: senderPhone,
-              });
-            } catch (e) {
-              console.error("release_conversation_lock failed:", e);
-            }
-          };
-          try {
-            const { data: gotLock } = await supabase.rpc("acquire_conversation_lock", {
-              p_chatbot_id: chatbot.id,
-              p_external_id: senderPhone,
-            });
-            lockAcquired = gotLock !== false;
-          } catch (e) {
-            console.error("acquire_conversation_lock failed:", e);
-          }
-
-          try {
 
           // Upsert contact (save/update name and last message time)
           await upsertContact(supabase, chatbot.id, senderPhone, senderName);
@@ -310,121 +289,8 @@ Deno.serve(async (req) => {
             _last_message: userMessage,
           });
 
-          // Human takeover: if a human recently intervened, stay silent.
-          if (handover?.takeover_mode_enabled) {
-            const { data: takeover } = await supabase
-              .from("conversation_takeovers")
-              .select("active,last_human_at")
-              .eq("chatbot_id", chatbot.id)
-              .eq("channel", "whatsapp")
-              .eq("external_id", senderPhone)
-              .maybeSingle();
-            if (takeover?.active) {
-              const timeoutMin = handover.takeover_timeout_minutes || 60;
-              const lastHuman = new Date(takeover.last_human_at as string).getTime();
-              const stillActive = Date.now() - lastHuman < timeoutMin * 60 * 1000;
-              if (stillActive) {
-                await supabase.from("whatsapp_messages").insert({
-                  chatbot_id: chatbot.id,
-                  phone_number: senderPhone,
-                  role: "user",
-                  content: userMessage,
-                });
-                console.log("Skipping WhatsApp reply: human takeover active for", senderPhone);
-                continue;
-              } else {
-                await supabase
-                  .from("conversation_takeovers")
-                  .update({ active: false })
-                  .eq("chatbot_id", chatbot.id)
-                  .eq("channel", "whatsapp")
-                  .eq("external_id", senderPhone);
-              }
-            }
-          }
-
           // Get conversation history for this sender
           const history = await getConversationHistory(supabase, chatbot.id, senderPhone, 10);
-
-          // Semantic retrieval with fallback to the full dump.
-          let retrievedItems: any[] | null = null;
-          try {
-            const embRes = await supabase.functions.invoke("generate-embedding", {
-              body: { text: userMessage },
-            });
-            const embedding = (embRes.data as any)?.embedding;
-            if (Array.isArray(embedding)) {
-              const { data: matches } = await supabase.rpc("match_knowledge_items", {
-                p_chatbot_id: chatbot.id,
-                query_embedding: embedding,
-                match_count: 5,
-              });
-              if (matches && matches.length > 0) retrievedItems = matches as any[];
-            }
-          } catch (e) {
-            console.error("Semantic retrieval failed, falling back:", e);
-          }
-          const knowledgeItems = retrievedItems ?? allKnowledgeItems;
-
-          let knowledgeContext = "";
-          if (knowledgeItems && knowledgeItems.length > 0) {
-            const faqs = knowledgeItems
-              .filter((i: any) => i.type === "faq" && i.question && i.answer)
-              .map((i: any) => `سؤال: ${i.question}\nجواب: ${i.answer}`)
-              .join("\n\n");
-            const texts = knowledgeItems
-              .filter((i: any) => i.type === "text" && i.content)
-              .map((i: any) => `${i.title}: ${i.content}`)
-              .join("\n\n");
-            const images = knowledgeItems
-              .filter((i: any) => i.type === "image" && i.file_url)
-              .map(
-                (i: any) =>
-                  `صورة بعنوان "${i.title}":\nالوصف: ${i.content || "بدون وصف"}\nرابط الإرسال: [IMAGE:${i.file_url}]`
-              )
-              .join("\n\n");
-            if (faqs) knowledgeContext += faqs + "\n\n";
-            if (texts) knowledgeContext += texts;
-            if (images) {
-              knowledgeContext += `\n\n## الصور المتاحة:\n${images}\n\nعندما يطلب المستخدم رؤية صورة أو حين تكون الصورة هي أفضل إجابة، أرسلها بإضافة [IMAGE:<الرابط>] في ردك تماماً كما هي، ولا تخترع روابط.`;
-            }
-          }
-
-          // WhatsApp Cloud API: mark as read with a typing indicator for a human feel.
-          // Falls back silently if the API version doesn't support typing_indicator.
-          const waApiUrl = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
-          try {
-            const r = await fetch(waApiUrl, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${accessToken}`,
-              },
-              body: JSON.stringify({
-                messaging_product: "whatsapp",
-                status: "read",
-                message_id: message.id,
-                typing_indicator: { type: "text" },
-              }),
-            });
-            if (!r.ok) {
-              // Retry without typing_indicator (older API versions)
-              await fetch(waApiUrl, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${accessToken}`,
-                },
-                body: JSON.stringify({
-                  messaging_product: "whatsapp",
-                  status: "read",
-                  message_id: message.id,
-                }),
-              }).catch(() => {});
-            }
-          } catch (e) {
-            console.error("WhatsApp typing/read indicator failed:", e);
-          }
 
           // Generate AI response with history and sender name
           const responseText = await generateAIResponse(
@@ -432,8 +298,7 @@ Deno.serve(async (req) => {
             knowledgeContext,
             chatbot,
             history,
-            senderName,
-            supabase
+            senderName
           );
 
           // Save messages to database
@@ -445,6 +310,7 @@ Deno.serve(async (req) => {
           let m: RegExpExecArray | null;
           while ((m = imageRegex.exec(responseText)) !== null) imageUrls.push(m[1]);
           const cleanedText = responseText.replace(imageRegex, "").trim();
+          const waApiUrl = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
 
           for (const imgUrl of imageUrls) {
             const r = await fetch(waApiUrl, {
@@ -478,9 +344,6 @@ Deno.serve(async (req) => {
               }),
             });
             if (!r.ok) console.error("WhatsApp text send error:", await r.text());
-          }
-          } finally {
-            await releaseLock();
           }
         }
       }
