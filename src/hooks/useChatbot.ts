@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -30,55 +30,55 @@ export function useChatbot() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchOrCreateChatbot() {
-      if (!user) {
-        setChatbot(null);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        // Try to fetch existing chatbot
-        const { data: existingChatbot, error: fetchError } = await supabase
-          .from('chatbots')
-          .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (fetchError) throw fetchError;
-
-        if (existingChatbot) {
-          setChatbot(existingChatbot);
-        } else {
-          // Create a default chatbot for the user
-          const { data: newChatbot, error: createError } = await supabase
-            .from('chatbots')
-            .insert({
-              user_id: user.id,
-              name: 'شات بوت جديد',
-            })
-            .select()
-            .single();
-
-          if (createError) throw createError;
-
-          setChatbot(newChatbot);
-        }
-      } catch (err) {
-        console.error('Error fetching/creating chatbot:', err);
-        setError('حدث خطأ في تحميل الشات بوت');
-      } finally {
-        setLoading(false);
-      }
+  const fetchOrCreateChatbot = useCallback(async () => {
+    if (!user) {
+      setChatbot(null);
+      setLoading(false);
+      return null;
     }
+    setLoading(true);
+    setError(null);
+    try {
+      const { data: existingChatbot, error: fetchError } = await supabase
+        .from('chatbots')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (fetchError) throw fetchError;
 
-    fetchOrCreateChatbot();
+      if (existingChatbot) {
+        setChatbot(existingChatbot);
+        return existingChatbot as Chatbot;
+      }
+
+      const { data: newChatbot, error: createError } = await supabase
+        .from('chatbots')
+        .insert({ user_id: user.id, name: 'شات بوت جديد' })
+        .select()
+        .single();
+      if (createError) throw createError;
+      setChatbot(newChatbot);
+      return newChatbot as Chatbot;
+    } catch (err: any) {
+      console.error('Error fetching/creating chatbot:', err);
+      setError(err?.message || 'حدث خطأ في تحميل الشات بوت');
+      return null;
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
+  useEffect(() => {
+    fetchOrCreateChatbot();
+  }, [fetchOrCreateChatbot]);
+
   const updateChatbot = async (updates: Partial<Chatbot>) => {
-    if (!chatbot) {
-      console.error('updateChatbot called before chatbot loaded');
+    let target = chatbot;
+    if (!target) {
+      // Try to (re)load the chatbot on-demand instead of failing outright
+      target = await fetchOrCreateChatbot();
+    }
+    if (!target) {
       return { success: false, error: new Error('chatbot_not_loaded') };
     }
 
@@ -86,7 +86,7 @@ export function useChatbot() {
       const { data, error } = await supabase
         .from('chatbots')
         .update(updates)
-        .eq('id', chatbot.id)
+        .eq('id', target.id)
         .select()
         .single();
 
@@ -100,5 +100,5 @@ export function useChatbot() {
     }
   };
 
-  return { chatbot, loading, error, updateChatbot };
+  return { chatbot, loading, error, updateChatbot, refetch: fetchOrCreateChatbot };
 }
