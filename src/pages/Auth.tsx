@@ -259,8 +259,8 @@ export default function AuthPage() {
 
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
               <TabsTrigger value="signup">إنشاء حساب</TabsTrigger>
+              <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
             </TabsList>
 
             {/* Login Tab */}
