@@ -48,12 +48,35 @@ export default function DashboardPage() {
     const load = async () => {
       setLoading(true);
       try {
-        const [tgChRes, socialRes, webMsgRes, tgMsgRes, waMsgRes, waContactsRes, tgUsersRes] = await Promise.all([
+        // For totals we only need counts (head:true) — no payload downloaded.
+        // For "top questions" we only need the user-role content (server-side filter),
+        // avoiding pulling all bot replies just to discard them client-side.
+        const [
+          tgChRes,
+          socialRes,
+          webCountRes,
+          tgCountRes,
+          waCountRes,
+          webUserCountRes,
+          tgUserCountRes,
+          waUserCountRes,
+          webUserMsgsRes,
+          tgUserMsgsRes,
+          waUserMsgsRes,
+          waContactsRes,
+          tgUsersRes,
+        ] = await Promise.all([
           supabase.from('channels').select('platform, is_connected').eq('chatbot_id', chatbot.id),
           supabase.from('social_connections').select('platform').eq('chatbot_id', chatbot.id),
-          supabase.from('web_chat_messages').select('content, role').eq('chatbot_id', chatbot.id),
-          supabase.from('telegram_messages').select('content, role, telegram_user_id').eq('chatbot_id', chatbot.id),
-          supabase.from('whatsapp_messages').select('content, role, phone_number').eq('chatbot_id', chatbot.id),
+          supabase.from('web_chat_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
+          supabase.from('telegram_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
+          supabase.from('whatsapp_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
+          supabase.from('web_chat_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id).eq('role', 'user'),
+          supabase.from('telegram_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id).eq('role', 'user'),
+          supabase.from('whatsapp_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id).eq('role', 'user'),
+          supabase.from('web_chat_messages').select('content').eq('chatbot_id', chatbot.id).eq('role', 'user').limit(500),
+          supabase.from('telegram_messages').select('content').eq('chatbot_id', chatbot.id).eq('role', 'user').limit(500),
+          supabase.from('whatsapp_messages').select('content').eq('chatbot_id', chatbot.id).eq('role', 'user').limit(500),
           supabase.from('whatsapp_contacts').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
           supabase.from('telegram_users').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
         ]);
@@ -75,31 +98,23 @@ export default function DashboardPage() {
           (Object.keys(map) as PlatformKey[]).map((p) => ({ platform: p, connected: map[p] }))
         );
 
-        const web = webMsgRes.data || [];
-        const tg = tgMsgRes.data || [];
-        const wa = waMsgRes.data || [];
+        setTotalMessages((webCountRes.count || 0) + (tgCountRes.count || 0) + (waCountRes.count || 0));
+        setUserMessages((webUserCountRes.count || 0) + (tgUserCountRes.count || 0) + (waUserCountRes.count || 0));
 
-        const allMessages = [...web, ...tg, ...wa];
-        setTotalMessages(allMessages.length);
+        setUniqueContacts((waContactsRes.count || 0) + (tgUsersRes.count || 0));
 
-        const userMsgs = allMessages.filter((m: any) => m.role === 'user');
-        setUserMessages(userMsgs.length);
-
-        // Unique contacts: whatsapp_contacts + telegram_users + unique web user_ids
-        const webUserIds = new Set((web as any[]).map((m: any) => m.user_id).filter(Boolean));
-        const total =
-          (waContactsRes.count || 0) +
-          (tgUsersRes.count || 0) +
-          webUserIds.size;
-        setUniqueContacts(total);
-
-        // Top questions: count user messages by content (trimmed, lowered)
+        // Top questions: aggregate a bounded slice of recent user messages.
         const counts = new Map<string, number>();
-        userMsgs.forEach((m: any) => {
-          const k = (m.content || '').trim();
-          if (!k) return;
-          counts.set(k, (counts.get(k) || 0) + 1);
-        });
+        const bucket = (rows: any[] | null | undefined) => {
+          (rows || []).forEach((m) => {
+            const k = (m.content || '').trim();
+            if (!k) return;
+            counts.set(k, (counts.get(k) || 0) + 1);
+          });
+        };
+        bucket(webUserMsgsRes.data);
+        bucket(tgUserMsgsRes.data);
+        bucket(waUserMsgsRes.data);
         const top = [...counts.entries()]
           .sort((a, b) => b[1] - a[1])
           .slice(0, 4)
