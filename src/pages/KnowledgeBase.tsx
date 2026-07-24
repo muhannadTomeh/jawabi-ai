@@ -204,10 +204,10 @@ export default function KnowledgeBasePage() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="البحث في قاعدة المعرفة..."
-          className="pr-10"
+          className="ps-10"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
