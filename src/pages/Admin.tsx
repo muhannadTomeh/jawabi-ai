@@ -15,7 +15,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div dir="rtl" className="space-y-6">
-        <PageHeader title="لوحة تحكم الأدمن" description="إدارة المستخدمين والشات بوتات والإحصائيات العامة" icon={ShieldCheck} />
+        <PageHeader title="لوحة تحكم الأدمن" description="إدارة المستخدمين والشات بوتات والإحصائيات العامة" />
         <PageSkeleton />
       </div>
     );
@@ -27,7 +27,7 @@ export default function AdminPage() {
 
   return (
     <div dir="rtl" className="space-y-8 text-right">
-      <PageHeader title="لوحة تحكم الأدمن" description="إدارة المستخدمين والشات بوتات والإحصائيات العامة" icon={ShieldCheck} />
+      <PageHeader title="لوحة تحكم الأدمن" description="إدارة المستخدمين والشات بوتات والإحصائيات العامة" />
 
       {/* Stats */}
       <AdminStats />
