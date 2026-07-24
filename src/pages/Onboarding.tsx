@@ -85,7 +85,7 @@ export default function Onboarding() {
       </div>
     );
   }
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) return <Navigate to="/" replace />;
 
   const goNext = async (data: Partial<any> = {}, nextStep?: number) => {
     if (!chatbot) {
