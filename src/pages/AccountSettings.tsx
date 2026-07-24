@@ -430,8 +430,9 @@ export default function AccountSettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="mx-auto max-w-4xl space-y-6" dir="rtl">
+        <PageHeader title="إعدادات الحساب" description="إدارة معلوماتك الشخصية والأمان وتفضيلات الحساب." />
+        <PageSkeleton />
       </div>
     );
   }
@@ -445,21 +446,16 @@ export default function AccountSettingsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 text-right" dir="rtl">
-      {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            إعدادات الحساب
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            إدارة معلوماتك الشخصية والأمان وتفضيلات الحساب.
-          </p>
-        </div>
-        <Button variant="outline" onClick={handleLogout} className="gap-2 self-start">
-          <LogOut className="h-4 w-4" />
-          تسجيل الخروج
-        </Button>
-      </div>
+      <PageHeader
+        title="إعدادات الحساب"
+        description="إدارة معلوماتك الشخصية والأمان وتفضيلات الحساب."
+        actions={
+          <Button variant="outline" onClick={handleLogout} className="gap-2">
+            <LogOut className="h-4 w-4" />
+            تسجيل الخروج
+          </Button>
+        }
+      />
 
       {/* Personal information */}
       <Card>
