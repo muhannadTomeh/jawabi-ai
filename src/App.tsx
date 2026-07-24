@@ -1,27 +1,49 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import AuthPage from "@/pages/Auth";
-import Landing from "@/pages/Landing";
-import Onboarding from "@/pages/Onboarding";
-import DashboardPage from "@/pages/Dashboard";
-import KnowledgeBasePage from "@/pages/KnowledgeBase";
-import ChannelsPage from "@/pages/Channels";
-import AnalyticsPage from "@/pages/Analytics";
-import TestChatPage from "@/pages/TestChat";
-import SettingsPage from "@/pages/Settings";
-import AdminPage from "@/pages/Admin";
-import NotificationsPage from "@/pages/Notifications";
-import CustomersPage from "@/pages/Customers";
-import NotFound from "@/pages/NotFound";
-import PublicChat from "@/pages/PublicChat";
-import OAuthConsent from "@/pages/OAuthConsent";
 
-const queryClient = new QueryClient();
+// Route-based code splitting: each page is loaded on demand,
+// dramatically reducing the initial JS bundle and improving FCP/TTI.
+const AuthPage = lazy(() => import("@/pages/Auth"));
+const Landing = lazy(() => import("@/pages/Landing"));
+const Onboarding = lazy(() => import("@/pages/Onboarding"));
+const DashboardPage = lazy(() => import("@/pages/Dashboard"));
+const KnowledgeBasePage = lazy(() => import("@/pages/KnowledgeBase"));
+const ChannelsPage = lazy(() => import("@/pages/Channels"));
+const AnalyticsPage = lazy(() => import("@/pages/Analytics"));
+const TestChatPage = lazy(() => import("@/pages/TestChat"));
+const SettingsPage = lazy(() => import("@/pages/Settings"));
+const AdminPage = lazy(() => import("@/pages/Admin"));
+const NotificationsPage = lazy(() => import("@/pages/Notifications"));
+const CustomersPage = lazy(() => import("@/pages/Customers"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+const PublicChat = lazy(() => import("@/pages/PublicChat"));
+const OAuthConsent = lazy(() => import("@/pages/OAuthConsent"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -30,7 +52,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
+          <Suspense fallback={<RouteFallback />}>
+            <Routes>
             {/* Auth route */}
             <Route path="/auth" element={<AuthPage />} />
 
@@ -61,7 +84,8 @@ const App = () => (
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
-          </Routes>
+            </Routes>
+          </Suspense>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
