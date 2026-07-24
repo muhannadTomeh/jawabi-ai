@@ -197,7 +197,7 @@ export default function AuthPage() {
           الرئيسية
         </Link>
 
-        <div className="w-full max-w-md">
+          <div className="w-full max-w-md text-right">
           <div className="mb-8 text-center lg:text-right">
             <div className="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-md lg:hidden">
               <Sparkles className="h-6 w-6" />
@@ -267,7 +267,7 @@ export default function AuthPage() {
             <TabsContent value="login" className="mt-6">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">البريد الإلكتروني</Label>
+                  <Label htmlFor="login-email" className="block text-right">البريد الإلكتروني</Label>
                   <Input
                     id="login-email"
                     type="email"
@@ -276,10 +276,11 @@ export default function AuthPage() {
                     placeholder="example@email.com"
                     required
                     dir="ltr"
+                    className="text-right"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">كلمة المرور</Label>
+                  <Label htmlFor="login-password" className="block text-right">كلمة المرور</Label>
                   <Input
                     id="login-password"
                     type="password"
@@ -288,6 +289,7 @@ export default function AuthPage() {
                     placeholder="••••••••"
                     required
                     dir="ltr"
+                    className="text-right"
                   />
                 </div>
                 <Button type="submit" className="w-full h-11 text-base" disabled={isSubmitting}>
@@ -303,7 +305,7 @@ export default function AuthPage() {
             <TabsContent value="signup" className="mt-6">
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">الاسم الكامل</Label>
+                  <Label htmlFor="signup-name" className="block text-right">الاسم الكامل</Label>
                   <Input
                     id="signup-name"
                     type="text"
@@ -311,10 +313,11 @@ export default function AuthPage() {
                     onChange={(e) => setSignupName(e.target.value)}
                     placeholder="محمد أحمد"
                     required
+                    className="text-right"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">البريد الإلكتروني</Label>
+                  <Label htmlFor="signup-email" className="block text-right">البريد الإلكتروني</Label>
                   <Input
                     id="signup-email"
                     type="email"
@@ -323,10 +326,11 @@ export default function AuthPage() {
                     placeholder="example@email.com"
                     required
                     dir="ltr"
+                    className="text-right"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">كلمة المرور</Label>
+                  <Label htmlFor="signup-password" className="block text-right">كلمة المرور</Label>
                   <Input
                     id="signup-password"
                     type="password"
@@ -336,6 +340,7 @@ export default function AuthPage() {
                     required
                     minLength={6}
                     dir="ltr"
+                    className="text-right"
                   />
                   <p className="text-xs text-muted-foreground">
                     يجب أن تكون 6 أحرف على الأقل
