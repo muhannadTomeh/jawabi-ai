@@ -77,7 +77,10 @@ export function useChatbot() {
   }, [user]);
 
   const updateChatbot = async (updates: Partial<Chatbot>) => {
-    if (!chatbot) return;
+    if (!chatbot) {
+      console.error('updateChatbot called before chatbot loaded');
+      return { success: false, error: new Error('chatbot_not_loaded') };
+    }
 
     try {
       const { data, error } = await supabase
@@ -93,7 +96,7 @@ export function useChatbot() {
       return { success: true };
     } catch (err) {
       console.error('Error updating chatbot:', err);
-      return { success: false, error: err };
+      return { success: false, error: err as Error };
     }
   };
 
