@@ -1,17 +1,21 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AppSidebar, MobileSidebar } from './AppSidebar';
 import { useAuth } from '@/hooks/useAuth';
-import { Loader2 } from 'lucide-react';
+import { PageSkeleton } from './PageSkeletons';
+import { useEffect } from 'react';
 
 export function DashboardLayout() {
   const { user, loading } = useAuth();
 
+  const location = useLocation();
+
+  // Scroll to top on every route change so users don't land mid-page.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [location.pathname]);
+
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   if (!user) {
@@ -26,7 +30,7 @@ export function DashboardLayout() {
           <span className="text-lg font-semibold">جوابي</span>
           <MobileSidebar />
         </header>
-        <div className="p-4 sm:p-6 lg:p-8">
+        <div key={location.pathname} className="p-4 sm:p-6 lg:p-8 animate-fade-in">
           <Outlet />
         </div>
       </main>

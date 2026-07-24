@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, Search, Users as UsersIcon, Trash2, Save } from 'lucide-react';
+import { Search, Users as UsersIcon, Trash2, Save } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { TableSkeleton } from '@/components/layout/PageSkeletons';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -160,23 +162,16 @@ export default function CustomersPage() {
 
   if (chatbotLoading || loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6 animate-fade-in">
+        <PageHeader title="العملاء" description="كل من تواصل مع البوت يُسجَّل هنا تلقائياً بدون تكرار" />
+        <TableSkeleton rows={6} cols={5} />
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-in space-y-6">
-      <div className="flex items-center gap-3">
-        <UsersIcon className="h-7 w-7 text-primary" />
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">العملاء</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            كل من تواصل مع البوت يُسجَّل هنا تلقائياً بدون تكرار
-          </p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader title="العملاء" description="كل من تواصل مع البوت يُسجَّل هنا تلقائياً بدون تكرار" />
 
       {/* Tag pills */}
       <div className="flex flex-wrap gap-2">

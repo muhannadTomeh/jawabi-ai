@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare, Users, TrendingUp, ArrowLeft, Share2, Bot, Settings, Loader2 } from 'lucide-react';
+import { MessageSquare, Users, ArrowLeft, Share2, Bot, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { StatusBadge } from '@/components/dashboard/StatusBadge';
 import { supabase } from '@/integrations/supabase/client';
 import { useChatbot } from '@/hooks/useChatbot';
 import { ChannelIcon } from '@/components/ChannelIcon';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { StatCardsSkeleton, CardGridSkeleton } from '@/components/layout/PageSkeletons';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type PlatformKey = 'telegram' | 'facebook' | 'instagram' | 'whatsapp';
 
@@ -131,8 +134,19 @@ export default function DashboardPage() {
 
   if (chatbotLoading || loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-8 animate-fade-in">
+        <PageHeader title="لوحة التحكم" description="إدارة الشات بوت ومتابعة الأداء" />
+        <StatCardsSkeleton />
+        <div className="rounded-xl border border-border bg-card p-6">
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-14 w-14 rounded-xl" />
+            <div className="space-y-2 flex-1">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-56" />
+            </div>
+          </div>
+        </div>
+        <CardGridSkeleton count={2} />
       </div>
     );
   }
@@ -140,11 +154,8 @@ export default function DashboardPage() {
   const connectedCount = channels.filter((c) => c.connected).length;
 
   return (
-    <div className="animate-fade-in space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">لوحة التحكم</h1>
-        <p className="mt-1 text-muted-foreground">إدارة الشات بوت ومتابعة الأداء</p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader title="لوحة التحكم" description="إدارة الشات بوت ومتابعة الأداء" />
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard

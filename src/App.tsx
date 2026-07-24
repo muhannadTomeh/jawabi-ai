@@ -4,9 +4,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { PageSkeleton } from "@/components/layout/PageSkeletons";
 
 // Route-based code splitting: each page is loaded on demand,
 // dramatically reducing the initial JS bundle and improving FCP/TTI.
@@ -39,11 +39,9 @@ const queryClient = new QueryClient({
 });
 
 function RouteFallback() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  );
+  // Skeleton instead of a full-screen spinner — the shell is already
+  // painted, so we only need to fill the main content area.
+  return <PageSkeleton />;
 }
 
 const App = () => (

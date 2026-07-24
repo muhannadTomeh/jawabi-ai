@@ -7,8 +7,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Bell, Check, Trash2, MessageCircleReply, ShoppingCart, HelpCircle, UserCog, Send } from "lucide-react";
-import { Loader2 } from "lucide-react";
+import { Bell, Check, Trash2, MessageCircleReply, ShoppingCart, HelpCircle, UserCog, Send, Loader2 } from "lucide-react";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { ListSkeleton } from "@/components/layout/PageSkeletons";
 
 const typeMeta: Record<string, { icon: typeof Bell; color: string }> = {
   sale: { icon: ShoppingCart, color: "text-emerald-600 bg-emerald-50" },
@@ -54,25 +55,21 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">الإشعارات</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            تنبيهات تتطلب تدخلك — طلبات شراء، أسئلة غير مفهومة، طلب موظف بشري.
-          </p>
-        </div>
-        {unreadCount > 0 && (
-          <Button variant="outline" size="sm" onClick={markAllRead} className="shrink-0">
-            <Check className="ml-2 h-4 w-4" />
-            تعليم الكل كمقروء ({unreadCount})
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="الإشعارات"
+        description="تنبيهات تتطلب تدخلك — طلبات شراء، أسئلة غير مفهومة، طلب موظف بشري."
+        actions={
+          unreadCount > 0 ? (
+            <Button variant="outline" size="sm" onClick={markAllRead}>
+              <Check className="me-2 h-4 w-4" />
+              تعليم الكل كمقروء ({unreadCount})
+            </Button>
+          ) : null
+        }
+      />
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </div>
+        <ListSkeleton rows={4} />
       ) : notifications.length === 0 ? (
         <Card className="p-12 text-center text-muted-foreground">
           <Bell className="mx-auto h-10 w-10 mb-3 opacity-40" />
