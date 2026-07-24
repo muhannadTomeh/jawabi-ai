@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, MessageSquare, TrendingUp, Share2, Loader2, Users } from 'lucide-react';
+import { BarChart3, MessageSquare, TrendingUp, Share2, Users } from 'lucide-react';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { useChatbot } from '@/hooks/useChatbot';
 import { supabase } from '@/integrations/supabase/client';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { StatCardsSkeleton } from '@/components/layout/PageSkeletons';
 
 interface AnalyticsData {
   totalMessages: number;
