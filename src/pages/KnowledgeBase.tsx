@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, FileText, MessageCircle, File, MoreHorizontal, Trash2, Edit, Upload, Loader2, Image as ImageIcon, Globe, Share2, RefreshCw } from 'lucide-react';
+import { Plus, Search, FileText, MessageCircle, File, MoreHorizontal, Trash2, Edit, Upload, Image as ImageIcon, Globe, Share2, RefreshCw } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { ListSkeleton } from '@/components/layout/PageSkeletons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -174,33 +176,31 @@ export default function KnowledgeBasePage() {
 
   if (chatbotLoading || loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6 animate-fade-in" dir="rtl">
+        <PageHeader title="قاعدة المعرفة" description="أضف محتوى ليتعلم منه الشات بوت" />
+        <ListSkeleton rows={5} />
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-in space-y-6 text-right" dir="rtl">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-foreground">قاعدة المعرفة</h1>
-          <p className="mt-1 text-muted-foreground">
-            أضف محتوى ليتعلم منه الشات بوت
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setUploadDialogOpen(true)}>
-            <Upload className="me-2 h-4 w-4" />
-            رفع ملف
-          </Button>
-          <Button onClick={() => setAddDialogOpen(true)}>
-            <Plus className="me-2 h-4 w-4" />
-            إضافة محتوى
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-6 text-right" dir="rtl">
+      <PageHeader
+        title="قاعدة المعرفة"
+        description="أضف محتوى ليتعلم منه الشات بوت"
+        actions={
+          <>
+            <Button variant="outline" onClick={() => setUploadDialogOpen(true)}>
+              <Upload className="me-2 h-4 w-4" />
+              رفع ملف
+            </Button>
+            <Button onClick={() => setAddDialogOpen(true)}>
+              <Plus className="me-2 h-4 w-4" />
+              إضافة محتوى
+            </Button>
+          </>
+        }
+      />
 
       {/* Search */}
       <div className="relative max-w-md">
