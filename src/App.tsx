@@ -19,6 +19,7 @@ const ChannelsPage = lazy(() => import("@/pages/Channels"));
 const AnalyticsPage = lazy(() => import("@/pages/Analytics"));
 const TestChatPage = lazy(() => import("@/pages/TestChat"));
 const SettingsPage = lazy(() => import("@/pages/Settings"));
+const AccountSettingsPage = lazy(() => import("@/pages/AccountSettings"));
 const AdminPage = lazy(() => import("@/pages/Admin"));
 const NotificationsPage = lazy(() => import("@/pages/Notifications"));
 const CustomersPage = lazy(() => import("@/pages/Customers"));
@@ -79,6 +80,7 @@ const App = () => (
               <Route path="/dashboard/test" element={<TestChatPage />} />
               <Route path="/dashboard/notifications" element={<NotificationsPage />} />
               <Route path="/dashboard/settings" element={<SettingsPage />} />
+              <Route path="/dashboard/account" element={<AccountSettingsPage />} />
               <Route path="/dashboard/admin" element={<AdminPage />} />
             </Route>
             

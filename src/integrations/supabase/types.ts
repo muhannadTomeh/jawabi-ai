@@ -544,24 +544,36 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          language_preference: string
+          notification_preferences: Json
+          theme_preference: string
           updated_at: string
           user_id: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
+          language_preference?: string
+          notification_preferences?: Json
+          theme_preference?: string
           updated_at?: string
           user_id: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
+          language_preference?: string
+          notification_preferences?: Json
+          theme_preference?: string
           updated_at?: string
           user_id?: string
+          username?: string | null
         }
         Relationships: []
       }
