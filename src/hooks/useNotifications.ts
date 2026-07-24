@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useChatbot } from "./useChatbot";
 
@@ -18,37 +20,34 @@ export interface Notification {
 
 export function useNotifications() {
   const { chatbot } = useChatbot();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const chatbotId = chatbot?.id;
+  const queryKey = ["notifications", chatbotId] as const;
 
-  const fetchAll = async (chatbotId: string) => {
-    const { data } = await supabase
-      .from("notifications")
-      .select("*")
-      .eq("chatbot_id", chatbotId)
-      .order("created_at", { ascending: false })
-      .limit(100);
-    setNotifications((data || []) as Notification[]);
-    setLoading(false);
-  };
+  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
+    queryKey,
+    enabled: !!chatbotId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("chatbot_id", chatbotId!)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      return (data || []) as Notification[];
+    },
+  });
 
+  // Ref-counted realtime subscription: one channel per chatbot, shared across
+  // every mounted `useNotifications` consumer.
   useEffect(() => {
-    if (!chatbot?.id) return;
-    fetchAll(chatbot.id);
-
-    const channel = supabase
-      .channel(`notifications-${chatbot.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notifications", filter: `chatbot_id=eq.${chatbot.id}` },
-        () => fetchAll(chatbot.id)
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [chatbot?.id]);
+    if (!chatbotId) return;
+    const entry = acquireNotificationsChannel(chatbotId, () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", chatbotId] });
+    });
+    return () => entry.release();
+  }, [chatbotId, queryClient]);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -69,5 +68,56 @@ export function useNotifications() {
     await supabase.from("notifications").delete().eq("id", id);
   };
 
-  return { notifications, loading, unreadCount, markRead, markAllRead, resolve, remove };
+  return {
+    notifications,
+    loading: !!chatbotId && isLoading,
+    unreadCount,
+    markRead,
+    markAllRead,
+    resolve,
+    remove,
+  };
+}
+
+// ---- shared realtime channel registry (module scope) ---------------------
+type Entry = {
+  channel: RealtimeChannel;
+  listeners: Set<() => void>;
+  count: number;
+};
+const registry = new Map<string, Entry>();
+
+function acquireNotificationsChannel(chatbotId: string, onChange: () => void) {
+  let entry = registry.get(chatbotId);
+  if (!entry) {
+    const listeners = new Set<() => void>();
+    const channel = supabase
+      .channel(`notifications-${chatbotId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `chatbot_id=eq.${chatbotId}`,
+        },
+        () => listeners.forEach((fn) => fn())
+      )
+      .subscribe();
+    entry = { channel, listeners, count: 0 };
+    registry.set(chatbotId, entry);
+  }
+  entry.count += 1;
+  entry.listeners.add(onChange);
+  const current = entry;
+  return {
+    release() {
+      current.listeners.delete(onChange);
+      current.count -= 1;
+      if (current.count <= 0) {
+        supabase.removeChannel(current.channel);
+        registry.delete(chatbotId);
+      }
+    },
+  };
 }
