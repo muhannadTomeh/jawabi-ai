@@ -106,9 +106,16 @@ export default function Landing() {
           className="absolute -top-32 right-1/2 -z-10 h-[500px] w-[500px] translate-x-1/2 rounded-full opacity-20 blur-3xl"
           style={{ background: "var(--gradient-primary)" }}
         />
-        <div className="container mx-auto px-4 py-20 md:py-28">
-          <div className="grid items-center gap-10 md:grid-cols-2">
-           <div className="text-center md:text-right">
+        <div className="container relative mx-auto px-4 py-20 md:py-28">
+          {/* Mascot – small floating waving robot */}
+          <img
+            src={robotMascot.url}
+            alt="مساعد جوابي يلوّح بالترحيب"
+            loading="eager"
+            aria-hidden
+            className="pointer-events-none absolute top-6 left-4 h-20 w-20 animate-float drop-shadow-xl sm:top-8 sm:left-10 sm:h-24 sm:w-24 md:h-32 md:w-32"
+          />
+          <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground">
               <Zap className="h-3.5 w-3.5 text-primary" />
               منصة عربية لإنشاء بوتات الذكاء الاصطناعي
@@ -123,7 +130,7 @@ export default function Landing() {
               أنشئ مساعدك الذكي خلال دقائق، اربطه بواتساب وتيليجرام وفيسبوك،
               ودعه يجيب أسئلة عملاءك ويزيد مبيعاتك تلقائياً.
             </p>
-            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row md:justify-start">
+            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button asChild size="lg" className="min-w-56 text-base">
                 <Link to="/auth?mode=signup">
                   ابدأ تجربتك المجانية
@@ -137,22 +144,6 @@ export default function Landing() {
             <p className="mt-4 text-xs text-muted-foreground">
               بدون بطاقة ائتمان • إعداد فوري • إلغاء في أي وقت
             </p>
-           </div>
-           <div className="relative flex items-center justify-center">
-             <div
-               aria-hidden
-               className="absolute inset-0 -z-10 mx-auto h-72 w-72 rounded-full opacity-30 blur-3xl md:h-96 md:w-96"
-               style={{ background: "var(--gradient-primary)" }}
-             />
-             <div className="animate-float">
-               <img
-                 src={robotMascot.url}
-                 alt="مساعد جوابي الذكي يلوّح بالترحيب"
-                 loading="eager"
-                 className="h-64 w-64 origin-bottom animate-wave drop-shadow-2xl md:h-96 md:w-96"
-               />
-             </div>
-           </div>
           </div>
         </div>
       </section>
