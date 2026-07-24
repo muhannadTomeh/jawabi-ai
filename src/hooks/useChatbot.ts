@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -26,79 +27,73 @@ interface Chatbot {
 
 export function useChatbot() {
   const { user } = useAuth();
-  const [chatbot, setChatbot] = useState<Chatbot | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const userId = user?.id;
+  const queryKey = ['chatbot', userId] as const;
 
-  const fetchOrCreateChatbot = useCallback(async () => {
-    if (!user) {
-      setChatbot(null);
-      setLoading(false);
-      return null;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const { data: existingChatbot, error: fetchError } = await supabase
+  const query = useQuery<Chatbot | null, Error>({
+    queryKey,
+    enabled: !!userId,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    retry: 1,
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data: existing, error: fetchError } = await supabase
         .from('chatbots')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .maybeSingle();
       if (fetchError) throw fetchError;
+      if (existing) return existing as Chatbot;
 
-      if (existingChatbot) {
-        setChatbot(existingChatbot);
-        return existingChatbot as Chatbot;
-      }
-
-      const { data: newChatbot, error: createError } = await supabase
+      const { data: created, error: createError } = await supabase
         .from('chatbots')
-        .insert({ user_id: user.id, name: 'شات بوت جديد' })
+        .insert({ user_id: userId, name: 'شات بوت جديد' })
         .select()
         .single();
       if (createError) throw createError;
-      setChatbot(newChatbot);
-      return newChatbot as Chatbot;
-    } catch (err: any) {
-      console.error('Error fetching/creating chatbot:', err);
-      setError(err?.message || 'حدث خطأ في تحميل الشات بوت');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+      return created as Chatbot;
+    },
+  });
 
-  useEffect(() => {
-    fetchOrCreateChatbot();
-  }, [fetchOrCreateChatbot]);
+  const refetch = useCallback(async () => {
+    const res = await query.refetch();
+    return res.data ?? null;
+  }, [query]);
 
-  const updateChatbot = async (updates: Partial<Chatbot>) => {
-    let target = chatbot;
-    if (!target) {
-      // Try to (re)load the chatbot on-demand instead of failing outright
-      target = await fetchOrCreateChatbot();
-    }
-    if (!target) {
-      return { success: false, error: new Error('chatbot_not_loaded') };
-    }
+  const updateChatbot = useCallback(
+    async (updates: Partial<Chatbot>) => {
+      let target = query.data;
+      if (!target) {
+        target = (await query.refetch()).data ?? null;
+      }
+      if (!target) {
+        return { success: false, error: new Error('chatbot_not_loaded') };
+      }
+      try {
+        const { data, error } = await supabase
+          .from('chatbots')
+          .update(updates)
+          .eq('id', target.id)
+          .select()
+          .single();
+        if (error) throw error;
+        queryClient.setQueryData(queryKey, data as Chatbot);
+        return { success: true };
+      } catch (err) {
+        console.error('Error updating chatbot:', err);
+        return { success: false, error: err as Error };
+      }
+    },
+    [query, queryClient, queryKey]
+  );
 
-    try {
-      const { data, error } = await supabase
-        .from('chatbots')
-        .update(updates)
-        .eq('id', target.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setChatbot(data);
-      return { success: true };
-    } catch (err) {
-      console.error('Error updating chatbot:', err);
-      return { success: false, error: err as Error };
-    }
+  return {
+    chatbot: query.data ?? null,
+    loading: !!userId && query.isLoading,
+    error: query.error ? query.error.message : null,
+    updateChatbot,
+    refetch,
   };
-
-  return { chatbot, loading, error, updateChatbot, refetch: fetchOrCreateChatbot };
 }
