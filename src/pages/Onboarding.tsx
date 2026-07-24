@@ -39,7 +39,7 @@ function slugify(text: string) {
 
 export default function Onboarding() {
   const { user, loading: authLoading } = useAuth();
-  const { chatbot, loading: botLoading, updateChatbot } = useChatbot();
+  const { chatbot, loading: botLoading, error: botError, updateChatbot, refetch } = useChatbot();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
@@ -86,6 +86,20 @@ export default function Onboarding() {
     );
   }
   if (!user) return <Navigate to="/" replace />;
+
+  if (!chatbot) {
+    return (
+      <div dir="rtl" className="flex min-h-screen items-center justify-center bg-background p-6">
+        <Card className="w-full max-w-md p-6 text-center space-y-4">
+          <h2 className="text-lg font-semibold">تعذر تحميل البوت</h2>
+          <p className="text-sm text-muted-foreground">
+            {botError || 'حدث خطأ غير متوقع أثناء تحميل بيانات البوت.'}
+          </p>
+          <Button onClick={() => refetch()} className="w-full">إعادة المحاولة</Button>
+        </Card>
+      </div>
+    );
+  }
 
   const goNext = async (data: Partial<any> = {}, nextStep?: number) => {
     if (!chatbot) {
