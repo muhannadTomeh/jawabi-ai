@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Bell, Check, Trash2, MessageCircleReply, ShoppingCart, HelpCircle, UserCog, Send } from "lucide-react";
+import { Bell, Check, Trash2, MessageCircleReply, ShoppingCart, HelpCircle, UserCog, Send, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ListSkeleton } from "@/components/layout/PageSkeletons";
 
