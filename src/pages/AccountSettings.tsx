@@ -28,6 +28,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { PageSkeleton } from '@/components/layout/PageSkeletons';
 import { Progress } from '@/components/ui/progress';
 import {
   Select,
