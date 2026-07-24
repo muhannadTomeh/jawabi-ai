@@ -20,6 +20,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import logo from '@/assets/logo.png.asset.json';
 
 const navigation = [
   { name: 'لوحة التحكم', href: '/dashboard', icon: Bot },
@@ -56,6 +57,7 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
         {/* Logo */}
         <div className="flex h-16 items-center border-b border-sidebar-border px-6">
           <Link to="/dashboard" className="flex items-center gap-2">
+            <img src={logo.url} alt="جوابي" width={32} height={32} className="h-8 w-8" />
             <span className="text-xl font-semibold tracking-tight text-foreground">
               جوابي
             </span>

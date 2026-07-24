@@ -3,6 +3,7 @@ import { VisitorChat } from "@/components/landing/VisitorChat";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import robotMascot from "@/assets/robot-mascot.png.asset.json";
+import logo from "@/assets/logo.png.asset.json";
 import {
   Bot,
   MessageSquare,
@@ -73,9 +74,7 @@ export default function Landing() {
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <div className="container mx-auto flex h-16 flex-row-reverse items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Sparkles className="h-5 w-5" />
-            </div>
+            <img src={logo.url} alt="جوابي" width={36} height={36} className="h-9 w-9" />
             <span className="text-xl font-bold">جوابي</span>
           </Link>
           <nav className="hidden items-center gap-8 md:flex">
