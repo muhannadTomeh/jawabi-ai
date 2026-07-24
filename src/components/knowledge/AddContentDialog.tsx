@@ -210,12 +210,12 @@ export function AddContentDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="text-right sm:max-w-lg" dir="rtl">
+        <DialogHeader className="text-right">
           <DialogTitle>إضافة محتوى جديد</DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} dir="rtl">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="text" className="gap-2">
               <FileText className="h-4 w-4" />
@@ -235,7 +235,7 @@ export function AddContentDialog({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="text" className="space-y-4 mt-4">
+          <TabsContent value="text" className="mt-4 space-y-4 text-right">
             <div className="space-y-2">
               <Label htmlFor="text-title">العنوان</Label>
               <Input
@@ -264,7 +264,7 @@ export function AddContentDialog({
             >
               {loading ? (
                 <>
-                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
                   جاري الإضافة...
                 </>
               ) : (
@@ -273,7 +273,7 @@ export function AddContentDialog({
             </Button>
           </TabsContent>
 
-          <TabsContent value="faq" className="space-y-4 mt-4">
+          <TabsContent value="faq" className="mt-4 space-y-4 text-right">
             <div className="space-y-2">
               <Label htmlFor="faq-title">العنوان</Label>
               <Input
@@ -317,7 +317,7 @@ export function AddContentDialog({
             >
               {loading ? (
                 <>
-                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
                   جاري الإضافة...
                 </>
               ) : (
@@ -326,13 +326,13 @@ export function AddContentDialog({
             </Button>
           </TabsContent>
 
-          <TabsContent value="url" className="space-y-4 mt-4">
+          <TabsContent value="url" className="mt-4 space-y-4 text-right">
             <div className="space-y-2">
               <Label htmlFor="url-value">رابط الموقع أو الملف</Label>
               <Input
                 id="url-value"
                 type="url"
-                dir="ltr"
+                dir="rtl"
                 value={urlValue}
                 onChange={(e) => setUrlValue(e.target.value)}
                 placeholder="https://example.com/about أو رابط Google Drive/Docs"
@@ -359,7 +359,7 @@ export function AddContentDialog({
             >
               {loading ? (
                 <>
-                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
                   جاري جلب المحتوى...
                 </>
               ) : (
@@ -368,7 +368,7 @@ export function AddContentDialog({
             </Button>
           </TabsContent>
 
-          <TabsContent value="social" className="space-y-4 mt-4">
+          <TabsContent value="social" className="mt-4 space-y-4 text-right">
             {socialConnections.length === 0 ? (
               <div className="rounded-lg border border-dashed p-6 text-center">
                 <Share2 className="mx-auto h-8 w-8 text-muted-foreground" />
@@ -390,7 +390,7 @@ export function AddContentDialog({
                     <SelectContent>
                       {socialConnections.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
-                          <span className="flex items-center gap-2">
+                      <span className="flex items-center gap-2 text-right">
                             {c.platform === 'facebook' ? (
                               <Facebook className="h-4 w-4" />
                             ) : (
@@ -424,7 +424,7 @@ export function AddContentDialog({
                 >
                   {loading ? (
                     <>
-                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="me-2 h-4 w-4 animate-spin" />
                       جاري جلب المحتوى...
                     </>
                   ) : (

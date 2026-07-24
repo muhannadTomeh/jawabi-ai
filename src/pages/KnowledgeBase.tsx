@@ -181,7 +181,7 @@ export default function KnowledgeBasePage() {
   }
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in space-y-6 text-right" dir="rtl">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -192,11 +192,11 @@ export default function KnowledgeBasePage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setUploadDialogOpen(true)}>
-            <Upload className="ml-2 h-4 w-4" />
+            <Upload className="me-2 h-4 w-4" />
             رفع ملف
           </Button>
           <Button onClick={() => setAddDialogOpen(true)}>
-            <Plus className="ml-2 h-4 w-4" />
+            <Plus className="me-2 h-4 w-4" />
             إضافة محتوى
           </Button>
         </div>
@@ -204,10 +204,10 @@ export default function KnowledgeBasePage() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="البحث في قاعدة المعرفة..."
-          className="pr-10"
+          className="ps-10"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -231,10 +231,10 @@ export default function KnowledgeBasePage() {
                   <p className="mt-0.5 text-sm text-muted-foreground">
                     {typeLabels[item.type]}
                     {item.type === 'faq' && item.question && (
-                      <span className="mr-1">• {item.question}</span>
+                      <span className="ms-1">• {item.question}</span>
                     )}
                     {item.type === 'file' && item.file_name && (
-                      <span className="mr-1">• {item.file_name}</span>
+                      <span className="ms-1">• {item.file_name}</span>
                     )}
                   </p>
                 </div>
@@ -244,9 +244,9 @@ export default function KnowledgeBasePage() {
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
+                  <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => setEditItem(item)}>
-                      <Edit className="ml-2 h-4 w-4" />
+                      <Edit className="me-2 h-4 w-4" />
                       تعديل
                     </DropdownMenuItem>
                     {item.type === 'social' && item.source_ref && (
@@ -254,7 +254,7 @@ export default function KnowledgeBasePage() {
                         onClick={() => handleSyncSocial(item)}
                         disabled={syncingId === item.id}
                       >
-                        <RefreshCw className={`ml-2 h-4 w-4 ${syncingId === item.id ? 'animate-spin' : ''}`} />
+                        <RefreshCw className={`me-2 h-4 w-4 ${syncingId === item.id ? 'animate-spin' : ''}`} />
                         مزامنة الآن
                       </DropdownMenuItem>
                     )}
@@ -263,7 +263,7 @@ export default function KnowledgeBasePage() {
                       className="text-destructive"
                       onClick={() => setDeleteItem(item)}
                     >
-                      <Trash2 className="ml-2 h-4 w-4" />
+                      <Trash2 className="me-2 h-4 w-4" />
                       حذف
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -286,11 +286,11 @@ export default function KnowledgeBasePage() {
           {!searchQuery && (
             <div className="mt-4 flex gap-2">
               <Button variant="outline" onClick={() => setUploadDialogOpen(true)}>
-                <Upload className="ml-2 h-4 w-4" />
+                <Upload className="me-2 h-4 w-4" />
                 رفع ملف
               </Button>
               <Button onClick={() => setAddDialogOpen(true)}>
-                <Plus className="ml-2 h-4 w-4" />
+                <Plus className="me-2 h-4 w-4" />
                 إضافة محتوى
               </Button>
             </div>
@@ -328,7 +328,7 @@ export default function KnowledgeBasePage() {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteItem} onOpenChange={() => setDeleteItem(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="text-right" dir="rtl">
           <AlertDialogHeader>
             <AlertDialogTitle>حذف المحتوى</AlertDialogTitle>
             <AlertDialogDescription>

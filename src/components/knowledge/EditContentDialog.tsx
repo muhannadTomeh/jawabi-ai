@@ -104,12 +104,12 @@ export function EditContentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent className="text-right sm:max-w-lg" dir="rtl">
+        <DialogHeader className="text-right">
           <DialogTitle>تعديل المحتوى</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 mt-4">
+        <div className="mt-4 space-y-4 text-right">
           <div className="space-y-2">
             <Label>العنوان</Label>
             <Input
@@ -156,7 +156,7 @@ export function EditContentDialog({
           <Button onClick={handleSave} disabled={!title.trim() || loading} className="w-full">
             {loading ? (
               <>
-                <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                <Loader2 className="me-2 h-4 w-4 animate-spin" />
                 جاري الحفظ...
               </>
             ) : (

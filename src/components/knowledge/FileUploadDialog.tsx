@@ -195,8 +195,8 @@ export function FileUploadDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="text-right sm:max-w-md" dir="rtl">
+        <DialogHeader className="text-right">
           <DialogTitle>رفع ملف</DialogTitle>
         </DialogHeader>
 
@@ -298,17 +298,17 @@ export function FileUploadDialog({
             >
               {analyzing ? (
                 <>
-                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
                   جاري تحليل الصورة...
                 </>
               ) : uploading ? (
                 <>
-                  <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="me-2 h-4 w-4 animate-spin" />
                   جاري الرفع...
                 </>
               ) : (
                 <>
-                  <CheckCircle className="ml-2 h-4 w-4" />
+                  <CheckCircle className="me-2 h-4 w-4" />
                   رفع
                 </>
               )}
