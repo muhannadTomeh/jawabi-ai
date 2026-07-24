@@ -21,10 +21,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Set up auth state listener BEFORE getting initial session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        if (event === 'SIGNED_OUT') {
+          // Always return to the landing page when the session ends
+          if (window.location.pathname !== '/') {
+            window.location.replace('/');
+          }
+        }
       }
     );
 
