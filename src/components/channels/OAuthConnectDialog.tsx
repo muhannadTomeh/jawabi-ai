@@ -192,7 +192,15 @@ export function OAuthConnectDialog({
           .catch((err: any) => toast.error(err.message || 'خطأ'))
           .finally(() => setLoading(false));
       },
-      { scope: config.scopes }
+      {
+        scope: config.scopes,
+        // Force Facebook to re-show the permissions + page selector each time
+        // so the user can pick exactly which Pages Jawabi may access
+        // (instead of silently reusing a previous full-account grant).
+        auth_type: 'rerequest',
+        return_scopes: true,
+        enable_profile_selector: true,
+      } as any
     );
   }, [platform, config.scopes]);
 
