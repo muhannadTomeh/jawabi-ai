@@ -21,6 +21,13 @@ interface TelegramUpdate {
     };
     text?: string;
     date: number;
+    reply_to_message?: { message_id: number; chat: { id: number } };
+  };
+  callback_query?: {
+    id: string;
+    from: { id: number; first_name: string; username?: string };
+    message?: { message_id: number; chat: { id: number } };
+    data?: string;
   };
 }
 
@@ -34,35 +41,26 @@ function getDialectInstruction(dialect: string): string {
 async function generateAIResponse(
   userMessage: string,
   knowledgeContext: string,
-  chatbot: { name: string; tone: string; language: string; fallback_message: string; custom_instructions: string; dialect: string },
-  conversationHistory: { role: string; content: string }[]
+  chatbot: { name: string; tone: string; language: string; fallback_message: string; custom_instructions: string; dialect: string; welcome_message?: string },
+  conversationHistory: { role: string; content: string }[],
+  supabase: ReturnType<typeof createClient>
 ): Promise<string> {
-  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-  if (!LOVABLE_API_KEY) {
-    console.error("LOVABLE_API_KEY not configured, using fallback");
+  // Unified LLM config from admin panel (single source of truth)
+  const { data: llmCfg } = await supabase
+    .from("llm_settings")
+    .select("model, custom_api_key")
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const model = (llmCfg as any)?.model || "google/gemini-2.5-flash";
+  const apiKey = (llmCfg as any)?.custom_api_key || Deno.env.get("LOVABLE_API_KEY");
+  if (!apiKey) {
+    console.error("No AI API key configured, using fallback");
     return chatbot.fallback_message;
   }
 
-  const customInstructions = chatbot.custom_instructions
-    ? `\n\nتعليمات إضافية من المالك:\n${chatbot.custom_instructions}`
-    : "";
-
-  const dialectInstruction = getDialectInstruction(chatbot.dialect || "formal");
-
-  const systemPrompt = `أنت مساعد ذكي اسمك "${chatbot.name}".
-نبرتك: ${chatbot.tone}
-اللغة: ${chatbot.language}${dialectInstruction}
-
-قاعدة المعرفة الخاصة بك:
-${knowledgeContext || "لا توجد معلومات في قاعدة المعرفة حالياً."}
-
-التعليمات:
-- أجب على أسئلة المستخدم بناءً على قاعدة المعرفة المتاحة فقط.
-- إذا لم تجد إجابة في قاعدة المعرفة، أجب بـ: "${chatbot.fallback_message}"
-- كن مختصراً ومفيداً.
-- لا تذكر أنك تستخدم "قاعدة معرفة" - تحدث بشكل طبيعي.
-- لا ترحب بالمستخدم ولا تقل "أهلاً" أو "مرحباً" في بداية كل رد. ادخل في الموضوع مباشرة.
-- لديك ذاكرة محادثة - استخدم السياق السابق للرد بشكل متسق وطبيعي.${customInstructions}`;
+  const systemPrompt = buildSystemPrompt(chatbot, knowledgeContext);
 
   const messages = [
     { role: "system", content: systemPrompt },
@@ -74,13 +72,10 @@ ${knowledgeContext || "لا توجد معلومات في قاعدة المعرف
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages,
-      }),
+      body: JSON.stringify({ model, messages, max_tokens: 1024 }),
     });
 
     if (!response.ok) {
@@ -96,6 +91,40 @@ ${knowledgeContext || "لا توجد معلومات في قاعدة المعرف
   }
 }
 
+// Shared system prompt used by both Chat and Telegram (mirrors chat function behavior)
+function buildSystemPrompt(
+  chatbot: { name: string; tone: string; language: string; fallback_message: string; custom_instructions: string; dialect: string; welcome_message?: string },
+  knowledgeContext: string,
+): string {
+  const toneMap: Record<string, string> = {
+    professional: "احترافي ومهني",
+    friendly: "ودود ولطيف",
+    casual: "عفوي وبسيط",
+    formal: "رسمي ومحترم",
+  };
+  const dialectMap: Record<string, string> = {
+    palestinian: "اللهجة الفلسطينية العامية",
+    formal: "العربية الفصحى",
+  };
+  const toneDesc = toneMap[chatbot.tone] || chatbot.tone;
+  const dialectDesc = dialectMap[chatbot.dialect || "formal"] || "العربية الفصحى";
+
+  return `أنت مساعد ذكي اسمك "${chatbot.name}".
+اللغة: ${chatbot.language}
+اللهجة: ${dialectDesc}
+النبرة: ${toneDesc}
+
+${chatbot.custom_instructions ? `تعليمات خاصة: ${chatbot.custom_instructions}` : ""}
+
+${chatbot.welcome_message ? `رسالة الترحيب: ${chatbot.welcome_message}` : ""}
+
+إذا لم تتمكن من الإجابة من قاعدة المعرفة، استخدم هذه الرسالة: "${chatbot.fallback_message}"
+
+${knowledgeContext ? `\n# قاعدة المعرفة المتاحة:\n${knowledgeContext}` : "ليس لديك قاعدة معرفة حالياً. أجب بشكل عام ومفيد."}
+
+أجب بإيجاز ووضوح. لا ترحّب في كل رد، ادخل بالموضوع مباشرة. استخدم قاعدة المعرفة عند الإمكان.`;
+}
+
 async function getOrCreateUser(
   supabase: ReturnType<typeof createClient>,
   telegramUserId: number,
@@ -103,22 +132,19 @@ async function getOrCreateUser(
   firstName: string,
   username?: string
 ): Promise<{ isNew: boolean }> {
-  const { data: existing } = await supabase
-    .from("telegram_users")
-    .select("id")
-    .eq("telegram_user_id", telegramUserId)
-    .eq("chatbot_id", chatbotId)
-    .maybeSingle();
-
-  if (existing) return { isNew: false };
-
-  await supabase.from("telegram_users").insert({
+  // Atomic insert: rely on the UNIQUE(telegram_user_id, chatbot_id) constraint
+  // to distinguish new vs. returning users, avoiding a select-then-insert race.
+  const { error } = await supabase.from("telegram_users").insert({
     telegram_user_id: telegramUserId,
     chatbot_id: chatbotId,
     first_name: firstName,
     username: username || null,
   });
-
+  if (error) {
+    if ((error as any).code === "23505") return { isNew: false };
+    console.error("getOrCreateUser insert failed:", error);
+    return { isNew: false };
+  }
   return { isNew: true };
 }
 
@@ -211,6 +237,63 @@ Deno.serve(async (req) => {
     const update: TelegramUpdate = await req.json();
     console.log("Received Telegram update:", JSON.stringify(update));
 
+    // ---- Handle inline "Confirm Order" button ----
+    if (update.callback_query) {
+      const cb = update.callback_query;
+      const data = cb.data || "";
+      if (data.startsWith("confirm_order:")) {
+        const orderId = data.split(":")[1];
+        const { data: order } = await supabase
+          .from("pending_sale_orders")
+          .select("*")
+          .eq("id", orderId)
+          .maybeSingle();
+        if (order && (order as any).status === "pending") {
+          const chatbotForOrder = (channel as any).chatbots;
+          const confirmMsg =
+            "تم تأكيد طلبك ✅ سيتواصل معك أحد ممثلي المبيعات لإتمام العملية. شكراً لثقتك بنا!";
+          // Notify customer on their channel
+          if ((order as any).channel === "telegram") {
+            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ chat_id: (order as any).customer_external_id, text: confirmMsg }),
+            });
+            await supabase.from("telegram_messages").insert({
+              telegram_user_id: Number((order as any).customer_external_id),
+              chatbot_id: chatbotForOrder.id,
+              role: "assistant",
+              content: confirmMsg,
+            });
+          }
+          await supabase
+            .from("pending_sale_orders")
+            .update({ status: "confirmed" })
+            .eq("id", orderId);
+          // Answer the callback + edit owner's message to reflect state
+          await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ callback_query_id: cb.id, text: "تم تأكيد الطلب" }),
+          });
+          if (cb.message) {
+            await fetch(`https://api.telegram.org/bot${botToken}/editMessageReplyMarkup`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                chat_id: cb.message.chat.id,
+                message_id: cb.message.message_id,
+                reply_markup: { inline_keyboard: [[{ text: "✅ تم التأكيد", callback_data: "noop" }]] },
+              }),
+            });
+          }
+        }
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     if (!update.message?.text) {
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -224,6 +307,69 @@ Deno.serve(async (req) => {
     const userMessage = update.message.text;
     const chatbot = channel.chatbots;
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+    const telegramChatActionUrl = `https://api.telegram.org/bot${botToken}/sendChatAction`;
+    let lockAcquired = false;
+    const releaseLock = async () => {
+      if (!lockAcquired) return;
+      lockAcquired = false;
+      try {
+        await supabase.rpc("release_conversation_lock", {
+          p_chatbot_id: chatbot.id,
+          p_external_id: String(telegramUserId),
+        });
+      } catch (e) {
+        console.error("release_conversation_lock failed:", e);
+      }
+    };
+
+    // ---- Owner manual reply -> activate takeover for that customer ----
+    if (
+      chatbot.owner_telegram_chat_id &&
+      String(chatId) === String(chatbot.owner_telegram_chat_id) &&
+      update.message.reply_to_message
+    ) {
+      const { data: order } = await supabase
+        .from("pending_sale_orders")
+        .select("*")
+        .eq("owner_chat_id", String(chatId))
+        .eq("owner_message_id", update.message.reply_to_message.message_id)
+        .maybeSingle();
+      if (order) {
+        // Enable existing takeover on this customer's conversation
+        await supabase.from("conversation_takeovers").upsert(
+          {
+            chatbot_id: (order as any).chatbot_id,
+            channel: (order as any).channel,
+            external_id: (order as any).customer_external_id,
+            active: true,
+            last_human_at: new Date().toISOString(),
+            source: "telegram_owner",
+          },
+          { onConflict: "chatbot_id,channel,external_id" }
+        );
+        // Forward owner's reply to the customer
+        if ((order as any).channel === "telegram") {
+          await fetch(telegramApiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id: (order as any).customer_external_id, text: userMessage }),
+          });
+          await supabase.from("telegram_messages").insert({
+            telegram_user_id: Number((order as any).customer_external_id),
+            chatbot_id: (order as any).chatbot_id,
+            role: "assistant",
+            content: userMessage,
+          });
+        }
+        await supabase
+          .from("pending_sale_orders")
+          .update({ status: "owner_replied" })
+          .eq("id", (order as any).id);
+        return new Response(JSON.stringify({ ok: true, takeover: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
 
     // Register user (track new vs existing)
     const { isNew } = await getOrCreateUser(supabase, telegramUserId, chatbot.id, firstName, username);
@@ -254,15 +400,36 @@ Deno.serve(async (req) => {
 
     // For new users (first message without /start), send welcome THEN process
     if (isNew) {
-      const welcomeMsg = chatbot.welcome_message || `مرحباً ${firstName}! أنا ${chatbot.name}. كيف يمكنني مساعدتك؟`;
-      await fetch(telegramApiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId, text: welcomeMsg }),
-      });
+      // Safety double-check: never welcome a user who already has message history.
+      const { data: priorMsgs } = await supabase
+        .from("telegram_messages")
+        .select("id")
+        .eq("chatbot_id", chatbot.id)
+        .eq("telegram_user_id", telegramUserId)
+        .limit(1);
+      if (!priorMsgs || priorMsgs.length === 0) {
+        const welcomeMsg = chatbot.welcome_message || `مرحباً ${firstName}! أنا ${chatbot.name}. كيف يمكنني مساعدتك؟`;
+        await fetch(telegramApiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chat_id: chatId, text: welcomeMsg }),
+        });
+      }
     }
 
     // Get conversation history
+    // Serialize concurrent messages from the same user+chatbot so we don't
+    // interleave AI replies when messages arrive within a few seconds.
+    try {
+      const { data: gotLock } = await supabase.rpc("acquire_conversation_lock", {
+        p_chatbot_id: chatbot.id,
+        p_external_id: String(telegramUserId),
+      });
+      lockAcquired = gotLock !== false;
+    } catch (e) {
+      console.error("acquire_conversation_lock failed:", e);
+    }
+
     const conversationHistory = await getConversationHistory(supabase, telegramUserId, chatbot.id);
 
     // Fetch handover settings
@@ -271,6 +438,44 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("chatbot_id", chatbot.id)
       .maybeSingle();
+
+    // Human takeover: if a human recently intervened in this conversation, stay silent
+    if (handover?.takeover_mode_enabled) {
+      const { data: takeover } = await supabase
+        .from("conversation_takeovers")
+        .select("active,last_human_at")
+        .eq("chatbot_id", chatbot.id)
+        .eq("channel", "telegram")
+        .eq("external_id", String(telegramUserId))
+        .maybeSingle();
+      if (takeover?.active) {
+        const timeoutMin = handover.takeover_timeout_minutes || 60;
+        const lastHuman = new Date(takeover.last_human_at as string).getTime();
+        const stillActive = Date.now() - lastHuman < timeoutMin * 60 * 1000;
+        if (stillActive) {
+          // Save the user's message but do NOT generate a bot reply
+          await supabase.from("telegram_messages").insert({
+            telegram_user_id: telegramUserId,
+            chatbot_id: chatbot.id,
+            role: "user",
+            content: userMessage,
+          });
+          console.log("Skipping bot: conversation under human takeover", telegramUserId);
+          await releaseLock();
+          return new Response(JSON.stringify({ ok: true, takeover: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        } else {
+          // Auto-expire takeover
+          await supabase
+            .from("conversation_takeovers")
+            .update({ active: false })
+            .eq("chatbot_id", chatbot.id)
+            .eq("channel", "telegram")
+            .eq("external_id", String(telegramUserId));
+        }
+      }
+    }
 
     // Helper to create a notification
     const createNotification = async (type: string, title: string) => {
@@ -301,19 +506,28 @@ Deno.serve(async (req) => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ chat_id: chatId, text: handoverMsg }),
         });
+        await releaseLock();
         return new Response(JSON.stringify({ ok: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
     }
 
-    // Sale-intent detection
-    if (handover?.enabled) {
+    // Sale-intent detection — gated by bot_mode
+    const botMode: string = (chatbot as any).bot_mode || "inquiries_sales";
+    const salesEnabled = botMode === "inquiries_sales" || botMode === "inquiries_sales_followup";
+    if (salesEnabled) {
       try {
-        const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+        const { data: llmCfg } = await supabase
+          .from("llm_settings")
+          .select("model, custom_api_key")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const intentApiKey = (llmCfg as any)?.custom_api_key || Deno.env.get("LOVABLE_API_KEY");
         const intentRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${lovableApiKey}` },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${intentApiKey}` },
           body: JSON.stringify({
             model: "google/gemini-2.5-flash-lite",
             messages: [
@@ -331,19 +545,56 @@ Deno.serve(async (req) => {
           const intentData = await intentRes.json();
           const intent = (intentData.choices?.[0]?.message?.content || "").toLowerCase().trim();
           if (intent.includes("sale")) {
-            const saleMsg = handover.sale_message || "سأقوم بتحويلك إلى موظف المبيعات.";
-            await saveMessages(supabase, telegramUserId, chatbot.id, userMessage, saleMsg);
-            if (handover.trigger_on_sale === true) {
-              await createNotification("sale", "طلب شراء");
+            // Send order summary to owner on Telegram with an inline confirm button.
+            const ownerChatId = (chatbot as any).owner_telegram_chat_id;
+            if (ownerChatId) {
+              const { data: order } = await supabase
+                .from("pending_sale_orders")
+                .insert({
+                  chatbot_id: chatbot.id,
+                  channel: "telegram",
+                  customer_external_id: String(telegramUserId),
+                  customer_name: firstName || username || null,
+                  summary: userMessage,
+                  owner_chat_id: String(ownerChatId),
+                })
+                .select()
+                .single();
+
+              const summaryText =
+                `🛒 طلب شراء جديد\n` +
+                `العميل: ${firstName || "غير معروف"}${username ? " (@" + username + ")" : ""}\n` +
+                `القناة: تيليجرام\n` +
+                `الرسالة: ${userMessage}\n\n` +
+                `اضغط «تأكيد الطلب» لإرسال تأكيد للعميل، أو رد على هذه الرسالة للتواصل يدوياً (سيتوقف البوت تلقائياً).`;
+
+              const ownerRes = await fetch(telegramApiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  chat_id: ownerChatId,
+                  text: summaryText,
+                  reply_markup: {
+                    inline_keyboard: [[
+                      { text: "✅ تأكيد الطلب", callback_data: `confirm_order:${(order as any)?.id}` },
+                    ]],
+                  },
+                }),
+              });
+              if (ownerRes.ok && order) {
+                const rj = await ownerRes.json();
+                await supabase
+                  .from("pending_sale_orders")
+                  .update({ owner_message_id: rj?.result?.message_id })
+                  .eq("id", (order as any).id);
+              } else if (!ownerRes.ok) {
+                console.error("Failed to notify owner:", await ownerRes.text());
+              }
+            } else {
+              console.warn("Sale intent detected but owner_telegram_chat_id not configured");
             }
-            await fetch(telegramApiUrl, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ chat_id: chatId, text: saleMsg }),
-            });
-            return new Response(JSON.stringify({ ok: true }), {
-              headers: { ...corsHeaders, "Content-Type": "application/json" },
-            });
+            // Do NOT auto-confirm to the customer. Let the AI respond normally,
+            // continuing to collect info until the owner presses Confirm.
           }
         }
       } catch (e) {
@@ -352,10 +603,30 @@ Deno.serve(async (req) => {
     }
 
     // Build knowledge context
-    const { data: knowledgeItems } = await supabase
+    const { data: allKnowledgeItems } = await supabase
       .from("knowledge_items")
       .select("*")
       .eq("chatbot_id", chatbot.id);
+
+    // Semantic retrieval with fallback to the full dump.
+    let retrievedItems: any[] | null = null;
+    try {
+      const embRes = await supabase.functions.invoke("generate-embedding", {
+        body: { text: userMessage },
+      });
+      const embedding = (embRes.data as any)?.embedding;
+      if (Array.isArray(embedding)) {
+        const { data: matches } = await supabase.rpc("match_knowledge_items", {
+          p_chatbot_id: chatbot.id,
+          query_embedding: embedding,
+          match_count: 5,
+        });
+        if (matches && matches.length > 0) retrievedItems = matches as any[];
+      }
+    } catch (e) {
+      console.error("Semantic retrieval failed, falling back:", e);
+    }
+    const knowledgeItems = retrievedItems ?? allKnowledgeItems;
 
     let knowledgeContext = "";
     if (knowledgeItems && knowledgeItems.length > 0) {
@@ -367,6 +638,12 @@ Deno.serve(async (req) => {
           parts.push(`${item.title}:\n${item.content}`);
         } else if (item.type === "file" && item.content) {
           parts.push(`ملف "${item.title}":\n${item.content}`);
+        } else if ((item.type === "url" || item.type === "social") && item.content) {
+          parts.push(
+            item.file_url
+              ? `${item.title} (المصدر: ${item.file_url}):\n${item.content}`
+              : `${item.title}:\n${item.content}`
+          );
         } else if (item.type === "image" && item.file_url) {
           parts.push(
             `صورة بعنوان "${item.title}":\nالوصف: ${item.content || "بدون وصف"}\nرابط الإرسال: [IMAGE:${item.file_url}]`
@@ -379,8 +656,19 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Generate AI response with conversation history
-    let responseText = await generateAIResponse(userMessage, knowledgeContext, chatbot, conversationHistory);
+    // Generate AI response with conversation history (unified LLM settings from admin)
+    // Show typing indicator to the user for a more human feel.
+    try {
+      await fetch(telegramChatActionUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, action: "typing" }),
+      });
+    } catch (e) {
+      console.error("Telegram sendChatAction failed:", e);
+    }
+
+    let responseText = await generateAIResponse(userMessage, knowledgeContext, chatbot, conversationHistory, supabase);
 
     // Unclear-question handover (consecutive fallback responses)
     if (handover?.enabled && responseText.trim() === chatbot.fallback_message.trim()) {
@@ -403,6 +691,7 @@ Deno.serve(async (req) => {
 
     // Save messages
     await saveMessages(supabase, telegramUserId, chatbot.id, userMessage, responseText);
+    await releaseLock();
 
     // Parse [IMAGE:url] tokens and send images + remaining text
     const imageRegex = /\[IMAGE:(https?:\/\/[^\s\]]+)\]/g;
@@ -437,6 +726,7 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("Error processing webhook:", error);
+    try { await releaseLock(); } catch (_) { /* ignore */ }
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
       {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Bot, MessageSquare, Shield, Loader2 } from 'lucide-react';
+import { Save, Bot, MessageSquare, Shield, Loader2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,15 +28,18 @@ export default function SettingsPage() {
   const [fallbackMessage, setFallbackMessage] = useState('');
   const [welcomeMessage, setWelcomeMessage] = useState('');
   const [customInstructions, setCustomInstructions] = useState('');
+  const [botMode, setBotMode] = useState<'inquiries_only' | 'inquiries_sales' | 'inquiries_sales_followup'>('inquiries_sales');
+  const [ownerTelegramChatId, setOwnerTelegramChatId] = useState('');
 
   const [handoverEnabled, setHandoverEnabled] = useState(true);
-  const [lowConfidence, setLowConfidence] = useState(true);
   const [keywords, setKeywords] = useState('بشري، موظف، مساعدة، دعم');
   const [handoverMessage, setHandoverMessage] = useState('');
   const [failedThreshold, setFailedThreshold] = useState(3);
   const [triggerOnSale, setTriggerOnSale] = useState(false);
   const [saleMessage, setSaleMessage] = useState('سأقوم بتحويلك إلى أحد موظفي المبيعات لإتمام طلبك.');
   const [handoverSettingsId, setHandoverSettingsId] = useState<string | null>(null);
+  const [takeoverMode, setTakeoverMode] = useState(false);
+  const [takeoverTimeout, setTakeoverTimeout] = useState(60);
 
   useEffect(() => {
     if (chatbot) {
@@ -47,6 +50,8 @@ export default function SettingsPage() {
       setFallbackMessage(chatbot.fallback_message);
       setWelcomeMessage((chatbot as any).welcome_message || '');
       setCustomInstructions((chatbot as any).custom_instructions || '');
+      setBotMode(((chatbot as any).bot_mode || 'inquiries_sales'));
+      setOwnerTelegramChatId(((chatbot as any).owner_telegram_chat_id || ''));
       loadHandover(chatbot.id);
     }
   }, [chatbot]);
@@ -60,12 +65,13 @@ export default function SettingsPage() {
     if (data) {
       setHandoverSettingsId(data.id);
       setHandoverEnabled(data.enabled);
-      setLowConfidence(data.trigger_on_low_confidence);
       setKeywords((data.trigger_keywords || []).join('، '));
       setHandoverMessage(data.handover_message);
       setFailedThreshold(data.failed_responses_threshold ?? 3);
       setTriggerOnSale((data as any).trigger_on_sale ?? false);
       setSaleMessage((data as any).sale_message ?? 'سأقوم بتحويلك إلى أحد موظفي المبيعات لإتمام طلبك.');
+      setTakeoverMode((data as any).takeover_mode_enabled ?? false);
+      setTakeoverTimeout((data as any).takeover_timeout_minutes ?? 60);
     }
   };
 
@@ -79,6 +85,8 @@ export default function SettingsPage() {
       fallback_message: fallbackMessage,
       welcome_message: welcomeMessage,
       custom_instructions: customInstructions,
+      bot_mode: botMode,
+      owner_telegram_chat_id: ownerTelegramChatId.trim() || null,
     } as any);
 
     let handoverOk = true;
@@ -86,7 +94,6 @@ export default function SettingsPage() {
       const payload = {
         chatbot_id: chatbot.id,
         enabled: handoverEnabled,
-        trigger_on_low_confidence: lowConfidence,
         trigger_keywords: keywords
           .split(/[،,]/)
           .map((k) => k.trim())
@@ -95,6 +102,8 @@ export default function SettingsPage() {
         failed_responses_threshold: failedThreshold,
         trigger_on_sale: triggerOnSale,
         sale_message: saleMessage,
+        takeover_mode_enabled: takeoverMode,
+        takeover_timeout_minutes: takeoverTimeout,
       } as any;
       if (handoverSettingsId) {
         const { error } = await supabase
@@ -263,6 +272,40 @@ export default function SettingsPage() {
                   أوامر وتعليمات مخصصة تحدد كيف يتعامل البوت مع الأسئلة خارج قاعدة المعرفة.
                 </p>
               </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="botMode">وضع عمل البوت</Label>
+                <Select value={botMode} onValueChange={(v) => setBotMode(v as typeof botMode)}>
+                  <SelectTrigger id="botMode">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inquiries_only">استفسارات فقط</SelectItem>
+                    <SelectItem value="inquiries_sales">استفسارات + مبيعات</SelectItem>
+                    <SelectItem value="inquiries_sales_followup">استفسارات + مبيعات + متابعة (قريباً)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  يتحكم بسلوك البوت: هل يكتفي بالإجابة على الأسئلة، أم يكتشف نية الشراء ويرسل إشعاراً للمالك.
+                </p>
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="ownerTg" className="flex items-center gap-2">
+                  <Send className="h-4 w-4" />
+                  معرّف محادثة المالك على تيليجرام
+                </Label>
+                <Input
+                  id="ownerTg"
+                  dir="ltr"
+                  value={ownerTelegramChatId}
+                  onChange={(e) => setOwnerTelegramChatId(e.target.value)}
+                  placeholder="123456789"
+                />
+                <p className="text-xs text-muted-foreground">
+                  عند اكتشاف نية شراء، سيرسل البوت ملخص الطلب على هذا المعرّف مع زر «تأكيد الطلب». يمكنك معرفة رقمك عبر @userinfobot.
+                </p>
+              </div>
             </div>
           </div>
         </TabsContent>
@@ -282,19 +325,6 @@ export default function SettingsPage() {
             </div>
 
             <div className={handoverEnabled ? 'space-y-6' : 'pointer-events-none opacity-50 space-y-6'}>
-              <div className="flex items-center justify-between rounded-lg border border-border p-4">
-                <div>
-                  <p className="font-medium text-foreground">التحويل عند انخفاض الثقة</p>
-                  <p className="text-sm text-muted-foreground">
-                    تحويل المحادثة عندما يكون البوت غير متأكد من الرد
-                  </p>
-                </div>
-                <Switch
-                  checked={lowConfidence}
-                  onCheckedChange={setLowConfidence}
-                />
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="keywords">كلمات التحويل</Label>
                 <Input
@@ -363,6 +393,38 @@ export default function SettingsPage() {
                   الرسالة المرسلة للمستخدم عند تحويله لموظف الدعم
                 </p>
               </div>
+            </div>
+          </div>
+
+          <div className="card-elevated p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                <div>
+                  <h3 className="font-semibold text-foreground">وضع التدخل البشري</h3>
+                  <p className="text-sm text-muted-foreground">
+                    عندما يرد موظف يدوياً على المحادثة، يتوقف البوت مؤقتاً عن الرد لتفادي التداخل.
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={takeoverMode}
+                onCheckedChange={setTakeoverMode}
+              />
+            </div>
+            <div className={takeoverMode ? 'space-y-2' : 'pointer-events-none opacity-50 space-y-2'}>
+              <Label htmlFor="takeoverTimeout">مدة إيقاف البوت (بالدقائق)</Label>
+              <Input
+                id="takeoverTimeout"
+                type="number"
+                min={5}
+                max={1440}
+                value={takeoverTimeout}
+                onChange={(e) => setTakeoverTimeout(Number(e.target.value) || 60)}
+              />
+              <p className="text-xs text-muted-foreground">
+                يبقى البوت متوقفاً في تلك المحادثة حتى تمر هذه المدة من دون تدخل بشري إضافي.
+              </p>
             </div>
           </div>
         </TabsContent>
