@@ -82,8 +82,9 @@ export default function AnalyticsPage() {
 
   if (chatbotLoading || loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-8 animate-fade-in" dir="rtl">
+        <PageHeader title="الإحصائيات" description="تتبع أداء الشات بوت والتفاعل بناءً على البيانات الحقيقية" />
+        <StatCardsSkeleton />
       </div>
     );
   }
@@ -98,14 +99,8 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="animate-fade-in space-y-8" dir="rtl">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">الإحصائيات</h1>
-        <p className="mt-1 text-muted-foreground">
-          تتبع أداء الشات بوت والتفاعل بناءً على البيانات الحقيقية
-        </p>
-      </div>
+    <div className="space-y-8" dir="rtl">
+      <PageHeader title="الإحصائيات" description="تتبع أداء الشات بوت والتفاعل بناءً على البيانات الحقيقية" />
 
       {/* Stats */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
