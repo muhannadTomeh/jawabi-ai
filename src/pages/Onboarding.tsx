@@ -85,16 +85,24 @@ export default function Onboarding() {
       </div>
     );
   }
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) return <Navigate to="/" replace />;
 
   const goNext = async (data: Partial<any> = {}, nextStep?: number) => {
-    if (!chatbot) return;
+    if (!chatbot) {
+      toast.error('لم يتم تحميل البوت بعد، حاول مجدداً');
+      return;
+    }
     setSaving(true);
     const target = nextStep ?? step + 1;
     const res = await updateChatbot({ ...data, onboarding_step: target });
     setSaving(false);
-    if (res?.success) setStep(target);
-    else toast.error('فشل الحفظ، حاول مجدداً');
+    if (res?.success) {
+      setStep(target);
+    } else {
+      const msg = (res?.error as any)?.message || 'فشل الحفظ، حاول مجدداً';
+      console.error('Onboarding goNext failed:', res?.error);
+      toast.error('فشل الحفظ', { description: msg });
+    }
   };
 
   const handleStep1 = async (e: React.FormEvent) => {
