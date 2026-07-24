@@ -25,66 +25,48 @@ export default function AnalyticsPage() {
     async function fetchAnalytics() {
       setLoading(true);
       try {
-        // Fetch messages from all channels in parallel
-        const [tgRes, waRes, msgRes, chRes] = await Promise.all([
-          supabase
-            .from('telegram_messages')
-            .select('role, created_at, telegram_user_id')
-            .eq('chatbot_id', chatbot!.id),
-          supabase
-            .from('whatsapp_messages')
-            .select('role, created_at, phone_number')
-            .eq('chatbot_id', chatbot!.id),
-          supabase
-            .from('messenger_messages')
-            .select('role, created_at, sender_id')
-            .eq('chatbot_id', chatbot!.id),
-          supabase
-          .from('channels')
-          .select('*')
-          .eq('chatbot_id', chatbot!.id)
-            .eq('is_connected', true),
+        const now = new Date();
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+        const weekStart = new Date(Date.now() - 7 * 24 * 60 * 60_000).toISOString();
+        const cbId = chatbot!.id;
+
+        // Only unique-users lookup pulls rows (small columns). Everything
+        // else uses head-count queries so no payload is downloaded.
+        const countFor = (table: 'telegram_messages' | 'whatsapp_messages' | 'messenger_messages') =>
+          [
+            supabase.from(table).select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId),
+            supabase.from(table).select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId).eq('role', 'user'),
+            supabase.from(table).select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId).gte('created_at', todayStart),
+            supabase.from(table).select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId).gte('created_at', weekStart),
+          ] as const;
+
+        const [
+          tgTotal, tgUser, tgToday, tgWeek,
+          waTotal, waUser, waToday, waWeek,
+          msTotal, msUser, msToday, msWeek,
+          tgUsersRes, waUsersRes, msUsersRes,
+          chRes,
+        ] = await Promise.all([
+          ...countFor('telegram_messages'),
+          ...countFor('whatsapp_messages'),
+          ...countFor('messenger_messages'),
+          supabase.from('telegram_users').select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId),
+          supabase.from('whatsapp_contacts').select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId),
+          supabase.from('messenger_users').select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId),
+          supabase.from('channels').select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId).eq('is_connected', true),
         ]);
 
-        if (tgRes.error) throw tgRes.error;
-        if (waRes.error) throw waRes.error;
-        if (msgRes.error) throw msgRes.error;
-        if (chRes.error) throw chRes.error;
+        const total = (tgTotal.count || 0) + (waTotal.count || 0) + (msTotal.count || 0);
+        const userCount = (tgUser.count || 0) + (waUser.count || 0) + (msUser.count || 0);
 
-        setChannelCount(chRes.data?.length || 0);
-
-        type Unified = { role: string; created_at: string; userKey: string };
-        const allMessages: Unified[] = [
-          ...((tgRes.data || []) as any[]).map((m) => ({
-            role: m.role,
-            created_at: m.created_at,
-            userKey: `tg:${m.telegram_user_id}`,
-          })),
-          ...((waRes.data || []) as any[]).map((m) => ({
-            role: m.role,
-            created_at: m.created_at,
-            userKey: `wa:${m.phone_number}`,
-          })),
-          ...((msgRes.data || []) as any[]).map((m) => ({
-            role: m.role,
-            created_at: m.created_at,
-            userKey: `ms:${m.sender_id}`,
-          })),
-        ];
-        const now = new Date();
-        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const weekStart = new Date(todayStart);
-        weekStart.setDate(weekStart.getDate() - 7);
-
-        const uniqueUserIds = new Set(allMessages.map((m) => m.userKey));
-
+        setChannelCount(chRes.count || 0);
         setAnalytics({
-          totalMessages: allMessages.length,
-          userMessages: allMessages.filter((m) => m.role === 'user').length,
-          botMessages: allMessages.filter((m) => m.role === 'bot' || m.role === 'assistant').length,
-          uniqueUsers: uniqueUserIds.size,
-          todayMessages: allMessages.filter((m) => new Date(m.created_at) >= todayStart).length,
-          weekMessages: allMessages.filter((m) => new Date(m.created_at) >= weekStart).length,
+          totalMessages: total,
+          userMessages: userCount,
+          botMessages: Math.max(0, total - userCount),
+          uniqueUsers: (tgUsersRes.count || 0) + (waUsersRes.count || 0) + (msUsersRes.count || 0),
+          todayMessages: (tgToday.count || 0) + (waToday.count || 0) + (msToday.count || 0),
+          weekMessages: (tgWeek.count || 0) + (waWeek.count || 0) + (msWeek.count || 0),
         });
       } catch (err) {
         console.error('Error fetching analytics:', err);
