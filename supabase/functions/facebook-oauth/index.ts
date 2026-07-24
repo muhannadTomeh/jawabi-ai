@@ -27,8 +27,8 @@ function getSupabase() {
 
 // Platform-specific Facebook Login scopes
 const PLATFORM_SCOPES: Record<string, string> = {
-  facebook: "pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement",
-  instagram: "instagram_basic,instagram_manage_messages,pages_show_list,pages_read_engagement",
+  facebook: "pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,business_management",
+  instagram: "instagram_basic,instagram_manage_messages,pages_show_list,pages_read_engagement,business_management",
   whatsapp: "whatsapp_business_management,whatsapp_business_messaging,business_management",
 };
 
