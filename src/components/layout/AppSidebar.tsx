@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Bell,
   Users,
+  UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -30,6 +31,8 @@ const navigation = [
   { name: 'الإشعارات', href: '/dashboard/notifications', icon: Bell },
   { name: 'الإعدادات', href: '/dashboard/settings', icon: Settings },
 ];
+
+const accountNavItem = { name: 'إعدادات الحساب', href: '/dashboard/account', icon: UserCog };
 
 function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
   const location = useLocation();
@@ -102,6 +105,17 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
 
         {/* User section */}
         <div className="border-t border-sidebar-border p-3">
+          <Link
+            to={accountNavItem.href}
+            onClick={onNavigate}
+            className={cn(
+              'nav-item mb-2',
+              isActive(accountNavItem.href) ? 'nav-item-active' : 'nav-item-inactive'
+            )}
+          >
+            <accountNavItem.icon className="h-5 w-5" />
+            <span>{accountNavItem.name}</span>
+          </Link>
           <div className="flex items-center gap-3 rounded-lg px-3 py-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
               <User className="h-5 w-5 text-primary" />
