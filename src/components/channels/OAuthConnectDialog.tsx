@@ -62,7 +62,7 @@ const PLATFORM_CONFIG = {
     color: 'bg-[#0084ff]',
     hoverColor: 'hover:bg-[#0073e6]',
     loginText: 'ربط بفيسبوك',
-    scopes: 'pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement',
+    scopes: 'pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,business_management',
   },
   instagram: {
     title: 'ربط انستغرام',
@@ -70,7 +70,7 @@ const PLATFORM_CONFIG = {
     color: 'bg-gradient-to-r from-[#833AB4] via-[#FD1D1D] to-[#F77737]',
     hoverColor: 'hover:opacity-90',
     loginText: 'ربط بانستغرام',
-    scopes: 'instagram_basic,instagram_manage_messages,pages_show_list,pages_read_engagement',
+    scopes: 'instagram_basic,instagram_manage_messages,pages_show_list,pages_read_engagement,business_management',
   },
   whatsapp: {
     title: 'ربط واتساب',
