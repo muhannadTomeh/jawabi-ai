@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ExternalLink, Settings, Loader2, Unlink, Copy, Check, Globe } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { CardGridSkeleton } from '@/components/layout/PageSkeletons';
 import { FaTelegram, FaFacebookMessenger, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
 import { Button } from '@/components/ui/button';
@@ -264,8 +266,9 @@ export default function ChannelsPage() {
 
   if (chatbotLoading || loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="space-y-6 animate-fade-in">
+        <PageHeader title="القنوات" description="اربط الشات بوت بمنصات المراسلة" />
+        <CardGridSkeleton count={4} />
       </div>
     );
   }
@@ -284,11 +287,8 @@ export default function ChannelsPage() {
   };
 
   return (
-    <div className="animate-fade-in space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">القنوات</h1>
-        <p className="mt-1 text-muted-foreground">اربط الشات بوت بمنصات المراسلة</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader title="القنوات" description="اربط الشات بوت بمنصات المراسلة" />
 
       {publicUrl && (
         <div className="card-elevated p-6">
