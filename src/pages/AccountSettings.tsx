@@ -331,6 +331,26 @@ export default function AccountSettingsPage() {
 
   const handleChangePassword = async () => {
     if (!user?.email) return;
+    void 0;
+    return handleChangePasswordInner();
+  };
+
+  const handleSendResetLink = async () => {
+    if (!user?.email) return;
+    setSendingReset(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: window.location.origin + '/reset-password',
+    });
+    setSendingReset(false);
+    if (error) {
+      toast.error('تعذّر إرسال الرابط', { description: error.message });
+      return;
+    }
+    toast.success('تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني');
+  };
+
+  const handleChangePasswordInner = async () => {
+    if (!user?.email) return;
     if (!currentPassword) {
       toast.error('الرجاء إدخال كلمة المرور الحالية');
       return;
