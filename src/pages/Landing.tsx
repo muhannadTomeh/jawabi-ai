@@ -103,7 +103,7 @@ export default function Landing() {
             </div>
             <h1 className="text-balance text-4xl font-bold leading-tight tracking-tight md:text-6xl">
               بوت ذكاء اصطناعي يرد على عملاءك
-              <span className="block bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-primary)" }}>
+              <span className="block bg-clip-text text-transparent pb-2 leading-[1.3]" style={{ backgroundImage: "var(--gradient-primary)" }}>
                 بالعربية، على مدار الساعة
               </span>
             </h1>
@@ -160,7 +160,7 @@ export default function Landing() {
         <div className="mx-auto mb-14 max-w-2xl text-center">
           <h2 className="text-3xl font-bold md:text-4xl">
             جوابي لا يرد فقط...
-            <span className="block bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-primary)" }}>
+            <span className="block bg-clip-text text-transparent pb-2 leading-[1.3]" style={{ backgroundImage: "var(--gradient-primary)" }}>
               بل يفهم ويتصرف
             </span>
           </h2>
