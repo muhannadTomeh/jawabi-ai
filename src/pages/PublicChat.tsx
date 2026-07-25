@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Send, Loader2, Sparkles } from 'lucide-react';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { Send, Loader2, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,6 +20,8 @@ function getGuestId(slug: string) {
 
 export default function PublicChat() {
   const { slug = '' } = useParams();
+  const [searchParams] = useSearchParams();
+  const embed = searchParams.get('embed') === '1';
   const [bot, setBot] = useState<{ id: string; name: string; welcome_message: string; fallback_message: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -92,7 +94,7 @@ export default function PublicChat() {
   }
 
   return (
-    <div dir="rtl" className="flex min-h-screen flex-col bg-secondary/30">
+    <div dir="rtl" className={cn('flex flex-col bg-secondary/30', embed ? 'h-screen' : 'min-h-screen')}>
       <header
         className="flex items-center gap-3 px-4 py-3 text-primary-foreground shadow"
         style={{ background: 'var(--gradient-primary)' }}
@@ -107,6 +109,16 @@ export default function PublicChat() {
             متصل الآن
           </div>
         </div>
+        {embed && (
+          <button
+            type="button"
+            aria-label="إغلاق"
+            onClick={() => window.parent?.postMessage('jawabi:close', '*')}
+            className="rounded-full p-1.5 transition-colors hover:bg-white/20"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </header>
 
       <div ref={scrollRef} className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-3 overflow-y-auto p-4">

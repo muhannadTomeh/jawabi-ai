@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useChatbot } from "./useChatbot";
+import { toast } from "@/hooks/use-toast";
 
 export interface Notification {
   id: string;
@@ -48,6 +49,17 @@ export function useNotifications() {
     });
     return () => entry.release();
   }, [chatbotId, queryClient]);
+
+  // Ask once for browser notification permission so alerts reach the owner
+  // even when the dashboard tab is in the background.
+  useEffect(() => {
+    if (!chatbotId) return;
+    if (typeof Notification === "undefined") return;
+    if (Notification.permission !== "default") return;
+    if (localStorage.getItem("jawabi_notif_prompted")) return;
+    localStorage.setItem("jawabi_notif_prompted", "1");
+    Notification.requestPermission().catch(() => {});
+  }, [chatbotId]);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -101,7 +113,12 @@ function acquireNotificationsChannel(chatbotId: string, onChange: () => void) {
           table: "notifications",
           filter: `chatbot_id=eq.${chatbotId}`,
         },
-        () => listeners.forEach((fn) => fn())
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            announce(payload.new as Notification);
+          }
+          listeners.forEach((fn) => fn());
+        }
       )
       .subscribe();
     entry = { channel, listeners, count: 0 };
