@@ -24,6 +24,7 @@ import { useChatbot } from '@/hooks/useChatbot';
 import { useToast } from '@/hooks/use-toast';
 import { TelegramConnectDialog } from '@/components/channels/TelegramConnectDialog';
 import { OAuthConnectDialog } from '@/components/channels/OAuthConnectDialog';
+import { EmbedWidgetCard } from '@/components/channels/EmbedWidgetCard';
 
 type Platform = 'telegram' | 'facebook' | 'instagram' | 'whatsapp';
 
