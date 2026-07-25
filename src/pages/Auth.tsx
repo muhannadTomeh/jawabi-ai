@@ -10,6 +10,12 @@ import { Loader2, Sparkles, MessageSquare, Bot, Globe, ArrowLeft, CheckCircle2 }
 import { lovable } from '@/integrations/lovable';
 import { supabase } from '@/integrations/supabase/client';
 
+// Managed OAuth is served by Lovable hosting, so deployments on other hosts
+// (Vercel, custom domains) run the OAuth round-trip on this origin and get the
+// session handed back in the URL hash.
+const BRIDGE_ORIGIN = 'https://jawabi-ai.lovable.app';
+const isLovableHost = (hostname: string) => /(^|\.)lovable\.(app|dev)$/.test(hostname);
+
 export default function AuthPage() {
   const { user, loading, signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -37,6 +43,28 @@ export default function AuthPage() {
         description: 'مرحباً بك في جوابي',
       });
     }
+  }, []);
+
+  // Install a session handed back by the login bridge (tokens arrive in the
+  // hash, which never reaches a server), then scrub it from the URL.
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, '');
+    if (!hash) return;
+    const params = new URLSearchParams(hash);
+    const access_token = params.get('access_token');
+    const refresh_token = params.get('refresh_token');
+    if (!access_token || !refresh_token) return;
+
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    setOauthLoading('google');
+    supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
+      setOauthLoading(null);
+      if (error) {
+        toast.error('فشل تسجيل الدخول', { description: error.message });
+        return;
+      }
+      toast.success('تم تسجيل الدخول بنجاح', { description: 'مرحباً بك في جوابي' });
+    });
   }, []);
 
   if (loading) {
@@ -110,20 +138,14 @@ export default function AuthPage() {
         '/auth' +
         (rawNext ? `?next=${encodeURIComponent(nextPath)}` : '');
 
-      // Outside Lovable hosting (e.g. Vercel) the Lovable OAuth broker routes
-      // (/~oauth/*) do not exist, so we go straight through the backend's own
-      // OAuth provider using the project's own Google credentials.
-      const isLovableHost = /(^|\.)lovable\.(app|dev)$/.test(window.location.hostname);
-      if (!isLovableHost) {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider,
-          options: { redirectTo },
-        });
-        if (error) {
-          toast.error('فشل تسجيل الدخول', { description: error.message });
-          sessionStorage.removeItem('oauth_pending');
-          setOauthLoading(null);
-        }
+      // Outside Lovable hosting (e.g. Vercel) the managed OAuth routes
+      // (/~oauth/*) do not exist, so we run the flow on the Lovable origin and
+      // come back here with the session.
+      if (!isLovableHost(window.location.hostname)) {
+        const bridge = new URL('/auth/bridge', BRIDGE_ORIGIN);
+        bridge.searchParams.set('provider', provider);
+        bridge.searchParams.set('return', redirectTo);
+        window.location.href = bridge.toString();
         return;
       }
 

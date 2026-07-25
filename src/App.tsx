@@ -11,6 +11,7 @@ import { PageSkeleton } from "@/components/layout/PageSkeletons";
 // Route-based code splitting: each page is loaded on demand,
 // dramatically reducing the initial JS bundle and improving FCP/TTI.
 const AuthPage = lazy(() => import("@/pages/Auth"));
+const AuthBridge = lazy(() => import("@/pages/AuthBridge"));
 const Landing = lazy(() => import("@/pages/Landing"));
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
 const DashboardPage = lazy(() => import("@/pages/Dashboard"));
@@ -58,6 +59,9 @@ const App = () => (
             <Routes>
             {/* Auth route */}
             <Route path="/auth" element={<AuthPage />} />
+
+            {/* OAuth login bridge (used by non-Lovable deployments) */}
+            <Route path="/auth/bridge" element={<AuthBridge />} />
 
             {/* OAuth consent screen for MCP / agent integrations */}
             <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
