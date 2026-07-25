@@ -65,7 +65,7 @@ export default function AuthBridge() {
       // Coming back from the provider: a session already exists.
       if (await finish()) return;
 
-      if (provider !== 'google' && provider !== 'apple') {
+      if (provider !== 'google') {
         setError('مزوّد تسجيل الدخول غير معروف');
         return;
       }
