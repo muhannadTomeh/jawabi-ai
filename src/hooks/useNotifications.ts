@@ -99,6 +99,35 @@ type Entry = {
 };
 const registry = new Map<string, Entry>();
 
+const CHANNEL_LABELS: Record<string, string> = {
+  telegram: "تيليجرام",
+  whatsapp: "واتساب",
+  facebook: "ماسنجر",
+  instagram: "إنستغرام",
+  web: "الويب",
+};
+
+/** Instant, in-app + OS level alert for a newly created notification. */
+function announce(n: Notification) {
+  const who = n.contact_name || n.contact_identifier || "عميل";
+  const via = CHANNEL_LABELS[n.channel] || n.channel;
+  const body = `${who} • ${via}${n.last_message ? ` — ${n.last_message.slice(0, 90)}` : ""}`;
+
+  toast({ title: n.title || "تدخل بشري مطلوب", description: body });
+
+  try {
+    if (typeof Notification !== "undefined" && window.Notification?.permission === "granted") {
+      new window.Notification(n.title || "جوابي — تدخل بشري مطلوب", {
+        body,
+        icon: "/logo.png",
+        tag: n.id,
+      });
+    }
+  } catch {
+    /* notifications unavailable — the toast already covers it */
+  }
+}
+
 function acquireNotificationsChannel(chatbotId: string, onChange: () => void) {
   let entry = registry.get(chatbotId);
   if (!entry) {
