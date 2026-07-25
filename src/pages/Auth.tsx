@@ -25,6 +25,9 @@ export default function AuthPage() {
     rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/onboarding';
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<'google' | null>(null);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [sendingReset, setSendingReset] = useState(false);
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -130,6 +133,31 @@ export default function AuthPage() {
   };
 
   const handleOAuth = async (provider: 'google') => {
+    setOauthLoading(provider);
+    return handleOAuthInner(provider);
+  };
+
+  const handleSendReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = forgotEmail.trim();
+    if (!email) return;
+    setSendingReset(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setSendingReset(false);
+    if (error) {
+      toast.error('تعذّر إرسال الرابط', { description: error.message });
+      return;
+    }
+    toast.success('تم إرسال رابط إعادة التعيين', {
+      description: 'تفقّد بريدك الإلكتروني واتبع الرابط لتعيين كلمة مرور جديدة.',
+    });
+    setForgotOpen(false);
+    setForgotEmail('');
+  };
+
+  const handleOAuthInner = async (provider: 'google') => {
     setOauthLoading(provider);
     try {
       sessionStorage.setItem('oauth_pending', provider);
