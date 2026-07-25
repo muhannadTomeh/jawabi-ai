@@ -26,6 +26,9 @@ const CustomersPage = lazy(() => import("@/pages/Customers"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const PublicChat = lazy(() => import("@/pages/PublicChat"));
 const OAuthConsent = lazy(() => import("@/pages/OAuthConsent"));
+const PrivacyPolicy = lazy(() => import("@/pages/legal/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
+const DataDeletion = lazy(() => import("@/pages/legal/DataDeletion"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -64,6 +67,11 @@ const App = () => (
 
             {/* Public shareable chat */}
             <Route path="/chat/:slug" element={<PublicChat />} />
+
+            {/* Legal pages (required for Meta App Review) */}
+            <Route path="/legal/privacy" element={<PrivacyPolicy />} />
+            <Route path="/legal/terms" element={<TermsOfService />} />
+            <Route path="/legal/data-deletion" element={<DataDeletion />} />
 
             {/* Onboarding (auth required, no sidebar) */}
             <Route path="/onboarding" element={<Onboarding />} />

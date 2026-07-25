@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ExternalLink, Settings, Loader2, Unlink, Copy, Check, Globe } from 'lucide-react';
+import { ExternalLink, Settings, Loader2, Unlink, Copy, Check, Globe, Info, ChevronDown } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { CardGridSkeleton } from '@/components/layout/PageSkeletons';
 import { FaTelegram, FaFacebookMessenger, FaInstagram, FaWhatsapp } from 'react-icons/fa';
@@ -289,6 +289,31 @@ export default function ChannelsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="القنوات" description="اربط الشات بوت بمنصات المراسلة" />
+
+      <details className="card-elevated p-5 group">
+        <summary className="flex items-center gap-3 cursor-pointer list-none">
+          <div className="rounded-lg bg-amber-500/10 p-2">
+            <Info className="h-5 w-5 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-foreground">ملاحظة مهمة لربط قنوات Meta (فيسبوك / إنستغرام / واتساب)</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">تطبيق جوابي حالياً في وضع التطوير — يجب إضافتك كمختبِر (Tester) لتتمكن من الربط.</p>
+          </div>
+          <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform group-open:rotate-180" />
+        </summary>
+        <div className="mt-4 ps-11 space-y-3 text-sm text-foreground">
+          <p>لربط أي قناة من Meta، يجب أن يضيفك مالك التطبيق كـ <strong>Tester</strong> أو <strong>Developer</strong> في Meta for Developers. الخطوات:</p>
+          <ol className="list-decimal ps-6 space-y-1.5 text-muted-foreground">
+            <li>أرسل لنا اسم حساب فيسبوك الخاص بك على: <a href="mailto:muhannad.tomeh22@gmail.com" className="text-primary hover:underline">muhannad.tomeh22@gmail.com</a></li>
+            <li>سنرسل لك دعوة كـ Tester على تطبيق جوابي في Meta.</li>
+            <li>افتح <a href="https://developers.facebook.com/settings/developer/requests/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">إعدادات المطوّر في Meta <ExternalLink className="h-3 w-3" /></a> واقبل الدعوة.</li>
+            <li>ارجع إلى هذه الصفحة واضغط "ربط" على القناة المطلوبة.</li>
+          </ol>
+          <p className="text-xs text-muted-foreground pt-2 border-t border-border">
+            💡 <strong>تيليجرام</strong> يعمل مباشرة بدون هذه الخطوة. ننصح بالبدء به.
+          </p>
+        </div>
+      </details>
 
       {publicUrl && (
         <div className="card-elevated p-6">

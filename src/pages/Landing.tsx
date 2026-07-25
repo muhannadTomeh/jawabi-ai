@@ -311,6 +311,11 @@ export default function Landing() {
             </div>
             <span className="font-semibold">جوابي</span>
           </div>
+          <nav className="flex items-center gap-4 text-xs text-muted-foreground">
+            <Link to="/legal/privacy" className="hover:text-foreground">سياسة الخصوصية</Link>
+            <Link to="/legal/terms" className="hover:text-foreground">شروط الاستخدام</Link>
+            <Link to="/legal/data-deletion" className="hover:text-foreground">حذف البيانات</Link>
+          </nav>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} جوابي. جميع الحقوق محفوظة.
           </p>
