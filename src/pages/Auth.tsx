@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Loader2, Sparkles, MessageSquare, Bot, Globe, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { lovable } from '@/integrations/lovable';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AuthPage() {
   const { user, loading, signIn, signUp } = useAuth();
@@ -104,11 +105,30 @@ export default function AuthPage() {
     setOauthLoading(provider);
     try {
       sessionStorage.setItem('oauth_pending', provider);
+      const redirectTo =
+        window.location.origin +
+        '/auth' +
+        (rawNext ? `?next=${encodeURIComponent(nextPath)}` : '');
+
+      // Outside Lovable hosting (e.g. Vercel) the Lovable OAuth broker routes
+      // (/~oauth/*) do not exist, so we go straight through the backend's own
+      // OAuth provider using the project's own Google credentials.
+      const isLovableHost = /(^|\.)lovable\.(app|dev)$/.test(window.location.hostname);
+      if (!isLovableHost) {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo },
+        });
+        if (error) {
+          toast.error('فشل تسجيل الدخول', { description: error.message });
+          sessionStorage.removeItem('oauth_pending');
+          setOauthLoading(null);
+        }
+        return;
+      }
+
       const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri:
-          window.location.origin +
-          '/auth' +
-          (rawNext ? `?next=${encodeURIComponent(nextPath)}` : ''),
+        redirect_uri: redirectTo,
       });
       if (result.error) {
         toast.error('فشل تسجيل الدخول', { description: result.error.message });
