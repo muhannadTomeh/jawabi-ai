@@ -374,6 +374,7 @@ export default function AccountSettingsPage() {
   };
 
   const handleSavePrefs = async () => {
+    // (unchanged)
     if (!user) return;
     setSavingPrefs(true);
     const payload: any = {

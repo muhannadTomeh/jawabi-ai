@@ -5,6 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Loader2, Sparkles, MessageSquare, Bot, Globe, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { lovable } from '@/integrations/lovable';
@@ -352,6 +360,16 @@ export default function AuthPage() {
                   ) : null}
                   تسجيل الدخول
                 </Button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotEmail(loginEmail);
+                    setForgotOpen(true);
+                  }}
+                  className="block w-full text-center text-sm text-primary hover:underline"
+                >
+                  نسيت كلمة المرور؟
+                </button>
               </form>
             </TabsContent>
 
@@ -412,6 +430,38 @@ export default function AuthPage() {
         </div>
         </div>
       </div>
+
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent dir="rtl" className="sm:max-w-md text-right">
+          <DialogHeader className="text-right">
+            <DialogTitle>إعادة تعيين كلمة المرور</DialogTitle>
+            <DialogDescription>
+              أدخل بريدك الإلكتروني وسنرسل لك رابطاً لتعيين كلمة مرور جديدة.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSendReset} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email" className="block text-right">البريد الإلكتروني</Label>
+              <Input
+                id="forgot-email"
+                type="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                placeholder="example@email.com"
+                required
+                dir="ltr"
+                className="text-right"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="w-full h-11" disabled={sendingReset}>
+                {sendingReset ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : null}
+                إرسال الرابط
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
