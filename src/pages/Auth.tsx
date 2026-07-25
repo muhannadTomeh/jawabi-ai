@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Loader2, Sparkles, MessageSquare, Bot, Globe, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { lovable } from '@/integrations/lovable';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AuthPage() {
   const { user, loading, signIn, signUp } = useAuth();
