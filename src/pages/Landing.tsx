@@ -11,72 +11,35 @@ import {
   Sparkles,
   Zap,
   Globe,
-  Shield,
   CheckCircle2,
   ArrowLeft,
-  BookOpen,
-  Users,
   BarChart3,
 } from "lucide-react";
-import { Brain, Target, UserCheck, FileText, TrendingUp, XCircle } from "lucide-react";
+import { Brain, Target, UserCheck, FileText, XCircle } from "lucide-react";
+import { FaWhatsapp, FaFacebookMessenger, FaInstagram, FaTelegramPlane } from "react-icons/fa";
 
-const understandCards = [
-  { icon: Brain, title: "يفهم نية العميل", desc: "يحلّل الرسالة ويستخرج القصد الحقيقي وراءها." },
-  { icon: MessageSquare, title: "يحاكي أسلوب الإنسان", desc: "ردود طبيعية بلهجتك بدون طابع آلي." },
-  { icon: BookOpen, title: "يعتمد على معلومات نشاطك", desc: "يجيب من قاعدة معرفتك، لا من فراغ." },
-  { icon: Target, title: "يقنع العميل بالشراء", desc: "يتعامل مع الاعتراضات ويوجّه نحو الإتمام." },
-  { icon: UserCheck, title: "يحوّل للموظف عند الحاجة", desc: "تسليم سلس مع كامل سياق المحادثة." },
+const channels = [
+  { icon: FaWhatsapp, name: "واتساب", color: "#25D366" },
+  { icon: FaFacebookMessenger, name: "ماسنجر", color: "#0084FF" },
+  { icon: FaInstagram, name: "انستجرام", color: "#E1306C" },
+  { icon: FaTelegramPlane, name: "تيليجرام", color: "#229ED9" },
 ];
 
 const comparison = [
   { label: "الرد على العملاء", without: "يدوي وبطيء", with: "فوري وذكي" },
   { label: "تفويت العملاء", without: "رسائل ضائعة", with: "لا تفوت أي عميل" },
   { label: "ساعات العمل", without: "محدودة", with: "24/7 بدون توقف" },
-  { label: "الأسئلة المكررة", without: "يجيب مرة بعد مرة", with: "يجيب بنفس الدقة دائماً" },
   { label: "الضغط على الموظفين", without: "مرهق", with: "أتمتة كاملة" },
   { label: "متابعة العملاء", without: "صعبة", with: "تحليلات وتقارير ذكية" },
 ];
 
-const bigCards = [
-  { icon: MessageSquare, title: "يجيب على العملاء", desc: "يرد على جميع الرسائل بسرعة وبدقة." },
-  { icon: Brain, title: "يحلل المحادثات", desc: "يفهم البيانات ويستخرج الاهتمامات والفرص." },
-  { icon: FileText, title: "يوثّق المعلومات", desc: "يحفظ تفاصيل العملاء والمحادثات تلقائياً." },
-  { icon: BarChart3, title: "يلخّص البيانات", desc: "ملخصات وتقارير جاهزة تساعدك على القرار." },
-  { icon: TrendingUp, title: "يقدّم إحصائيات", desc: "لوحة تحليلات متكاملة للأداء والنمو." },
-  { icon: Zap, title: "يعمل بشكل فوري", desc: "تشغيل، إيقاف، وتعديل الإعدادات بضغطة زر." },
-];
-
-const features = [
-  {
-    icon: Bot,
-    title: "بوت ذكي بالعربية",
-    desc: "ردود طبيعية بلهجتك المفضلة مدعومة بأحدث نماذج الذكاء الاصطناعي.",
-  },
-  {
-    icon: BookOpen,
-    title: "قاعدة معرفة شاملة",
-    desc: "درّب بوتك من نصوص، ملفات، روابط، وصور وصفحات تواصل اجتماعي.",
-  },
-  {
-    icon: MessageSquare,
-    title: "قنوات متعددة",
-    desc: "تيليجرام، واتساب، فيسبوك وانستجرام من لوحة واحدة موحدة.",
-  },
-  {
-    icon: Users,
-    title: "إدارة العملاء",
-    desc: "ملفات تعريف تلقائية لكل عميل مع سجل المحادثات والتصنيف.",
-  },
-  {
-    icon: BarChart3,
-    title: "تحليلات لحظية",
-    desc: "تابع الأداء، معدل النجاح، وعدد الرسائل في الوقت الفعلي.",
-  },
-  {
-    icon: Shield,
-    title: "أمان وخصوصية",
-    desc: "بياناتك محمية بأعلى معايير الأمان مع عزل كامل بين الحسابات.",
-  },
+const capabilities = [
+  { icon: Brain, title: "يفهم نية العميل", desc: "يحلّل الرسالة ويستخرج القصد الحقيقي." },
+  { icon: MessageSquare, title: "يحاكي أسلوب الإنسان", desc: "ردود طبيعية بلهجتك بدون طابع آلي." },
+  { icon: Target, title: "يقنع بالشراء", desc: "يتعامل مع الاعتراضات ويغلق الصفقة." },
+  { icon: UserCheck, title: "يحوّل للموظف عند الحاجة", desc: "تسليم سلس مع كامل سياق المحادثة." },
+  { icon: FileText, title: "يوثّق ويلخّص", desc: "يحفظ تفاصيل العملاء ويقدّم ملخصات جاهزة." },
+  { icon: BarChart3, title: "تحليلات لحظية", desc: "لوحة متكاملة للأداء والنمو والفرص." },
 ];
 
 const steps = [
@@ -84,15 +47,6 @@ const steps = [
   { n: "2", title: "درّب بوتك", desc: "أضف معلومات عملك ومنتجاتك بسهولة." },
   { n: "3", title: "اربط قنواتك", desc: "فعّل البوت على واتساب وتيليجرام وغيرها." },
   { n: "4", title: "ابدأ البيع", desc: "دع البوت يجيب عملاءك 24/7 ويغلق الصفقات." },
-];
-
-const benefits = [
-  "إعداد سريع بدون أي خبرة تقنية",
-  "دعم كامل للغة العربية وجميع اللهجات",
-  "تكامل مباشر مع منصات التواصل الاجتماعي",
-  "تحويل المحادثات لموظف بشري عند الحاجة",
-  "تحديث المعرفة من صفحاتك تلقائياً",
-  "بدون رسوم خفية — جرّب مجاناً الآن",
 ];
 
 export default function Landing() {
@@ -175,29 +129,34 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="container mx-auto px-4 py-20">
-        <div className="mx-auto mb-14 max-w-2xl text-center">
-          <h2 className="text-3xl font-bold md:text-4xl">كل ما تحتاجه لخدمة عملاءك</h2>
+      {/* Channels */}
+      <section id="channels" className="container mx-auto px-4 py-20">
+        <div className="mx-auto mb-12 max-w-2xl text-center">
+          <h2 className="text-3xl font-bold md:text-4xl">يعمل على كل قنواتك</h2>
           <p className="mt-4 text-muted-foreground">
-            منصة متكاملة تجمع بين الذكاء الاصطناعي وسهولة الاستخدام.
+            اربط جوابي بمنصات التواصل بضغطة زر — لوحة واحدة موحّدة لكل المحادثات.
           </p>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {features.map((f) => (
-            <Card key={f.title} className="group p-6 transition-all hover:shadow-lg hover:-translate-y-1">
-              <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-                <f.icon className="h-5 w-5" />
+        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
+          {channels.map((c) => (
+            <Card
+              key={c.name}
+              className="group flex flex-col items-center gap-3 p-6 transition-all hover:-translate-y-1 hover:shadow-lg"
+            >
+              <div
+                className="flex h-14 w-14 items-center justify-center rounded-2xl transition-transform group-hover:scale-110"
+                style={{ backgroundColor: `${c.color}15` }}
+              >
+                <c.icon size={30} style={{ color: c.color }} />
               </div>
-              <h3 className="mb-2 text-lg font-semibold">{f.title}</h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+              <span className="text-sm font-semibold">{c.name}</span>
             </Card>
           ))}
         </div>
       </section>
 
-      {/* Understands & Acts */}
-      <section className="container mx-auto px-4 py-20">
+      {/* Capabilities */}
+      <section id="features" className="container mx-auto px-4 py-20">
         <div className="mx-auto mb-14 max-w-2xl text-center">
           <h2 className="text-3xl font-bold md:text-4xl">
             جوابي لا يرد فقط...
@@ -205,12 +164,15 @@ export default function Landing() {
               بل يفهم ويتصرف
             </span>
           </h2>
-          <p className="mt-4 text-muted-foreground">مساعد ذكي يفكّر كموظف مبيعات محترف.</p>
+          <p className="mt-4 text-muted-foreground">موظف ذكي يفكّر ويتفاعل كأنه فرد من فريقك.</p>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {understandCards.map((c) => (
+          {capabilities.map((c) => (
             <Card key={c.title} className="group p-6 transition-all hover:shadow-lg hover:-translate-y-1">
-              <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+              <div
+                className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl text-primary-foreground shadow-md"
+                style={{ background: "var(--gradient-primary)" }}
+              >
                 <c.icon className="h-5 w-5" />
               </div>
               <h3 className="mb-2 text-lg font-semibold">{c.title}</h3>
@@ -256,36 +218,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Big feature cards */}
-      <section className="container mx-auto px-4 py-20">
-        <div className="mx-auto mb-14 max-w-2xl text-center">
-          <h2 className="text-3xl font-bold md:text-4xl">ركّز على إدارة عملك...</h2>
-          <p className="mt-3 text-lg text-muted-foreground">واترك التواصل مع عملاءك علينا.</p>
-        </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {bigCards.map((c) => (
-            <Card
-              key={c.title}
-              className="group relative overflow-hidden p-8 transition-all hover:shadow-xl hover:-translate-y-1"
-            >
-              <div
-                aria-hidden
-                className="absolute -left-10 -top-10 h-32 w-32 rounded-full opacity-10 blur-2xl transition-opacity group-hover:opacity-20"
-                style={{ background: "var(--gradient-primary)" }}
-              />
-              <div
-                className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl text-primary-foreground shadow-lg"
-                style={{ background: "var(--gradient-primary)" }}
-              >
-                <c.icon className="h-6 w-6" />
-              </div>
-              <h3 className="mb-2 text-xl font-bold">{c.title}</h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">{c.desc}</p>
-            </Card>
-          ))}
-        </div>
-      </section>
-
       {/* How it works */}
       <section id="how" className="bg-secondary/40 py-20">
         <div className="container mx-auto px-4">
@@ -307,26 +239,19 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Benefits */}
+      {/* Chat example */}
       <section className="container mx-auto px-4 py-20">
-        <div className="grid items-center gap-12 md:grid-cols-2">
-          <div>
-            <h2 className="text-3xl font-bold md:text-4xl">لماذا جوابي؟</h2>
-            <p className="mt-4 text-muted-foreground">
-              صُمم خصيصاً للسوق العربي مع فهم عميق للهجات واحتياجات الأعمال المحلية.
-            </p>
-            <ul className="mt-6 space-y-3">
-              {benefits.map((b) => (
-                <li key={b} className="flex items-start gap-3">
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
-                  <span className="text-sm">{b}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div className="mx-auto mb-12 max-w-2xl text-center">
+          <h2 className="text-3xl font-bold md:text-4xl">شاهد جوابي أثناء العمل</h2>
+          <p className="mt-4 text-muted-foreground">محادثة حقيقية بأسلوب طبيعي، بلهجتك، وفي أي وقت.</p>
+        </div>
+        <div className="mx-auto max-w-2xl">
           <Card className="overflow-hidden border-2 p-0">
             <div className="border-b border-border bg-secondary/60 px-4 py-3 text-xs text-muted-foreground">
-              محادثة مباشرة • مثال
+              <div className="flex items-center gap-2">
+                <Bot className="h-4 w-4 text-primary" />
+                <span>محادثة مباشرة • مثال</span>
+              </div>
             </div>
             <div className="space-y-3 p-6">
               <div className="flex justify-start">
