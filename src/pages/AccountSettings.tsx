@@ -753,7 +753,20 @@ export default function AccountSettingsPage() {
             </div>
           )}
 
-          <div className="flex justify-end">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Button
+              variant="outline"
+              onClick={handleSendResetLink}
+              disabled={sendingReset}
+              className="gap-2"
+            >
+              {sendingReset ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4" />
+              )}
+              نسيت كلمة المرور؟ أرسل رابط إعادة التعيين
+            </Button>
             <Button onClick={handleChangePassword} disabled={changingPassword} className="gap-2">
               {changingPassword ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
