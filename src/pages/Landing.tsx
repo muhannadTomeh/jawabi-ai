@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { VisitorChat } from "@/components/landing/VisitorChat";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 const logo = { url: "/logo.png" };
 const robotMascot = { url: "/robot-mascot.png" };
 import {
