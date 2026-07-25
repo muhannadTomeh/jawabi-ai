@@ -122,6 +122,7 @@ export default function AccountSettingsPage() {
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [changingEmail, setChangingEmail] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
   const [loggingOutAll, setLoggingOutAll] = useState(false);
 
   // Profile
