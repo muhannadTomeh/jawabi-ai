@@ -16,6 +16,11 @@ import {
   BookOpen,
   Users,
   BarChart3,
+  Moon,
+  Database,
+  Send,
+  Facebook,
+  Instagram,
 } from "lucide-react";
 
 const features = [
