@@ -345,6 +345,8 @@ export default function ChannelsPage() {
         </div>
       )}
 
+      {chatbot?.public_slug && <EmbedWidgetCard slug={chatbot.public_slug} />}
+
       <div className="grid gap-6 md:grid-cols-2">
         {platforms.map((platform) => {
           const info = channelInfo[platform];
