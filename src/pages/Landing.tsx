@@ -11,72 +11,35 @@ import {
   Sparkles,
   Zap,
   Globe,
-  Shield,
   CheckCircle2,
   ArrowLeft,
-  BookOpen,
-  Users,
   BarChart3,
 } from "lucide-react";
-import { Brain, Target, UserCheck, FileText, TrendingUp, XCircle } from "lucide-react";
+import { Brain, Target, UserCheck, FileText, XCircle } from "lucide-react";
+import { FaWhatsapp, FaFacebookMessenger, FaInstagram, FaTelegramPlane } from "react-icons/fa";
 
-const understandCards = [
-  { icon: Brain, title: "يفهم نية العميل", desc: "يحلّل الرسالة ويستخرج القصد الحقيقي وراءها." },
-  { icon: MessageSquare, title: "يحاكي أسلوب الإنسان", desc: "ردود طبيعية بلهجتك بدون طابع آلي." },
-  { icon: BookOpen, title: "يعتمد على معلومات نشاطك", desc: "يجيب من قاعدة معرفتك، لا من فراغ." },
-  { icon: Target, title: "يقنع العميل بالشراء", desc: "يتعامل مع الاعتراضات ويوجّه نحو الإتمام." },
-  { icon: UserCheck, title: "يحوّل للموظف عند الحاجة", desc: "تسليم سلس مع كامل سياق المحادثة." },
+const channels = [
+  { icon: FaWhatsapp, name: "واتساب", color: "#25D366" },
+  { icon: FaFacebookMessenger, name: "ماسنجر", color: "#0084FF" },
+  { icon: FaInstagram, name: "انستجرام", color: "#E1306C" },
+  { icon: FaTelegramPlane, name: "تيليجرام", color: "#229ED9" },
 ];
 
 const comparison = [
   { label: "الرد على العملاء", without: "يدوي وبطيء", with: "فوري وذكي" },
   { label: "تفويت العملاء", without: "رسائل ضائعة", with: "لا تفوت أي عميل" },
   { label: "ساعات العمل", without: "محدودة", with: "24/7 بدون توقف" },
-  { label: "الأسئلة المكررة", without: "يجيب مرة بعد مرة", with: "يجيب بنفس الدقة دائماً" },
   { label: "الضغط على الموظفين", without: "مرهق", with: "أتمتة كاملة" },
   { label: "متابعة العملاء", without: "صعبة", with: "تحليلات وتقارير ذكية" },
 ];
 
-const bigCards = [
-  { icon: MessageSquare, title: "يجيب على العملاء", desc: "يرد على جميع الرسائل بسرعة وبدقة." },
-  { icon: Brain, title: "يحلل المحادثات", desc: "يفهم البيانات ويستخرج الاهتمامات والفرص." },
-  { icon: FileText, title: "يوثّق المعلومات", desc: "يحفظ تفاصيل العملاء والمحادثات تلقائياً." },
-  { icon: BarChart3, title: "يلخّص البيانات", desc: "ملخصات وتقارير جاهزة تساعدك على القرار." },
-  { icon: TrendingUp, title: "يقدّم إحصائيات", desc: "لوحة تحليلات متكاملة للأداء والنمو." },
-  { icon: Zap, title: "يعمل بشكل فوري", desc: "تشغيل، إيقاف، وتعديل الإعدادات بضغطة زر." },
-];
-
-const features = [
-  {
-    icon: Bot,
-    title: "بوت ذكي بالعربية",
-    desc: "ردود طبيعية بلهجتك المفضلة مدعومة بأحدث نماذج الذكاء الاصطناعي.",
-  },
-  {
-    icon: BookOpen,
-    title: "قاعدة معرفة شاملة",
-    desc: "درّب بوتك من نصوص، ملفات، روابط، وصور وصفحات تواصل اجتماعي.",
-  },
-  {
-    icon: MessageSquare,
-    title: "قنوات متعددة",
-    desc: "تيليجرام، واتساب، فيسبوك وانستجرام من لوحة واحدة موحدة.",
-  },
-  {
-    icon: Users,
-    title: "إدارة العملاء",
-    desc: "ملفات تعريف تلقائية لكل عميل مع سجل المحادثات والتصنيف.",
-  },
-  {
-    icon: BarChart3,
-    title: "تحليلات لحظية",
-    desc: "تابع الأداء، معدل النجاح، وعدد الرسائل في الوقت الفعلي.",
-  },
-  {
-    icon: Shield,
-    title: "أمان وخصوصية",
-    desc: "بياناتك محمية بأعلى معايير الأمان مع عزل كامل بين الحسابات.",
-  },
+const capabilities = [
+  { icon: Brain, title: "يفهم نية العميل", desc: "يحلّل الرسالة ويستخرج القصد الحقيقي." },
+  { icon: MessageSquare, title: "يحاكي أسلوب الإنسان", desc: "ردود طبيعية بلهجتك بدون طابع آلي." },
+  { icon: Target, title: "يقنع بالشراء", desc: "يتعامل مع الاعتراضات ويغلق الصفقة." },
+  { icon: UserCheck, title: "يحوّل للموظف عند الحاجة", desc: "تسليم سلس مع كامل سياق المحادثة." },
+  { icon: FileText, title: "يوثّق ويلخّص", desc: "يحفظ تفاصيل العملاء ويقدّم ملخصات جاهزة." },
+  { icon: BarChart3, title: "تحليلات لحظية", desc: "لوحة متكاملة للأداء والنمو والفرص." },
 ];
 
 const steps = [
@@ -84,15 +47,6 @@ const steps = [
   { n: "2", title: "درّب بوتك", desc: "أضف معلومات عملك ومنتجاتك بسهولة." },
   { n: "3", title: "اربط قنواتك", desc: "فعّل البوت على واتساب وتيليجرام وغيرها." },
   { n: "4", title: "ابدأ البيع", desc: "دع البوت يجيب عملاءك 24/7 ويغلق الصفقات." },
-];
-
-const benefits = [
-  "إعداد سريع بدون أي خبرة تقنية",
-  "دعم كامل للغة العربية وجميع اللهجات",
-  "تكامل مباشر مع منصات التواصل الاجتماعي",
-  "تحويل المحادثات لموظف بشري عند الحاجة",
-  "تحديث المعرفة من صفحاتك تلقائياً",
-  "بدون رسوم خفية — جرّب مجاناً الآن",
 ];
 
 export default function Landing() {
