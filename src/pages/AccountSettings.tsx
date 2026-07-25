@@ -122,6 +122,7 @@ export default function AccountSettingsPage() {
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [changingEmail, setChangingEmail] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const [sendingReset, setSendingReset] = useState(false);
   const [loggingOutAll, setLoggingOutAll] = useState(false);
 
   // Profile
@@ -330,6 +331,26 @@ export default function AccountSettingsPage() {
   };
 
   const handleChangePassword = async () => {
+    if (!user?.email) return;
+    void 0;
+    return handleChangePasswordInner();
+  };
+
+  const handleSendResetLink = async () => {
+    if (!user?.email) return;
+    setSendingReset(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: window.location.origin + '/reset-password',
+    });
+    setSendingReset(false);
+    if (error) {
+      toast.error('تعذّر إرسال الرابط', { description: error.message });
+      return;
+    }
+    toast.success('تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني');
+  };
+
+  const handleChangePasswordInner = async () => {
     if (!user?.email) return;
     if (!currentPassword) {
       toast.error('الرجاء إدخال كلمة المرور الحالية');
@@ -732,7 +753,20 @@ export default function AccountSettingsPage() {
             </div>
           )}
 
-          <div className="flex justify-end">
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Button
+              variant="outline"
+              onClick={handleSendResetLink}
+              disabled={sendingReset}
+              className="gap-2"
+            >
+              {sendingReset ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4" />
+              )}
+              نسيت كلمة المرور؟ أرسل رابط إعادة التعيين
+            </Button>
             <Button onClick={handleChangePassword} disabled={changingPassword} className="gap-2">
               {changingPassword ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

@@ -5,6 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Loader2, Sparkles, MessageSquare, Bot, Globe, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { lovable } from '@/integrations/lovable';
@@ -25,6 +33,9 @@ export default function AuthPage() {
     rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/onboarding';
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<'google' | null>(null);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [sendingReset, setSendingReset] = useState(false);
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -130,6 +141,31 @@ export default function AuthPage() {
   };
 
   const handleOAuth = async (provider: 'google') => {
+    setOauthLoading(provider);
+    return handleOAuthInner(provider);
+  };
+
+  const handleSendReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = forgotEmail.trim();
+    if (!email) return;
+    setSendingReset(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setSendingReset(false);
+    if (error) {
+      toast.error('تعذّر إرسال الرابط', { description: error.message });
+      return;
+    }
+    toast.success('تم إرسال رابط إعادة التعيين', {
+      description: 'تفقّد بريدك الإلكتروني واتبع الرابط لتعيين كلمة مرور جديدة.',
+    });
+    setForgotOpen(false);
+    setForgotEmail('');
+  };
+
+  const handleOAuthInner = async (provider: 'google') => {
     setOauthLoading(provider);
     try {
       sessionStorage.setItem('oauth_pending', provider);
@@ -324,6 +360,16 @@ export default function AuthPage() {
                   ) : null}
                   تسجيل الدخول
                 </Button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotEmail(loginEmail);
+                    setForgotOpen(true);
+                  }}
+                  className="block w-full text-center text-sm text-primary hover:underline"
+                >
+                  نسيت كلمة المرور؟
+                </button>
               </form>
             </TabsContent>
 
@@ -384,6 +430,38 @@ export default function AuthPage() {
         </div>
         </div>
       </div>
+
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent dir="rtl" className="sm:max-w-md text-right">
+          <DialogHeader className="text-right">
+            <DialogTitle>إعادة تعيين كلمة المرور</DialogTitle>
+            <DialogDescription>
+              أدخل بريدك الإلكتروني وسنرسل لك رابطاً لتعيين كلمة مرور جديدة.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSendReset} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email" className="block text-right">البريد الإلكتروني</Label>
+              <Input
+                id="forgot-email"
+                type="email"
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                placeholder="example@email.com"
+                required
+                dir="ltr"
+                className="text-right"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="submit" className="w-full h-11" disabled={sendingReset}>
+                {sendingReset ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : null}
+                إرسال الرابط
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
