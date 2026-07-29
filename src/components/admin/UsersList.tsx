@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { useAuth } from '@/hooks/useAuth';
 
 interface UserProfile {
   id: string;
@@ -73,6 +74,7 @@ const channelLabels: Record<string, string> = {
 };
 
 export function UsersList({ onViewUser }: UsersListProps) {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -419,14 +421,20 @@ export function UsersList({ onViewUser }: UsersListProps) {
                 </div>
               </div>
 
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setImpersonateTarget(selected)}
-              >
-                <LogIn className="h-4 w-4 me-2" />
-                الدخول لحساب المستخدم (للدعم)
-              </Button>
+              {selected.user_id === currentUser?.id ? (
+                <p className="text-xs text-muted-foreground text-center">
+                  هذا حسابك أنت — لا حاجة للدخول كمستخدم.
+                </p>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setImpersonateTarget(selected)}
+                >
+                  <LogIn className="h-4 w-4 me-2" />
+                  الدخول لحساب المستخدم (للدعم)
+                </Button>
+              )}
             </div>
           )}
         </SheetContent>
