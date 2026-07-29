@@ -4,7 +4,8 @@ import { AdminStats } from '@/components/admin/AdminStats';
 import { UsersList } from '@/components/admin/UsersList';
 import { ChatbotsList } from '@/components/admin/ChatbotsList';
 import { LlmSettings } from '@/components/admin/LlmSettings';
-import { ShieldCheck, Cpu, Users, Bot } from 'lucide-react';
+import { AuditLog } from '@/components/admin/AuditLog';
+import { ShieldCheck, Cpu, Users, Bot, ScrollText } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/layout/PageSkeletons';
@@ -47,6 +48,10 @@ export default function AdminPage() {
             <Cpu className="h-4 w-4" />
             نموذج الذكاء
           </TabsTrigger>
+          <TabsTrigger value="audit" className="gap-2">
+            <ScrollText className="h-4 w-4" />
+            سجل العمليات
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="users">
           <UsersList />
@@ -56,6 +61,9 @@ export default function AdminPage() {
         </TabsContent>
         <TabsContent value="llm">
           <LlmSettings />
+        </TabsContent>
+        <TabsContent value="audit">
+          <AuditLog />
         </TabsContent>
       </Tabs>
     </div>
