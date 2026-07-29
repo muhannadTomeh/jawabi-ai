@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Table,
   TableBody,
@@ -10,9 +10,11 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Eye, Shield, User } from 'lucide-react';
+import { Loader2, Eye, Shield, User, Search, Mail, Phone, Bot, MessageSquare, Users as UsersIcon, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -24,19 +26,57 @@ interface UserProfile {
   created_at: string;
   role?: 'admin' | 'user';
   chatbots_count?: number;
+  email?: string | null;
+  phone?: string | null;
+  provider?: string;
+  email_confirmed_at?: string | null;
+  last_sign_in_at?: string | null;
+  signed_up_at?: string;
+  banned_until?: string | null;
+  active_chatbots?: number;
+  onboarding_completed?: boolean;
+  business_name?: string | null;
+  business_category?: string | null;
+  business_location?: string | null;
+  chatbots?: Array<{ id: string; name: string; is_active: boolean; bot_mode: string }>;
+  channels?: string[];
+  messages_count?: number;
+  customers_count?: number;
+  last_activity_at?: string | null;
 }
 
 interface UsersListProps {
   onViewUser?: (userId: string) => void;
 }
 
+const fmt = (d?: string | null) =>
+  d ? format(new Date(d), 'dd MMM yyyy • HH:mm', { locale: ar }) : '—';
+
+const channelLabels: Record<string, string> = {
+  telegram: 'تيليجرام',
+  messenger: 'ماسنجر',
+  instagram: 'إنستغرام',
+  whatsapp: 'واتساب',
+  facebook: 'فيسبوك',
+  web: 'الويب',
+};
+
 export function UsersList({ onViewUser }: UsersListProps) {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     async function fetchUsers() {
       try {
+        // Rich data (emails, activity, channels) via secured admin endpoint
+        const { data: rich, error: richError } = await supabase.functions.invoke('admin-users');
+        if (!richError && rich?.users) {
+          setUsers(rich.users as UserProfile[]);
+          return;
+        }
+
         // Fetch profiles
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
@@ -85,6 +125,16 @@ export function UsersList({ onViewUser }: UsersListProps) {
     fetchUsers();
   }, []);
 
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter((u) =>
+      [u.full_name, u.email, u.phone, u.business_name].some((v) =>
+        v?.toLowerCase().includes(q)
+      )
+    );
+  }, [users, query]);
+
   const getInitials = (name: string | null) => {
     if (!name) return 'م';
     return name
@@ -109,30 +159,46 @@ export function UsersList({ onViewUser }: UsersListProps) {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="gap-4">
         <CardTitle className="flex items-center gap-2">
           <User className="h-5 w-5" />
           المستخدمون ({users.length})
         </CardTitle>
+        <div className="relative">
+          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="بحث بالاسم أو البريد أو النشاط التجاري..."
+            className="pr-9 text-right"
+          />
+        </div>
       </CardHeader>
       <CardContent>
-        {users.length === 0 ? (
+        {filtered.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">
             لا يوجد مستخدمون بعد
           </p>
         ) : (
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="text-right">المستخدم</TableHead>
+                <TableHead className="text-right">البريد الإلكتروني</TableHead>
+                <TableHead className="text-right">النشاط التجاري</TableHead>
                 <TableHead className="text-right">الصلاحية</TableHead>
                 <TableHead className="text-right">الشات بوتات</TableHead>
+                <TableHead className="text-right">القنوات</TableHead>
+                <TableHead className="text-right">الرسائل</TableHead>
+                <TableHead className="text-right">العملاء</TableHead>
+                <TableHead className="text-right">آخر دخول</TableHead>
                 <TableHead className="text-right">تاريخ التسجيل</TableHead>
                 <TableHead className="text-right">الإجراءات</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {filtered.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
@@ -142,15 +208,34 @@ export function UsersList({ onViewUser }: UsersListProps) {
                           {getInitials(user.full_name)}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="font-medium">
-                        {user.full_name || 'مستخدم'}
-                      </span>
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{user.full_name || 'مستخدم'}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {user.provider === 'google' ? 'Google' : 'بريد إلكتروني'}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground" dir="ltr">
+                    <div className="flex items-center justify-end gap-1">
+                      {user.email_confirmed_at ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+                      ) : (
+                        <XCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      )}
+                      <span className="text-xs">{user.email || '—'}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">{user.business_name || '—'}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {user.business_category || ''}
                     </div>
                   </TableCell>
                   <TableCell>
                     {user.role === 'admin' ? (
                       <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20">
-                        <Shield className="h-3 w-3 ml-1" />
+                        <Shield className="h-3 w-3 me-1" />
                         أدمن
                       </Badge>
                     ) : (
@@ -158,18 +243,41 @@ export function UsersList({ onViewUser }: UsersListProps) {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{user.chatbots_count}</Badge>
+                    <Badge variant="outline">
+                      {user.active_chatbots ?? 0}/{user.chatbots_count ?? 0}
+                    </Badge>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {format(new Date(user.created_at), 'dd MMM yyyy', { locale: ar })}
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {(user.channels || []).length === 0 ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : (
+                        (user.channels || []).map((c) => (
+                          <Badge key={c} variant="outline" className="text-[10px]">
+                            {channelLabels[c] || c}
+                          </Badge>
+                        ))
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>{user.messages_count ?? 0}</TableCell>
+                  <TableCell>{user.customers_count ?? 0}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {fmt(user.last_sign_in_at)}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {format(new Date(user.signed_up_at || user.created_at), 'dd MMM yyyy', { locale: ar })}
                   </TableCell>
                   <TableCell>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onViewUser?.(user.user_id)}
+                      onClick={() => {
+                        setSelected(user);
+                        onViewUser?.(user.user_id);
+                      }}
                     >
-                      <Eye className="h-4 w-4 ml-1" />
+                      <Eye className="h-4 w-4 me-1" />
                       عرض
                     </Button>
                   </TableCell>
@@ -177,8 +285,111 @@ export function UsersList({ onViewUser }: UsersListProps) {
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </CardContent>
+
+      <Sheet open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+        <SheetContent side="left" className="w-full sm:max-w-md overflow-y-auto" dir="rtl">
+          <SheetHeader className="text-right">
+            <SheetTitle>تفاصيل المستخدم</SheetTitle>
+          </SheetHeader>
+          {selected && (
+            <div className="mt-6 space-y-6 text-right">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={selected.avatar_url || undefined} />
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {getInitials(selected.full_name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="font-semibold">{selected.full_name || 'مستخدم'}</div>
+                  <div className="text-xs text-muted-foreground" dir="ltr">{selected.email}</div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { icon: MessageSquare, label: 'الرسائل', value: selected.messages_count ?? 0 },
+                  { icon: UsersIcon, label: 'العملاء', value: selected.customers_count ?? 0 },
+                  { icon: Bot, label: 'الشات بوتات', value: selected.chatbots_count ?? 0 },
+                  { icon: Shield, label: 'الصلاحية', value: selected.role === 'admin' ? 'أدمن' : 'مستخدم' },
+                ].map((s) => (
+                  <div key={s.label} className="rounded-lg border border-border p-3">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <s.icon className="h-3.5 w-3.5" />
+                      {s.label}
+                    </div>
+                    <div className="mt-1 text-lg font-semibold">{s.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <Row icon={Mail} label="البريد" value={selected.email || '—'} />
+                <Row icon={Phone} label="الهاتف" value={selected.phone || '—'} />
+                <Row icon={CheckCircle2} label="تأكيد البريد" value={selected.email_confirmed_at ? 'مُفعّل' : 'غير مُفعّل'} />
+                <Row icon={Clock} label="آخر دخول" value={fmt(selected.last_sign_in_at)} />
+                <Row icon={Clock} label="آخر نشاط" value={fmt(selected.last_activity_at)} />
+                <Row icon={Clock} label="تاريخ التسجيل" value={fmt(selected.signed_up_at || selected.created_at)} />
+                <Row icon={CheckCircle2} label="أكمل الإعداد" value={selected.onboarding_completed ? 'نعم' : 'لا'} />
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-sm font-medium">النشاط التجاري</div>
+                <div className="rounded-lg border border-border p-3 text-sm space-y-1">
+                  <div>{selected.business_name || '—'}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {[selected.business_category, selected.business_location].filter(Boolean).join(' • ') || '—'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-sm font-medium">الشات بوتات</div>
+                {(selected.chatbots || []).length === 0 ? (
+                  <p className="text-xs text-muted-foreground">لا يوجد</p>
+                ) : (
+                  (selected.chatbots || []).map((b) => (
+                    <div key={b.id} className="flex items-center justify-between rounded-lg border border-border p-3 text-sm">
+                      <span>{b.name}</span>
+                      <Badge variant={b.is_active ? 'default' : 'secondary'}>
+                        {b.is_active ? 'نشط' : 'متوقف'}
+                      </Badge>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="text-sm font-medium">القنوات المربوطة</div>
+                <div className="flex flex-wrap gap-1">
+                  {(selected.channels || []).length === 0 ? (
+                    <span className="text-xs text-muted-foreground">لا يوجد</span>
+                  ) : (
+                    (selected.channels || []).map((c) => (
+                      <Badge key={c} variant="outline">{channelLabels[c] || c}</Badge>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </Card>
+  );
+}
+
+function Row({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-2 border-b border-border pb-2">
+      <span className="flex items-center gap-2 text-muted-foreground">
+        <Icon className="h-3.5 w-3.5" />
+        {label}
+      </span>
+      <span className="text-left" dir="auto">{value}</span>
+    </div>
   );
 }
