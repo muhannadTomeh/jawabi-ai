@@ -14,7 +14,18 @@ import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Eye, Shield, User, Search, Mail, Phone, Bot, MessageSquare, Users as UsersIcon, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, Eye, Shield, User, Search, Mail, Phone, Bot, MessageSquare, Users as UsersIcon, Clock, CheckCircle2, XCircle, LogIn } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 
@@ -66,6 +77,39 @@ export function UsersList({ onViewUser }: UsersListProps) {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<UserProfile | null>(null);
+  const [impersonateTarget, setImpersonateTarget] = useState<UserProfile | null>(null);
+  const [reason, setReason] = useState('');
+  const [impersonating, setImpersonating] = useState(false);
+
+  const startImpersonation = async () => {
+    if (!impersonateTarget) return;
+    setImpersonating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-impersonate', {
+        body: {
+          target_user_id: impersonateTarget.user_id,
+          reason: reason || null,
+          redirect_to: `${window.location.origin}/dashboard`,
+        },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message);
+      window.open(data.action_link, '_blank', 'noopener');
+      toast({
+        title: 'تم إنشاء جلسة دخول',
+        description: 'افتحها في نافذة خاصة (Incognito) حتى لا تُستبدل جلستك كأدمن. العملية مسجّلة في سجل العمليات.',
+      });
+      setImpersonateTarget(null);
+      setReason('');
+    } catch (e) {
+      toast({
+        title: 'تعذّر الدخول للحساب',
+        description: e instanceof Error ? e.message : 'خطأ غير معروف',
+        variant: 'destructive',
+      });
+    } finally {
+      setImpersonating(false);
+    }
+  };
 
   useEffect(() => {
     async function fetchUsers() {
@@ -374,10 +418,50 @@ export function UsersList({ onViewUser }: UsersListProps) {
                   )}
                 </div>
               </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setImpersonateTarget(selected)}
+              >
+                <LogIn className="h-4 w-4 me-2" />
+                الدخول لحساب المستخدم (للدعم)
+              </Button>
             </div>
           )}
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={!!impersonateTarget} onOpenChange={(o) => !o && setImpersonateTarget(null)}>
+        <AlertDialogContent dir="rtl" className="text-right">
+          <AlertDialogHeader>
+            <AlertDialogTitle>الدخول لحساب {impersonateTarget?.full_name || impersonateTarget?.email}</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم إنشاء رابط دخول مؤقت لمرة واحدة بدون إرسال أي إشعار للمستخدم. العملية تُسجَّل في سجل عمليات الأدمن.
+              يُفضّل فتح الرابط في نافذة تصفح خاصة حتى لا تفقد جلستك كأدمن.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="سبب الدخول (اختياري — يظهر في السجل)"
+            className="text-right"
+          />
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <AlertDialogCancel disabled={impersonating}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                startImpersonation();
+              }}
+              disabled={impersonating}
+            >
+              {impersonating && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+              متابعة
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
