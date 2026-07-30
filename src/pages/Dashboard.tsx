@@ -203,6 +203,19 @@ export default function DashboardPage() {
   const connectedCount = channels.filter((c) => c.connected).length;
   const engagementRate = totalMessages > 0 ? Math.round((userMessages / totalMessages) * 100) : 0;
 
+  // Today vs. yesterday, derived from the loaded user messages.
+  const now = Date.now();
+  const day = 86400000;
+  const todayCount = activity.filter((a) => now - +new Date(a.created_at) < day).length;
+  const yesterdayCount = activity.filter((a) => {
+    const age = now - +new Date(a.created_at);
+    return age >= day && age < day * 2;
+  }).length;
+  const dayTrend = yesterdayCount === 0
+    ? (todayCount > 0 ? 100 : 0)
+    : Math.round(((todayCount - yesterdayCount) / yesterdayCount) * 100);
+  const weekCount = activity.filter((a) => now - +new Date(a.created_at) < day * 7).length;
+
   return (
     <div className="space-y-10">
       {/* 1 — Page header */}
@@ -277,28 +290,37 @@ export default function DashboardPage() {
         </h3>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            title="إجمالي الرسائل"
-            value={totalMessages.toLocaleString('ar-SA')}
+            title="رسائل اليوم"
+            value={todayCount.toLocaleString('ar-SA')}
             icon={MessageSquare}
-            description="عبر جميع القنوات"
+            description="رسائل واردة من العملاء"
+            accent="primary"
+            period="آخر 24 ساعة"
+            trend={{ value: dayTrend, isPositive: dayTrend >= 0 }}
           />
           <StatCard
-            title="رسائل المستخدمين"
-            value={userMessages.toLocaleString('ar-SA')}
+            title="إجمالي الرسائل"
+            value={totalMessages.toLocaleString('ar-SA')}
             icon={TrendingUp}
-            description={`${engagementRate}% من إجمالي الرسائل`}
+            description={`${userMessages.toLocaleString('ar-SA')} منها من المستخدمين (${engagementRate}%)`}
+            accent="info"
+            period="منذ بداية التشغيل"
           />
           <StatCard
             title="جهات الاتصال"
             value={uniqueContacts.toLocaleString('ar-SA')}
             icon={Users}
             description="إجمالي المتفاعلين"
+            accent="success"
+            period={`${weekCount.toLocaleString('ar-SA')} رسالة خلال 7 أيام`}
           />
           <StatCard
             title="القنوات النشطة"
             value={connectedCount}
             icon={Share2}
             description={`من ${channels.length} قنوات`}
+            accent="warning"
+            period={connectedCount > 0 ? 'تعمل الآن' : 'لم يتم الربط بعد'}
           />
         </div>
       </section>
