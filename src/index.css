@@ -161,7 +161,23 @@
 
   /* Card elevation */
   .card-elevated {
-    @apply bg-card rounded-lg border border-border shadow-sm;
+    @apply bg-card rounded-lg border border-border shadow-sm transition-all duration-200 ease-out hover:shadow-md hover:border-primary/20;
+  }
+
+  /* Interactive lift for clickable cards */
+  .card-interactive {
+    @apply transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:shadow-md;
+  }
+
+  /* Live status dot with soft pulse ring */
+  .status-dot-live {
+    @apply relative;
+  }
+
+  .status-dot-live::after {
+    content: "";
+    @apply absolute inset-0 rounded-full bg-current opacity-60;
+    animation: status-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
 
   /* Stat card styling */
