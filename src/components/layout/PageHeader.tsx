@@ -42,7 +42,7 @@ export function PageHeader({
   };
 
   return (
-    <div className={cn('mb-6 flex flex-col gap-3 animate-fade-in', className)}>
+    <div className={cn('mb-4 flex flex-col gap-2 animate-fade-in', className)}>
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav aria-label="مسار التنقل" className="flex items-center gap-1 text-sm text-muted-foreground">
           {breadcrumbs.map((c, i) => {

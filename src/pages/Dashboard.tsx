@@ -355,7 +355,7 @@ export default function DashboardPage() {
 
   if (chatbotLoading || loading) {
     return (
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-4 animate-fade-in">
         <PageHeader title="لوحة التحكم" description="نظرة شاملة على أداء الشات بوت عبر جميع القنوات" />
         <div className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-4">
@@ -389,7 +389,7 @@ export default function DashboardPage() {
   const weekCount = activity.filter((a) => now - +new Date(a.created_at) < day * 7).length;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       {/* 1 — Page header */}
       <PageHeader
         title="لوحة التحكم"
@@ -413,13 +413,13 @@ export default function DashboardPage() {
 
       {/* 2 — Main bot overview (primary focal point) */}
       {chatbot && (
-        <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+        <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6">
           <div
             className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full opacity-20 blur-3xl"
             style={{ background: 'var(--gradient-primary)' }}
             aria-hidden
           />
-          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-5">
               <div className="rounded-2xl p-4 shadow-sm" style={{ background: 'var(--gradient-primary)' }}>
                 <Bot className="h-8 w-8 text-primary-foreground" />
@@ -460,7 +460,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Dense overview grid — the panel now carries real operational data */}
-          <dl className="relative mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3 xl:grid-cols-6">
+          <dl className="relative mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3 xl:grid-cols-6">
             {[
               {
                 icon: Cpu,
@@ -514,7 +514,7 @@ export default function DashboardPage() {
 
       {/* 3 — KPI cards */}
       <section>
-        <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           المؤشرات الرئيسية
         </h3>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -555,7 +555,7 @@ export default function DashboardPage() {
       </section>
 
       {/* 4 — Charts + 5 — Recent activity */}
-      <section className="grid gap-6 lg:grid-cols-3">
+      <section className="grid gap-4 lg:grid-cols-3">
         <ChartCard
           className="lg:col-span-2"
           title="نشاط الرسائل — آخر ٧ أيام"
@@ -572,7 +572,7 @@ export default function DashboardPage() {
           <MessagesTrendChart data={dailySeries} />
         </ChartCard>
 
-        <div className="card-elevated rounded-2xl p-6">
+        <div className="card-elevated rounded-2xl p-4 sm:p-6">
           <div className="mb-4 flex items-center gap-2">
             <Activity className="h-4 w-4 text-primary" />
             <h3 className="font-semibold text-foreground">آخر النشاطات</h3>
@@ -586,7 +586,7 @@ export default function DashboardPage() {
               </p>
             </div>
           ) : (
-            <ol className="relative max-h-[19rem] space-y-5 overflow-y-auto pe-1 ps-1">
+            <ol className="relative max-h-[19rem] space-y-4 overflow-y-auto pe-1 ps-1">
               <span
                 className="pointer-events-none absolute bottom-2 end-[13px] top-2 w-px bg-border"
                 aria-hidden
@@ -620,7 +620,7 @@ export default function DashboardPage() {
       </section>
 
       {/* 5b — Secondary charts */}
-      <section className="grid gap-6 lg:grid-cols-3">
+      <section className="grid gap-4 lg:grid-cols-3">
         <ChartCard title="المستخدمون النشطون" description="عدد المتفاعلين الفريدين يوميًا">
           <ActiveUsersChart data={dailySeries} />
         </ChartCard>
@@ -633,8 +633,8 @@ export default function DashboardPage() {
       </section>
 
       {/* 6 — Connected channels + 7 — Popular questions */}
-      <section className="grid gap-6 md:grid-cols-2">
-        <div className="card-elevated rounded-2xl p-6">
+      <section className="grid gap-4 md:grid-cols-2">
+        <div className="card-elevated rounded-2xl p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-semibold text-foreground">القنوات المتصلة</h3>
             <Button variant="ghost" size="sm" asChild>
@@ -660,7 +660,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="card-elevated rounded-2xl p-6">
+        <div className="card-elevated rounded-2xl p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-semibold text-foreground">الأسئلة الأكثر شيوعاً</h3>
             <Button variant="ghost" size="sm" asChild>
