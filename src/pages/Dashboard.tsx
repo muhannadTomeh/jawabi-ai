@@ -514,59 +514,23 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* 4 — Chart + 5 — Recent activity */}
+      {/* 4 — Charts + 5 — Recent activity */}
       <section className="grid gap-6 lg:grid-cols-3">
-        <div className="card-elevated rounded-2xl p-6 lg:col-span-2">
-          <div className="mb-6 flex items-start justify-between">
-            <div>
-              <h3 className="font-semibold text-foreground">نشاط الرسائل — آخر ٧ أيام</h3>
-              <p className="mt-1 text-sm text-muted-foreground">رسائل العملاء الواردة يوميًا</p>
-            </div>
+        <ChartCard
+          className="lg:col-span-2"
+          title="نشاط الرسائل — آخر ٧ أيام"
+          description="رسائل العملاء الواردة يوميًا"
+          action={
             <Button variant="ghost" size="sm" asChild>
               <Link to="/dashboard/analytics">
                 الإحصائيات
                 <ArrowLeft className="me-1 h-4 w-4" />
               </Link>
             </Button>
-          </div>
-          <div className="h-64 w-full" dir="ltr">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="msgFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis
-                  dataKey="label" reversed tickLine={false} axisLine={false}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                />
-                <YAxis
-                  orientation="right" allowDecimals={false} tickLine={false} axisLine={false} width={32}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                />
-                <Tooltip
-                  cursor={{ stroke: 'hsl(var(--primary))', strokeOpacity: 0.2 }}
-                  contentStyle={{
-                    background: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: 12,
-                    color: 'hsl(var(--popover-foreground))',
-                    fontSize: 12,
-                    direction: 'rtl',
-                  }}
-                  formatter={(v: any) => [v, 'رسائل']}
-                />
-                <Area
-                  type="monotone" dataKey="value" stroke="hsl(var(--primary))"
-                  strokeWidth={2} fill="url(#msgFill)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+          }
+        >
+          <MessagesTrendChart data={dailySeries} />
+        </ChartCard>
 
         <div className="card-elevated rounded-2xl p-6">
           <div className="mb-4 flex items-center gap-2">
