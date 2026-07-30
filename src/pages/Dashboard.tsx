@@ -368,7 +368,7 @@ export default function DashboardPage() {
             <ul className="max-h-64 space-y-4 overflow-y-auto pe-1">
               {activity.slice(0, 8).map((a, i) => (
                 <li key={i} className="flex items-start gap-3">
-                  <ChannelIcon channel={a.channel === 'web' ? 'telegram' : a.channel} withBg />
+                  <ChannelIcon channel={a.channel} withBg />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm text-foreground">{a.content}</p>
                     <p className="mt-0.5 text-xs text-muted-foreground">
