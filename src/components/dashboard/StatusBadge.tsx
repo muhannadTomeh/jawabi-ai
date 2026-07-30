@@ -20,7 +20,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium',
+        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-200 ease-out hover:brightness-105 hover:scale-[1.03]',
         status === 'active' || status === 'connected'
           ? 'bg-success/10 text-success'
           : status === 'pending'
@@ -29,7 +29,14 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
         className
       )}
     >
-      <Circle className={cn('h-1.5 w-1.5 fill-current', config.color)} />
+      <Circle
+        className={cn(
+          'h-1.5 w-1.5 fill-current',
+          config.color,
+          (status === 'active' || status === 'connected' || status === 'pending') &&
+            'status-dot-live'
+        )}
+      />
       {config.label}
     </span>
   );
