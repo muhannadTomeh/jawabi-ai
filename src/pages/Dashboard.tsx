@@ -426,12 +426,12 @@ export default function DashboardPage() {
               </div>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="truncate text-2xl font-semibold tracking-tight text-foreground">
+                  <h2 className="truncate text-page-title">
                     {chatbot.name}
                   </h2>
                   <StatusBadge status={chatbot.is_active ? 'active' : 'inactive'} />
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 text-card-desc">
                   {chatbot.language} • نبرة {toneLabels[chatbot.tone] || chatbot.tone} •{' '}
                   {connectedCount} من {channels.length} قنوات متصلة
                 </p>
@@ -575,7 +575,7 @@ export default function DashboardPage() {
         <div className="card-elevated rounded-2xl p-4 sm:p-6">
           <div className="mb-4 flex items-center gap-2">
             <Activity className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold text-foreground">آخر النشاطات</h3>
+            <h3 className="text-section-title">آخر النشاطات</h3>
           </div>
           {timeline.length === 0 ? (
             <div className="flex h-56 flex-col items-center justify-center gap-2 text-center">
@@ -636,7 +636,7 @@ export default function DashboardPage() {
       <section className="grid gap-4 md:grid-cols-2">
         <div className="card-elevated rounded-2xl p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">القنوات المتصلة</h3>
+            <h3 className="text-section-title">القنوات المتصلة</h3>
             <Button variant="ghost" size="sm" asChild>
               <Link to="/dashboard/channels">
                 عرض الكل
@@ -662,7 +662,7 @@ export default function DashboardPage() {
 
         <div className="card-elevated rounded-2xl p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">الأسئلة الأكثر شيوعاً</h3>
+            <h3 className="text-section-title">الأسئلة الأكثر شيوعاً</h3>
             <Button variant="ghost" size="sm" asChild>
               <Link to="/dashboard/analytics">
                 الإحصائيات
