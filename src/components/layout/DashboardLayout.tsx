@@ -30,7 +30,7 @@ export function DashboardLayout() {
           <span className="text-lg font-semibold">جوابي</span>
           <MobileSidebar />
         </header>
-        <div key={location.pathname} className="p-4 sm:p-6 lg:p-8 animate-fade-in">
+        <div key={location.pathname} className="p-4 sm:p-6 animate-fade-in">
           <Outlet />
         </div>
       </main>
