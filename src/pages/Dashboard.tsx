@@ -349,6 +349,52 @@ export default function DashboardPage() {
         automationRate,
         avgResponseSec,
       });
+
+      // ---- AI experience metrics -------------------------------------------
+      const botReplies = [
+        ...((webBotRes.data || []) as any[]),
+        ...((tgBotRes.data || []) as any[]),
+        ...((waBotRes.data || []) as any[]),
+      ].map((m) => (m.content || '').trim()).filter(Boolean);
+      const fallbackSample = (chatbot.fallback_message || '').trim().slice(0, 25);
+      const fallbackCount = fallbackSample
+        ? botReplies.filter((c) => c.includes(fallbackSample)).length
+        : 0;
+      const accuracy = botReplies.length
+        ? Math.max(0, Math.round(((botReplies.length - fallbackCount) / botReplies.length) * 100))
+        : 0;
+
+      const faqCount = kItems.filter((k) => k.type === 'faq').length;
+      const knowledgeQuality = Math.min(
+        100,
+        Math.round(
+          Math.min(25, kItems.length * 5) +
+            Math.min(30, (knowledgeChars / 3000) * 30) +
+            Math.min(25, faqCount * 8) +
+            (documents > 0 ? 10 : 0) +
+            (lastTrainedAt && Date.now() - +new Date(lastTrainedAt) < 30 * 86400000 ? 10 : 0)
+        )
+      );
+      const confidence = Math.round(
+        accuracy * 0.5 + knowledgeQuality * 0.3 + automationRate * 0.2
+      );
+
+      const suggestions: string[] = [];
+      if (kItems.length < 5) suggestions.push('أضف المزيد من مصادر المعرفة (نصوص، ملفات أو روابط) — لديك عدد قليل من العناصر.');
+      if (faqCount < 3) suggestions.push('أضف أسئلة شائعة (FAQ) تغطي أكثر الاستفسارات تكرارًا لدى عملائك.');
+      if (knowledgeChars < 3000) suggestions.push('محتوى المعرفة قصير نسبيًا؛ وسّع تفاصيل المنتجات والأسعار وسياسات العمل.');
+      if (documents === 0) suggestions.push('ارفع ملفًا أو صورة (كتالوج، قائمة أسعار) ليستخرج البوت الإجابات منها.');
+      if (fallbackCount > 0) suggestions.push(`تم استخدام رسالة التعذّر ${fallbackCount} مرة — راجع الأسئلة غير المُجابة وأضف إجاباتها.`);
+      if (!lastTrainedAt || Date.now() - +new Date(lastTrainedAt) > 30 * 86400000) suggestions.push('لم يتم تحديث قاعدة المعرفة منذ فترة؛ حدّثها لتبقى الإجابات دقيقة.');
+
+      setAiStats({
+        automationRate,
+        accuracy,
+        confidence,
+        knowledgeQuality,
+        lastTrainedAt,
+        suggestions: suggestions.slice(0, 4),
+      });
       setSyncedAt(new Date());
     } catch (e) {
       console.error('Dashboard load error:', e);
