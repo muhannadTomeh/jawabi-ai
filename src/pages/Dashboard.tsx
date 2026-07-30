@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   MessageSquare, Users, ArrowLeft, Share2, Bot, Settings, RefreshCw,
@@ -14,7 +14,10 @@ import { ChannelIcon } from '@/components/ChannelIcon';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCardsSkeleton, CardGridSkeleton } from '@/components/layout/PageSkeletons';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import {
+  ChartCard, MessagesTrendChart, ActiveUsersChart, ChannelsChart, ResponseRateChart,
+  type DailyPoint, type ChannelPoint,
+} from '@/components/dashboard/DashboardCharts';
 
 type PlatformKey = 'telegram' | 'facebook' | 'instagram' | 'whatsapp';
 
@@ -92,6 +95,8 @@ export default function DashboardPage() {
   const [uniqueContacts, setUniqueContacts] = useState(0);
   const [topQuestions, setTopQuestions] = useState<TopQuestion[]>([]);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
+  const [dailySeries, setDailySeries] = useState<DailyPoint[]>([]);
+  const [channelDist, setChannelDist] = useState<ChannelPoint[]>([]);
   const [metrics, setMetrics] = useState<BotMetrics>({
     model: '—',
     lastTrainedAt: null,
@@ -225,6 +230,39 @@ export default function DashboardPage() {
         : null;
       const automationRate = asked > 0 ? Math.min(100, Math.round((answered / asked) * 100)) : 0;
 
+      // ---- Chart series ----------------------------------------------------
+      const days: { key: string; label: string; messages: number; users: Set<string> }[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() - i);
+        days.push({ key: d.toDateString(), label: d.toLocaleDateString('ar', { weekday: 'short' }), messages: 0, users: new Set() });
+      }
+      const dayIndex = new Map(days.map((d) => [d.key, d]));
+      msgs.forEach((m) => {
+        const d = new Date(m.at);
+        d.setHours(0, 0, 0, 0);
+        const row = dayIndex.get(d.toDateString());
+        if (!row) return;
+        if (m.role === 'user') {
+          row.messages += 1;
+          row.users.add(m.key);
+        }
+      });
+      setDailySeries(days.map((d) => ({ label: d.label, messages: d.messages, users: d.users.size })));
+
+      const convByChannel = { web: new Set<string>(), telegram: new Set<string>(), whatsapp: new Set<string>() };
+      msgs.forEach((m) => {
+        if (m.key.startsWith('w:')) convByChannel.web.add(m.key);
+        else if (m.key.startsWith('t:')) convByChannel.telegram.add(m.key);
+        else if (m.key.startsWith('a:')) convByChannel.whatsapp.add(m.key);
+      });
+      setChannelDist([
+        { label: 'الدردشة على الموقع', value: convByChannel.web.size, color: 'hsl(var(--primary))' },
+        { label: platformLabels.telegram, value: convByChannel.telegram.size, color: 'hsl(199 89% 48%)' },
+        { label: platformLabels.whatsapp, value: convByChannel.whatsapp.size, color: 'hsl(142 70% 45%)' },
+      ]);
+
       setMetrics({
         model: (llmRes.data as any)?.model || 'google/gemini-2.5-flash',
         lastTrainedAt,
@@ -248,29 +286,6 @@ export default function DashboardPage() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatbot]);
-
-  // 7-day message trend built from the loaded user messages.
-  const chartData = useMemo(() => {
-    const days: { key: string; label: string; value: number }[] = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() - i);
-      days.push({
-        key: d.toDateString(),
-        label: d.toLocaleDateString('ar', { weekday: 'short' }),
-        value: 0,
-      });
-    }
-    const index = new Map(days.map((d) => [d.key, d]));
-    activity.forEach((a) => {
-      const k = new Date(a.created_at);
-      k.setHours(0, 0, 0, 0);
-      const row = index.get(k.toDateString());
-      if (row) row.value += 1;
-    });
-    return days;
-  }, [activity]);
 
   const lastSync = syncedAt ? `آخر تحديث ${relativeTime(syncedAt.toISOString())}` : 'جارٍ التحديث…';
   void tick;
@@ -476,59 +491,23 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* 4 — Chart + 5 — Recent activity */}
+      {/* 4 — Charts + 5 — Recent activity */}
       <section className="grid gap-6 lg:grid-cols-3">
-        <div className="card-elevated rounded-2xl p-6 lg:col-span-2">
-          <div className="mb-6 flex items-start justify-between">
-            <div>
-              <h3 className="font-semibold text-foreground">نشاط الرسائل — آخر ٧ أيام</h3>
-              <p className="mt-1 text-sm text-muted-foreground">رسائل العملاء الواردة يوميًا</p>
-            </div>
+        <ChartCard
+          className="lg:col-span-2"
+          title="نشاط الرسائل — آخر ٧ أيام"
+          description="رسائل العملاء الواردة يوميًا"
+          action={
             <Button variant="ghost" size="sm" asChild>
               <Link to="/dashboard/analytics">
                 الإحصائيات
                 <ArrowLeft className="me-1 h-4 w-4" />
               </Link>
             </Button>
-          </div>
-          <div className="h-64 w-full" dir="ltr">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="msgFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                <XAxis
-                  dataKey="label" reversed tickLine={false} axisLine={false}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                />
-                <YAxis
-                  orientation="right" allowDecimals={false} tickLine={false} axisLine={false} width={32}
-                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
-                />
-                <Tooltip
-                  cursor={{ stroke: 'hsl(var(--primary))', strokeOpacity: 0.2 }}
-                  contentStyle={{
-                    background: 'hsl(var(--popover))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: 12,
-                    color: 'hsl(var(--popover-foreground))',
-                    fontSize: 12,
-                    direction: 'rtl',
-                  }}
-                  formatter={(v: any) => [v, 'رسائل']}
-                />
-                <Area
-                  type="monotone" dataKey="value" stroke="hsl(var(--primary))"
-                  strokeWidth={2} fill="url(#msgFill)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+          }
+        >
+          <MessagesTrendChart data={dailySeries} />
+        </ChartCard>
 
         <div className="card-elevated rounded-2xl p-6">
           <div className="mb-4 flex items-center gap-2">
@@ -553,6 +532,19 @@ export default function DashboardPage() {
             </ul>
           )}
         </div>
+      </section>
+
+      {/* 5b — Secondary charts */}
+      <section className="grid gap-6 lg:grid-cols-3">
+        <ChartCard title="المستخدمون النشطون" description="عدد المتفاعلين الفريدين يوميًا">
+          <ActiveUsersChart data={dailySeries} />
+        </ChartCard>
+        <ChartCard title="المحادثات حسب القناة" description="توزيع المحادثات على القنوات">
+          <ChannelsChart data={channelDist} />
+        </ChartCard>
+        <ChartCard title="معدل رد الذكاء الاصطناعي" description="نسبة الرسائل التي أجاب عنها البوت">
+          <ResponseRateChart rate={metrics.automationRate} avgSeconds={metrics.avgResponseSec} />
+        </ChartCard>
       </section>
 
       {/* 6 — Connected channels + 7 — Popular questions */}
