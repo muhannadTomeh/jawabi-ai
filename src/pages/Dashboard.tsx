@@ -1,6 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare, Users, ArrowLeft, Share2, Bot, Settings } from 'lucide-react';
+import {
+  MessageSquare, Users, ArrowLeft, Share2, Bot, Settings, RefreshCw,
+  Activity, TrendingUp, Sparkles, HelpCircle,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { StatusBadge } from '@/components/dashboard/StatusBadge';
@@ -10,6 +13,7 @@ import { ChannelIcon } from '@/components/ChannelIcon';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCardsSkeleton, CardGridSkeleton } from '@/components/layout/PageSkeletons';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 type PlatformKey = 'telegram' | 'facebook' | 'instagram' | 'whatsapp';
 
@@ -37,107 +41,151 @@ interface TopQuestion {
   count: number;
 }
 
+interface ActivityRow {
+  channel: PlatformKey | 'web';
+  content: string;
+  created_at: string;
+}
+
+const channelLabel = (c: ActivityRow['channel']) =>
+  c === 'web' ? 'الدردشة على الموقع' : platformLabels[c];
+
+function relativeTime(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'الآن';
+  if (m < 60) return `قبل ${m} دقيقة`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `قبل ${h} ساعة`;
+  const d = Math.floor(h / 24);
+  return `قبل ${d} يوم`;
+}
+
 export default function DashboardPage() {
   const { chatbot, loading: chatbotLoading } = useChatbot();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [syncedAt, setSyncedAt] = useState<Date | null>(null);
+  const [tick, setTick] = useState(0);
   const [channels, setChannels] = useState<ChannelRow[]>([]);
   const [totalMessages, setTotalMessages] = useState(0);
   const [userMessages, setUserMessages] = useState(0);
   const [uniqueContacts, setUniqueContacts] = useState(0);
   const [topQuestions, setTopQuestions] = useState<TopQuestion[]>([]);
+  const [activity, setActivity] = useState<ActivityRow[]>([]);
+
+  // Refresh the "last updated" label without refetching data.
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
+
+  const load = async (isRefresh = false) => {
+    if (!chatbot) return;
+    isRefresh ? setRefreshing(true) : setLoading(true);
+    try {
+      const [
+        tgChRes, socialRes,
+        webCountRes, tgCountRes, waCountRes,
+        webUserCountRes, tgUserCountRes, waUserCountRes,
+        webUserMsgsRes, tgUserMsgsRes, waUserMsgsRes,
+        waContactsRes, tgUsersRes,
+      ] = await Promise.all([
+        supabase.from('channels').select('platform, is_connected').eq('chatbot_id', chatbot.id),
+        supabase.from('social_connections').select('platform').eq('chatbot_id', chatbot.id),
+        supabase.from('web_chat_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
+        supabase.from('telegram_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
+        supabase.from('whatsapp_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
+        supabase.from('web_chat_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id).eq('role', 'user'),
+        supabase.from('telegram_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id).eq('role', 'user'),
+        supabase.from('whatsapp_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id).eq('role', 'user'),
+        supabase.from('web_chat_messages').select('content, created_at').eq('chatbot_id', chatbot.id).eq('role', 'user').order('created_at', { ascending: false }).limit(500),
+        supabase.from('telegram_messages').select('content, created_at').eq('chatbot_id', chatbot.id).eq('role', 'user').order('created_at', { ascending: false }).limit(500),
+        supabase.from('whatsapp_messages').select('content, created_at').eq('chatbot_id', chatbot.id).eq('role', 'user').order('created_at', { ascending: false }).limit(500),
+        supabase.from('whatsapp_contacts').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
+        supabase.from('telegram_users').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
+      ]);
+
+      const map: Record<PlatformKey, boolean> = {
+        telegram: false, facebook: false, instagram: false, whatsapp: false,
+      };
+      (tgChRes.data || []).forEach((c: any) => {
+        if (c.platform === 'telegram') map.telegram = !!c.is_connected;
+      });
+      (socialRes.data || []).forEach((c: any) => {
+        if (c.platform in map) map[c.platform as PlatformKey] = true;
+      });
+      setChannels((Object.keys(map) as PlatformKey[]).map((p) => ({ platform: p, connected: map[p] })));
+
+      setTotalMessages((webCountRes.count || 0) + (tgCountRes.count || 0) + (waCountRes.count || 0));
+      setUserMessages((webUserCountRes.count || 0) + (tgUserCountRes.count || 0) + (waUserCountRes.count || 0));
+      setUniqueContacts((waContactsRes.count || 0) + (tgUsersRes.count || 0));
+
+      const counts = new Map<string, number>();
+      const all: ActivityRow[] = [];
+      const bucket = (rows: any[] | null | undefined, channel: ActivityRow['channel']) => {
+        (rows || []).forEach((m) => {
+          const k = (m.content || '').trim();
+          if (!k) return;
+          counts.set(k, (counts.get(k) || 0) + 1);
+          if (m.created_at) all.push({ channel, content: k, created_at: m.created_at });
+        });
+      };
+      bucket(webUserMsgsRes.data, 'web');
+      bucket(tgUserMsgsRes.data, 'telegram');
+      bucket(waUserMsgsRes.data, 'whatsapp');
+
+      setTopQuestions(
+        [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([question, count]) => ({ question, count }))
+      );
+      setActivity(
+        all.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 60)
+      );
+      setSyncedAt(new Date());
+    } catch (e) {
+      console.error('Dashboard load error:', e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    if (!chatbot) return;
-    const load = async () => {
-      setLoading(true);
-      try {
-        // For totals we only need counts (head:true) — no payload downloaded.
-        // For "top questions" we only need the user-role content (server-side filter),
-        // avoiding pulling all bot replies just to discard them client-side.
-        const [
-          tgChRes,
-          socialRes,
-          webCountRes,
-          tgCountRes,
-          waCountRes,
-          webUserCountRes,
-          tgUserCountRes,
-          waUserCountRes,
-          webUserMsgsRes,
-          tgUserMsgsRes,
-          waUserMsgsRes,
-          waContactsRes,
-          tgUsersRes,
-        ] = await Promise.all([
-          supabase.from('channels').select('platform, is_connected').eq('chatbot_id', chatbot.id),
-          supabase.from('social_connections').select('platform').eq('chatbot_id', chatbot.id),
-          supabase.from('web_chat_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
-          supabase.from('telegram_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
-          supabase.from('whatsapp_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
-          supabase.from('web_chat_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id).eq('role', 'user'),
-          supabase.from('telegram_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id).eq('role', 'user'),
-          supabase.from('whatsapp_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id).eq('role', 'user'),
-          supabase.from('web_chat_messages').select('content').eq('chatbot_id', chatbot.id).eq('role', 'user').limit(500),
-          supabase.from('telegram_messages').select('content').eq('chatbot_id', chatbot.id).eq('role', 'user').limit(500),
-          supabase.from('whatsapp_messages').select('content').eq('chatbot_id', chatbot.id).eq('role', 'user').limit(500),
-          supabase.from('whatsapp_contacts').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
-          supabase.from('telegram_users').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
-        ]);
-
-        // Channels: combine legacy `channels` (telegram) with social_connections (fb/ig/wa)
-        const map: Record<PlatformKey, boolean> = {
-          telegram: false,
-          facebook: false,
-          instagram: false,
-          whatsapp: false,
-        };
-        (tgChRes.data || []).forEach((c: any) => {
-          if (c.platform === 'telegram') map.telegram = !!c.is_connected;
-        });
-        (socialRes.data || []).forEach((c: any) => {
-          if (c.platform in map) map[c.platform as PlatformKey] = true;
-        });
-        setChannels(
-          (Object.keys(map) as PlatformKey[]).map((p) => ({ platform: p, connected: map[p] }))
-        );
-
-        setTotalMessages((webCountRes.count || 0) + (tgCountRes.count || 0) + (waCountRes.count || 0));
-        setUserMessages((webUserCountRes.count || 0) + (tgUserCountRes.count || 0) + (waUserCountRes.count || 0));
-
-        setUniqueContacts((waContactsRes.count || 0) + (tgUsersRes.count || 0));
-
-        // Top questions: aggregate a bounded slice of recent user messages.
-        const counts = new Map<string, number>();
-        const bucket = (rows: any[] | null | undefined) => {
-          (rows || []).forEach((m) => {
-            const k = (m.content || '').trim();
-            if (!k) return;
-            counts.set(k, (counts.get(k) || 0) + 1);
-          });
-        };
-        bucket(webUserMsgsRes.data);
-        bucket(tgUserMsgsRes.data);
-        bucket(waUserMsgsRes.data);
-        const top = [...counts.entries()]
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 4)
-          .map(([question, count]) => ({ question, count }));
-        setTopQuestions(top);
-      } catch (e) {
-        console.error('Dashboard load error:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatbot]);
+
+  // 7-day message trend built from the loaded user messages.
+  const chartData = useMemo(() => {
+    const days: { key: string; label: string; value: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() - i);
+      days.push({
+        key: d.toDateString(),
+        label: d.toLocaleDateString('ar', { weekday: 'short' }),
+        value: 0,
+      });
+    }
+    const index = new Map(days.map((d) => [d.key, d]));
+    activity.forEach((a) => {
+      const k = new Date(a.created_at);
+      k.setHours(0, 0, 0, 0);
+      const row = index.get(k.toDateString());
+      if (row) row.value += 1;
+    });
+    return days;
+  }, [activity]);
+
+  const lastSync = syncedAt ? `آخر تحديث ${relativeTime(syncedAt.toISOString())}` : 'جارٍ التحديث…';
+  void tick;
 
   if (chatbotLoading || loading) {
     return (
       <div className="space-y-8 animate-fade-in">
-        <PageHeader title="لوحة التحكم" description="إدارة الشات بوت ومتابعة الأداء" />
-        <StatCardsSkeleton />
-        <div className="rounded-xl border border-border bg-card p-6">
+        <PageHeader title="لوحة التحكم" description="نظرة شاملة على أداء الشات بوت عبر جميع القنوات" />
+        <div className="rounded-2xl border border-border bg-card p-6">
           <div className="flex items-center gap-4">
             <Skeleton className="h-14 w-14 rounded-xl" />
             <div className="space-y-2 flex-1">
@@ -146,73 +194,74 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+        <StatCardsSkeleton />
         <CardGridSkeleton count={2} />
       </div>
     );
   }
 
   const connectedCount = channels.filter((c) => c.connected).length;
+  const engagementRate = totalMessages > 0 ? Math.round((userMessages / totalMessages) * 100) : 0;
 
   return (
-    <div className="space-y-8">
-      <PageHeader title="لوحة التحكم" description="إدارة الشات بوت ومتابعة الأداء" />
-
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="إجمالي الرسائل"
-          value={totalMessages.toLocaleString('ar-SA')}
-          icon={MessageSquare}
-          description="عبر جميع القنوات"
-        />
-        <StatCard
-          title="رسائل المستخدمين"
-          value={userMessages.toLocaleString('ar-SA')}
-          icon={MessageSquare}
-        />
-        <StatCard
-          title="جهات الاتصال"
-          value={uniqueContacts.toLocaleString('ar-SA')}
-          icon={Users}
-          description="إجمالي المتفاعلين"
-        />
-        <StatCard
-          title="القنوات النشطة"
-          value={connectedCount}
-          icon={Share2}
-          description={`من ${channels.length} قنوات`}
-        />
-      </div>
-
-      {chatbot && (
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">الشات بوت الخاص بك</h2>
+    <div className="space-y-10">
+      {/* 1 — Page header */}
+      <PageHeader
+        title="لوحة التحكم"
+        description="نظرة شاملة على أداء الشات بوت عبر جميع القنوات"
+        actions={
+          <div className="flex items-center gap-3">
+            <span className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/60" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+              </span>
+              {lastSync}
+            </span>
+            <Button variant="outline" size="sm" onClick={() => load(true)} disabled={refreshing}>
+              <RefreshCw className={`ms-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              تحديث
+            </Button>
           </div>
-          <div className="card-elevated p-6">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                <div className="rounded-xl bg-primary/10 p-3">
-                  <Bot className="h-8 w-8 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground">{chatbot.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {chatbot.language} • نبرة {toneLabels[chatbot.tone] || chatbot.tone}
-                  </p>
-                </div>
+        }
+      />
+
+      {/* 2 — Main bot overview (primary focal point) */}
+      {chatbot && (
+        <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+          <div
+            className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full opacity-20 blur-3xl"
+            style={{ background: 'var(--gradient-primary)' }}
+            aria-hidden
+          />
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-5">
+              <div className="rounded-2xl p-4 shadow-sm" style={{ background: 'var(--gradient-primary)' }}>
+                <Bot className="h-8 w-8 text-primary-foreground" />
               </div>
-              <StatusBadge status={chatbot.is_active ? 'active' : 'inactive'} />
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="truncate text-2xl font-semibold tracking-tight text-foreground">
+                    {chatbot.name}
+                  </h2>
+                  <StatusBadge status={chatbot.is_active ? 'active' : 'inactive'} />
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {chatbot.language} • نبرة {toneLabels[chatbot.tone] || chatbot.tone} •{' '}
+                  {connectedCount} من {channels.length} قنوات متصلة
+                </p>
+              </div>
             </div>
-            <div className="mt-6 flex items-center gap-3">
-              <Button variant="outline" size="sm" asChild>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button variant="outline" asChild>
                 <Link to="/dashboard/settings">
-                  <Settings className="ml-2 h-4 w-4" />
-                  إعدادات
+                  <Settings className="ms-2 h-4 w-4" />
+                  إعدادات البوت
                 </Link>
               </Button>
-              <Button size="sm" asChild>
+              <Button asChild>
                 <Link to="/dashboard/test">
-                  <MessageSquare className="ml-2 h-4 w-4" />
+                  <MessageSquare className="ms-2 h-4 w-4" />
                   تجربة الشات
                 </Link>
               </Button>
@@ -221,22 +270,135 @@ export default function DashboardPage() {
         </section>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="card-elevated p-6">
+      {/* 3 — KPI cards */}
+      <section>
+        <h3 className="mb-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          المؤشرات الرئيسية
+        </h3>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="إجمالي الرسائل"
+            value={totalMessages.toLocaleString('ar-SA')}
+            icon={MessageSquare}
+            description="عبر جميع القنوات"
+          />
+          <StatCard
+            title="رسائل المستخدمين"
+            value={userMessages.toLocaleString('ar-SA')}
+            icon={TrendingUp}
+            description={`${engagementRate}% من إجمالي الرسائل`}
+          />
+          <StatCard
+            title="جهات الاتصال"
+            value={uniqueContacts.toLocaleString('ar-SA')}
+            icon={Users}
+            description="إجمالي المتفاعلين"
+          />
+          <StatCard
+            title="القنوات النشطة"
+            value={connectedCount}
+            icon={Share2}
+            description={`من ${channels.length} قنوات`}
+          />
+        </div>
+      </section>
+
+      {/* 4 — Chart + 5 — Recent activity */}
+      <section className="grid gap-6 lg:grid-cols-3">
+        <div className="card-elevated rounded-2xl p-6 lg:col-span-2">
+          <div className="mb-6 flex items-start justify-between">
+            <div>
+              <h3 className="font-semibold text-foreground">نشاط الرسائل — آخر ٧ أيام</h3>
+              <p className="mt-1 text-sm text-muted-foreground">رسائل العملاء الواردة يوميًا</p>
+            </div>
+            <Button variant="ghost" size="sm" asChild>
+              <Link to="/dashboard/analytics">
+                الإحصائيات
+                <ArrowLeft className="me-1 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+          <div className="h-64 w-full" dir="ltr">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="msgFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                <XAxis
+                  dataKey="label" reversed tickLine={false} axisLine={false}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                />
+                <YAxis
+                  orientation="right" allowDecimals={false} tickLine={false} axisLine={false} width={32}
+                  tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                />
+                <Tooltip
+                  cursor={{ stroke: 'hsl(var(--primary))', strokeOpacity: 0.2 }}
+                  contentStyle={{
+                    background: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: 12,
+                    color: 'hsl(var(--popover-foreground))',
+                    fontSize: 12,
+                    direction: 'rtl',
+                  }}
+                  formatter={(v: any) => [v, 'رسائل']}
+                />
+                <Area
+                  type="monotone" dataKey="value" stroke="hsl(var(--primary))"
+                  strokeWidth={2} fill="url(#msgFill)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="card-elevated rounded-2xl p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Activity className="h-4 w-4 text-primary" />
+            <h3 className="font-semibold text-foreground">آخر النشاطات</h3>
+          </div>
+          {activity.length === 0 ? (
+            <p className="text-sm text-muted-foreground">لا توجد نشاطات بعد.</p>
+          ) : (
+            <ul className="max-h-64 space-y-4 overflow-y-auto pe-1">
+              {activity.slice(0, 8).map((a, i) => (
+                <li key={i} className="flex items-start gap-3">
+                  <ChannelIcon channel={a.channel === 'web' ? 'telegram' : a.channel} withBg />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-foreground">{a.content}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {channelLabel(a.channel)} • {relativeTime(a.created_at)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      {/* 6 — Connected channels + 7 — Popular questions */}
+      <section className="grid gap-6 md:grid-cols-2">
+        <div className="card-elevated rounded-2xl p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-semibold text-foreground">القنوات المتصلة</h3>
             <Button variant="ghost" size="sm" asChild>
               <Link to="/dashboard/channels">
                 عرض الكل
-                <ArrowLeft className="mr-1 h-4 w-4" />
+                <ArrowLeft className="me-1 h-4 w-4" />
               </Link>
             </Button>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {channels.map((c) => (
               <div
                 key={c.platform}
-                className="flex items-center justify-between rounded-lg border border-border p-3"
+                className="flex items-center justify-between rounded-xl border border-border/70 p-3 transition-colors hover:border-primary/30 hover:bg-accent/40"
               >
                 <div className="flex items-center gap-3">
                   <ChannelIcon channel={c.platform} withBg />
@@ -248,35 +410,48 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="card-elevated p-6">
+        <div className="card-elevated rounded-2xl p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-semibold text-foreground">الأسئلة الأكثر شيوعاً</h3>
             <Button variant="ghost" size="sm" asChild>
               <Link to="/dashboard/analytics">
                 الإحصائيات
-                <ArrowLeft className="mr-1 h-4 w-4" />
+                <ArrowLeft className="me-1 h-4 w-4" />
               </Link>
             </Button>
           </div>
           {topQuestions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">لا توجد رسائل بعد.</p>
+            <div className="flex flex-col items-center justify-center gap-2 py-10 text-center">
+              <HelpCircle className="h-8 w-8 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">لا توجد رسائل بعد.</p>
+            </div>
           ) : (
-            <div className="space-y-3">
+            <ol className="space-y-2">
               {topQuestions.map((item, i) => (
-                <div
+                <li
                   key={i}
-                  className="flex items-center justify-between rounded-lg border border-border p-3"
+                  className="flex items-center justify-between gap-3 rounded-xl border border-border/70 p-3 transition-colors hover:border-primary/30 hover:bg-accent/40"
                 >
-                  <span className="truncate text-sm text-foreground">{item.question}</span>
-                  <span className="mr-2 shrink-0 text-sm font-medium text-muted-foreground">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xs font-semibold text-primary">
+                      {i + 1}
+                    </span>
+                    <span className="truncate text-sm text-foreground">{item.question}</span>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                     {item.count}
                   </span>
-                </div>
+                </li>
               ))}
-            </div>
+            </ol>
           )}
         </div>
-      </div>
+      </section>
+
+      <p className="flex items-center justify-center gap-1.5 pb-2 text-xs text-muted-foreground sm:hidden">
+        <Sparkles className="h-3.5 w-3.5" />
+        {lastSync}
+      </p>
     </div>
   );
 }
