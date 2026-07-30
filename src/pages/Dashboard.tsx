@@ -230,6 +230,39 @@ export default function DashboardPage() {
         : null;
       const automationRate = asked > 0 ? Math.min(100, Math.round((answered / asked) * 100)) : 0;
 
+      // ---- Chart series ----------------------------------------------------
+      const days: { key: string; label: string; messages: number; users: Set<string> }[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() - i);
+        days.push({ key: d.toDateString(), label: d.toLocaleDateString('ar', { weekday: 'short' }), messages: 0, users: new Set() });
+      }
+      const dayIndex = new Map(days.map((d) => [d.key, d]));
+      msgs.forEach((m) => {
+        const d = new Date(m.at);
+        d.setHours(0, 0, 0, 0);
+        const row = dayIndex.get(d.toDateString());
+        if (!row) return;
+        if (m.role === 'user') {
+          row.messages += 1;
+          row.users.add(m.key);
+        }
+      });
+      setDailySeries(days.map((d) => ({ label: d.label, messages: d.messages, users: d.users.size })));
+
+      const convByChannel = { web: new Set<string>(), telegram: new Set<string>(), whatsapp: new Set<string>() };
+      msgs.forEach((m) => {
+        if (m.key.startsWith('w:')) convByChannel.web.add(m.key);
+        else if (m.key.startsWith('t:')) convByChannel.telegram.add(m.key);
+        else if (m.key.startsWith('a:')) convByChannel.whatsapp.add(m.key);
+      });
+      setChannelDist([
+        { label: 'الدردشة على الموقع', value: convByChannel.web.size, color: 'hsl(var(--primary))' },
+        { label: platformLabels.telegram, value: convByChannel.telegram.size, color: 'hsl(199 89% 48%)' },
+        { label: platformLabels.whatsapp, value: convByChannel.whatsapp.size, color: 'hsl(142 70% 45%)' },
+      ]);
+
       setMetrics({
         model: (llmRes.data as any)?.model || 'google/gemini-2.5-flash',
         lastTrainedAt,
