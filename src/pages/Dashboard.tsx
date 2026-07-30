@@ -557,6 +557,19 @@ export default function DashboardPage() {
         </div>
       </section>
 
+      {/* 5b — Secondary charts */}
+      <section className="grid gap-6 lg:grid-cols-3">
+        <ChartCard title="المستخدمون النشطون" description="عدد المتفاعلين الفريدين يوميًا">
+          <ActiveUsersChart data={dailySeries} />
+        </ChartCard>
+        <ChartCard title="المحادثات حسب القناة" description="توزيع المحادثات على القنوات">
+          <ChannelsChart data={channelDist} />
+        </ChartCard>
+        <ChartCard title="معدل رد الذكاء الاصطناعي" description="نسبة الرسائل التي أجاب عنها البوت">
+          <ResponseRateChart rate={metrics.automationRate} avgSeconds={metrics.avgResponseSec} />
+        </ChartCard>
+      </section>
+
       {/* 6 — Connected channels + 7 — Popular questions */}
       <section className="grid gap-6 md:grid-cols-2">
         <div className="card-elevated rounded-2xl p-6">
