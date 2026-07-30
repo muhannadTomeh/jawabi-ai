@@ -514,7 +514,7 @@ export default function DashboardPage() {
 
       {/* 3 — KPI cards */}
       <section>
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <h3 className="mb-3 text-eyebrow">
           المؤشرات الرئيسية
         </h3>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

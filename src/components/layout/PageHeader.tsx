@@ -78,12 +78,12 @@ export function PageHeader({
                 <ArrowRight className="h-5 w-5" />
               </Button>
             )}
-            <h1 className="truncate text-2xl font-semibold tracking-tight text-foreground">
+            <h1 className="truncate text-page-title">
               {title}
             </h1>
           </div>
           {description && (
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+            <p className="mt-1 text-page-desc">{description}</p>
           )}
         </div>
         {actions && (
