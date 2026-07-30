@@ -79,12 +79,12 @@ export function StatCard({
 
       <div className="relative flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-3xl font-semibold leading-none tracking-tight text-foreground">
+          <p className="text-metric">
             {value}
           </p>
-          <p className="mt-2 text-sm font-medium text-foreground">{title}</p>
+          <p className="mt-2 text-sm font-semibold text-foreground">{title}</p>
           {description && (
-            <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{description}</p>
           )}
         </div>
         <div className={cn('shrink-0 rounded-xl p-2.5', a.icon)}>
