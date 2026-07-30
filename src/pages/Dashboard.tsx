@@ -615,6 +615,7 @@ export default function DashboardPage() {
 
       {/* 4 — Charts + 5 — Recent activity */}
       <section className="grid gap-4 lg:grid-cols-3">
+
         <ChartCard
           className="lg:col-span-2"
           title="نشاط الرسائل — آخر ٧ أيام"
