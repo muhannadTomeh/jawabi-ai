@@ -287,29 +287,6 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chatbot]);
 
-  // 7-day message trend built from the loaded user messages.
-  const chartData = useMemo(() => {
-    const days: { key: string; label: string; value: number }[] = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() - i);
-      days.push({
-        key: d.toDateString(),
-        label: d.toLocaleDateString('ar', { weekday: 'short' }),
-        value: 0,
-      });
-    }
-    const index = new Map(days.map((d) => [d.key, d]));
-    activity.forEach((a) => {
-      const k = new Date(a.created_at);
-      k.setHours(0, 0, 0, 0);
-      const row = index.get(k.toDateString());
-      if (row) row.value += 1;
-    });
-    return days;
-  }, [activity]);
-
   const lastSync = syncedAt ? `آخر تحديث ${relativeTime(syncedAt.toISOString())}` : 'جارٍ التحديث…';
   void tick;
 
