@@ -14,7 +14,10 @@ import { ChannelIcon } from '@/components/ChannelIcon';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StatCardsSkeleton, CardGridSkeleton } from '@/components/layout/PageSkeletons';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import {
+  ChartCard, MessagesTrendChart, ActiveUsersChart, ChannelsChart, ResponseRateChart,
+  type DailyPoint, type ChannelPoint,
+} from '@/components/dashboard/DashboardCharts';
 
 type PlatformKey = 'telegram' | 'facebook' | 'instagram' | 'whatsapp';
 
@@ -92,6 +95,8 @@ export default function DashboardPage() {
   const [uniqueContacts, setUniqueContacts] = useState(0);
   const [topQuestions, setTopQuestions] = useState<TopQuestion[]>([]);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
+  const [dailySeries, setDailySeries] = useState<DailyPoint[]>([]);
+  const [channelDist, setChannelDist] = useState<ChannelPoint[]>([]);
   const [metrics, setMetrics] = useState<BotMetrics>({
     model: '—',
     lastTrainedAt: null,
