@@ -82,6 +82,13 @@ function formatSize(chars: number) {
 const channelLabel = (c: ActivityRow['channel']) =>
   c === 'web' ? 'الدردشة على الموقع' : platformLabels[c];
 
+const timelineStyles: Record<TimelineKind, { icon: typeof MessageSquare; bg: string; fg: string }> = {
+  message: { icon: MessageSquare, bg: 'bg-primary/10', fg: 'text-primary' },
+  knowledge: { icon: GraduationCap, bg: 'bg-info/10', fg: 'text-info' },
+  channel: { icon: Share2, bg: 'bg-success/10', fg: 'text-success' },
+  notification: { icon: Sparkles, bg: 'bg-warning/10', fg: 'text-warning' },
+};
+
 function relativeTime(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
