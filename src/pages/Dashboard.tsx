@@ -18,6 +18,7 @@ import {
   ChartCard, MessagesTrendChart, ActiveUsersChart, ChannelsChart, ResponseRateChart,
   type DailyPoint, type ChannelPoint,
 } from '@/components/dashboard/DashboardCharts';
+import { AIInsights, type AIStats } from '@/components/dashboard/AIInsights';
 
 type PlatformKey = 'telegram' | 'facebook' | 'instagram' | 'whatsapp';
 
@@ -125,6 +126,14 @@ export default function DashboardPage() {
     automationRate: 0,
     avgResponseSec: null,
   });
+  const [aiStats, setAiStats] = useState<AIStats>({
+    automationRate: 0,
+    accuracy: 0,
+    confidence: 0,
+    knowledgeQuality: 0,
+    lastTrainedAt: null,
+    suggestions: [],
+  });
 
   // Refresh the "last updated" label without refetching data.
   useEffect(() => {
@@ -144,6 +153,7 @@ export default function DashboardPage() {
         waContactsRes, tgUsersRes,
         llmRes, knowledgeRes,
         webAllRes, tgAllRes, waAllRes,
+        webBotRes, tgBotRes, waBotRes,
       ] = await Promise.all([
         supabase.from('channels').select('platform, is_connected, created_at').eq('chatbot_id', chatbot.id),
         supabase.from('social_connections').select('platform, page_name, created_at').eq('chatbot_id', chatbot.id),
@@ -163,6 +173,9 @@ export default function DashboardPage() {
         supabase.from('web_chat_messages').select('user_id, role, created_at').eq('chatbot_id', chatbot.id).order('created_at', { ascending: false }).limit(400),
         supabase.from('telegram_messages').select('telegram_user_id, role, created_at').eq('chatbot_id', chatbot.id).order('created_at', { ascending: false }).limit(400),
         supabase.from('whatsapp_messages').select('phone_number, role, created_at').eq('chatbot_id', chatbot.id).order('created_at', { ascending: false }).limit(400),
+        supabase.from('web_chat_messages').select('content').eq('chatbot_id', chatbot.id).neq('role', 'user').order('created_at', { ascending: false }).limit(300),
+        supabase.from('telegram_messages').select('content').eq('chatbot_id', chatbot.id).neq('role', 'user').order('created_at', { ascending: false }).limit(300),
+        supabase.from('whatsapp_messages').select('content').eq('chatbot_id', chatbot.id).neq('role', 'user').order('created_at', { ascending: false }).limit(300),
       ]);
 
       const map: Record<PlatformKey, boolean> = {
