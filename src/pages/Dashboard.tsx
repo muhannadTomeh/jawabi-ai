@@ -105,6 +105,7 @@ export default function DashboardPage() {
   const [uniqueContacts, setUniqueContacts] = useState(0);
   const [topQuestions, setTopQuestions] = useState<TopQuestion[]>([]);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [dailySeries, setDailySeries] = useState<DailyPoint[]>([]);
   const [channelDist, setChannelDist] = useState<ChannelPoint[]>([]);
   const [metrics, setMetrics] = useState<BotMetrics>({
@@ -272,6 +273,51 @@ export default function DashboardPage() {
         { label: platformLabels.telegram, value: convByChannel.telegram.size, color: 'hsl(199 89% 48%)' },
         { label: platformLabels.whatsapp, value: convByChannel.whatsapp.size, color: 'hsl(142 70% 45%)' },
       ]);
+
+      // ---- Unified activity timeline ---------------------------------------
+      const events: TimelineEvent[] = [];
+      all.forEach((a) => {
+        events.push({
+          kind: 'message',
+          title: 'وصلت رسالة جديدة',
+          detail: a.content,
+          channel: a.channel,
+          created_at: a.created_at,
+        });
+      });
+      kItems.forEach((k) => {
+        const at = k.last_synced_at || k.created_at;
+        if (!at) return;
+        events.push({
+          kind: 'knowledge',
+          title: k.last_synced_at ? 'تمت مزامنة قاعدة المعرفة' : 'تم تحديث قاعدة المعرفة',
+          detail: k.title || undefined,
+          created_at: at,
+        });
+      });
+      ((tgChRes.data || []) as any[]).forEach((c) => {
+        if (!c.is_connected || !c.created_at) return;
+        events.push({
+          kind: 'channel',
+          title: 'تم ربط قناة جديدة',
+          detail: platformLabels[c.platform as PlatformKey] || c.platform,
+          channel: c.platform as PlatformKey,
+          created_at: c.created_at,
+        });
+      });
+      ((socialRes.data || []) as any[]).forEach((c) => {
+        if (!c.created_at) return;
+        events.push({
+          kind: 'channel',
+          title: 'تم ربط قناة جديدة',
+          detail: c.page_name || platformLabels[c.platform as PlatformKey] || c.platform,
+          channel: c.platform as PlatformKey,
+          created_at: c.created_at,
+        });
+      });
+      setTimeline(
+        events.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 12)
+      );
 
       setMetrics({
         model: (llmRes.data as any)?.model || 'google/gemini-2.5-flash',
