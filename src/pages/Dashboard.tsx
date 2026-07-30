@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   MessageSquare, Users, ArrowLeft, Share2, Bot, Settings, RefreshCw,
-  Activity, TrendingUp, Sparkles, HelpCircle,
+  Activity, TrendingUp, Sparkles, HelpCircle, Cpu, GraduationCap, Database,
+  FileText, Zap, Timer, MessagesSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/dashboard/StatCard';
@@ -47,6 +48,24 @@ interface ActivityRow {
   created_at: string;
 }
 
+interface BotMetrics {
+  model: string;
+  lastTrainedAt: string | null;
+  knowledgeChars: number;
+  knowledgeItems: number;
+  documents: number;
+  conversationsToday: number;
+  automationRate: number;
+  avgResponseSec: number | null;
+}
+
+function formatSize(chars: number) {
+  const kb = chars / 1024;
+  if (kb < 1) return `${chars} حرف`;
+  if (kb < 1024) return `${kb.toFixed(1)} كيلوبايت`;
+  return `${(kb / 1024).toFixed(1)} ميجابايت`;
+}
+
 const channelLabel = (c: ActivityRow['channel']) =>
   c === 'web' ? 'الدردشة على الموقع' : platformLabels[c];
 
@@ -73,6 +92,16 @@ export default function DashboardPage() {
   const [uniqueContacts, setUniqueContacts] = useState(0);
   const [topQuestions, setTopQuestions] = useState<TopQuestion[]>([]);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
+  const [metrics, setMetrics] = useState<BotMetrics>({
+    model: '—',
+    lastTrainedAt: null,
+    knowledgeChars: 0,
+    knowledgeItems: 0,
+    documents: 0,
+    conversationsToday: 0,
+    automationRate: 0,
+    avgResponseSec: null,
+  });
 
   // Refresh the "last updated" label without refetching data.
   useEffect(() => {
@@ -90,6 +119,8 @@ export default function DashboardPage() {
         webUserCountRes, tgUserCountRes, waUserCountRes,
         webUserMsgsRes, tgUserMsgsRes, waUserMsgsRes,
         waContactsRes, tgUsersRes,
+        llmRes, knowledgeRes,
+        webAllRes, tgAllRes, waAllRes,
       ] = await Promise.all([
         supabase.from('channels').select('platform, is_connected').eq('chatbot_id', chatbot.id),
         supabase.from('social_connections').select('platform').eq('chatbot_id', chatbot.id),
@@ -104,6 +135,11 @@ export default function DashboardPage() {
         supabase.from('whatsapp_messages').select('content, created_at').eq('chatbot_id', chatbot.id).eq('role', 'user').order('created_at', { ascending: false }).limit(500),
         supabase.from('whatsapp_contacts').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
         supabase.from('telegram_users').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
+        supabase.from('llm_settings').select('model').limit(1).maybeSingle(),
+        supabase.from('knowledge_items').select('type, content, answer, created_at, last_synced_at').eq('chatbot_id', chatbot.id).limit(1000),
+        supabase.from('web_chat_messages').select('user_id, role, created_at').eq('chatbot_id', chatbot.id).order('created_at', { ascending: false }).limit(400),
+        supabase.from('telegram_messages').select('telegram_user_id, role, created_at').eq('chatbot_id', chatbot.id).order('created_at', { ascending: false }).limit(400),
+        supabase.from('whatsapp_messages').select('phone_number, role, created_at').eq('chatbot_id', chatbot.id).order('created_at', { ascending: false }).limit(400),
       ]);
 
       const map: Record<PlatformKey, boolean> = {
@@ -141,6 +177,64 @@ export default function DashboardPage() {
       setActivity(
         all.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 60)
       );
+
+      // ---- Bot overview metrics -------------------------------------------
+      const kItems = (knowledgeRes.data || []) as any[];
+      const knowledgeChars = kItems.reduce(
+        (sum, k) => sum + ((k.content || '').length + (k.answer || '').length),
+        0
+      );
+      const documents = kItems.filter((k) => k.type === 'file' || k.type === 'image').length;
+      const lastTrainedAt = kItems
+        .map((k) => k.last_synced_at || k.created_at)
+        .filter(Boolean)
+        .sort()
+        .pop() || null;
+
+      type Msg = { key: string; role: string; at: number };
+      const msgs: Msg[] = [
+        ...((webAllRes.data || []) as any[]).map((m) => ({ key: `w:${m.user_id}`, role: m.role, at: +new Date(m.created_at) })),
+        ...((tgAllRes.data || []) as any[]).map((m) => ({ key: `t:${m.telegram_user_id}`, role: m.role, at: +new Date(m.created_at) })),
+        ...((waAllRes.data || []) as any[]).map((m) => ({ key: `a:${m.phone_number}`, role: m.role, at: +new Date(m.created_at) })),
+      ].sort((a, b) => a.at - b.at);
+
+      const dayAgo = Date.now() - 86400000;
+      const conversationsToday = new Set(msgs.filter((m) => m.at >= dayAgo).map((m) => m.key)).size;
+
+      // Pair each user message with the next bot reply in the same conversation.
+      const pending = new Map<string, number>();
+      const deltas: number[] = [];
+      let answered = 0;
+      let asked = 0;
+      msgs.forEach((m) => {
+        if (m.role === 'user') {
+          asked += 1;
+          if (!pending.has(m.key)) pending.set(m.key, m.at);
+        } else {
+          const start = pending.get(m.key);
+          if (start !== undefined) {
+            const d = (m.at - start) / 1000;
+            if (d >= 0 && d < 600) deltas.push(d);
+            answered += 1;
+            pending.delete(m.key);
+          }
+        }
+      });
+      const avgResponseSec = deltas.length
+        ? Math.round((deltas.reduce((a, b) => a + b, 0) / deltas.length) * 10) / 10
+        : null;
+      const automationRate = asked > 0 ? Math.min(100, Math.round((answered / asked) * 100)) : 0;
+
+      setMetrics({
+        model: (llmRes.data as any)?.model || 'google/gemini-2.5-flash',
+        lastTrainedAt,
+        knowledgeChars,
+        knowledgeItems: kItems.length,
+        documents,
+        conversationsToday,
+        automationRate,
+        avgResponseSec,
+      });
       setSyncedAt(new Date());
     } catch (e) {
       console.error('Dashboard load error:', e);
@@ -265,21 +359,78 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button variant="outline" asChild>
-                <Link to="/dashboard/settings">
-                  <Settings className="ms-2 h-4 w-4" />
-                  إعدادات البوت
-                </Link>
-              </Button>
+            <div className="flex flex-wrap items-center gap-2">
               <Button asChild>
                 <Link to="/dashboard/test">
                   <MessageSquare className="ms-2 h-4 w-4" />
-                  تجربة الشات
+                  تجربة البوت
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/dashboard/knowledge">
+                  <GraduationCap className="ms-2 h-4 w-4" />
+                  تدريب البوت
+                </Link>
+              </Button>
+              <Button variant="ghost" asChild>
+                <Link to="/dashboard/settings">
+                  <Settings className="ms-2 h-4 w-4" />
+                  الإعدادات
                 </Link>
               </Button>
             </div>
           </div>
+
+          {/* Dense overview grid — the panel now carries real operational data */}
+          <dl className="relative mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3 xl:grid-cols-6">
+            {[
+              {
+                icon: Cpu,
+                label: 'نموذج الذكاء الاصطناعي',
+                value: metrics.model.split('/').pop(),
+              },
+              {
+                icon: GraduationCap,
+                label: 'آخر تدريب',
+                value: metrics.lastTrainedAt ? relativeTime(metrics.lastTrainedAt) : 'لم يتم بعد',
+              },
+              {
+                icon: Database,
+                label: 'حجم قاعدة المعرفة',
+                value: formatSize(metrics.knowledgeChars),
+              },
+              {
+                icon: FileText,
+                label: 'عدد المستندات',
+                value: `${metrics.documents} من ${metrics.knowledgeItems}`,
+              },
+              {
+                icon: MessagesSquare,
+                label: 'محادثات اليوم',
+                value: metrics.conversationsToday.toLocaleString('ar-SA'),
+              },
+              {
+                icon: Zap,
+                label: 'نسبة الأتمتة',
+                value: `${metrics.automationRate}%`,
+              },
+              {
+                icon: Timer,
+                label: 'متوسط زمن الرد',
+                value: metrics.avgResponseSec !== null ? `${metrics.avgResponseSec} ثانية` : '—',
+              },
+            ].map((m) => (
+              <div key={m.label} className="bg-card p-4">
+                <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <m.icon className="h-3.5 w-3.5" />
+                  {m.label}
+                </dt>
+                <dd className="mt-1.5 truncate text-sm font-semibold text-foreground" title={String(m.value)}>
+                  {m.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </section>
       )}
 
