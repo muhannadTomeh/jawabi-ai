@@ -197,6 +197,7 @@ Deno.serve(async (req) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  let releaseLock = async () => {};
 
   try {
     const url = new URL(req.url);
@@ -309,7 +310,7 @@ Deno.serve(async (req) => {
     const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
     const telegramChatActionUrl = `https://api.telegram.org/bot${botToken}/sendChatAction`;
     let lockAcquired = false;
-    const releaseLock = async () => {
+    releaseLock = async () => {
       if (!lockAcquired) return;
       lockAcquired = false;
       try {
@@ -479,7 +480,7 @@ Deno.serve(async (req) => {
 
     // Helper to create a notification
     const createNotification = async (type: string, title: string) => {
-      await supabase.from("notifications").insert({
+      const { error } = await supabase.from("notifications").insert({
         chatbot_id: chatbot.id,
         type,
         title,
@@ -488,6 +489,10 @@ Deno.serve(async (req) => {
         contact_name: firstName || username || null,
         last_message: userMessage,
       });
+      if (error) {
+        console.error("Notification insert failed:", error);
+        throw new Error(`Notification insert failed: ${error.message}`);
+      }
     };
 
     // Keyword-based handover
@@ -545,6 +550,9 @@ Deno.serve(async (req) => {
           const intentData = await intentRes.json();
           const intent = (intentData.choices?.[0]?.message?.content || "").toLowerCase().trim();
           if (intent.includes("sale")) {
+            // Sales opportunities must also appear in the dashboard even when
+            // Telegram owner notifications are configured separately.
+            await createNotification("sale", "فرصة بيع جديدة");
             // Send order summary to owner on Telegram with an inline confirm button.
             const ownerChatId = (chatbot as any).owner_telegram_chat_id;
             if (ownerChatId) {
