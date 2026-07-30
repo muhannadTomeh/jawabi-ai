@@ -570,22 +570,44 @@ export default function DashboardPage() {
             <Activity className="h-4 w-4 text-primary" />
             <h3 className="font-semibold text-foreground">آخر النشاطات</h3>
           </div>
-          {activity.length === 0 ? (
-            <p className="text-sm text-muted-foreground">لا توجد نشاطات بعد.</p>
+          {timeline.length === 0 ? (
+            <div className="flex h-56 flex-col items-center justify-center gap-2 text-center">
+              <Activity className="h-8 w-8 text-muted-foreground/40" />
+              <p className="text-sm text-muted-foreground">لا توجد نشاطات بعد.</p>
+              <p className="text-xs text-muted-foreground/70">
+                ستظهر هنا الرسائل الواردة وتحديثات قاعدة المعرفة وربط القنوات.
+              </p>
+            </div>
           ) : (
-            <ul className="max-h-64 space-y-4 overflow-y-auto pe-1">
-              {activity.slice(0, 8).map((a, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <ChannelIcon channel={a.channel} withBg />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-foreground">{a.content}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {channelLabel(a.channel)} • {relativeTime(a.created_at)}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <ol className="relative max-h-[19rem] space-y-5 overflow-y-auto pe-1 ps-1">
+              <span
+                className="pointer-events-none absolute bottom-2 end-[13px] top-2 w-px bg-border"
+                aria-hidden
+              />
+              {timeline.map((e, i) => {
+                const style = timelineStyles[e.kind];
+                const Icon = style.icon;
+                return (
+                  <li key={i} className="relative flex gap-3">
+                    <span
+                      className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ring-4 ring-card ${style.bg}`}
+                    >
+                      <Icon className={`h-3.5 w-3.5 ${style.fg}`} />
+                    </span>
+                    <div className="min-w-0 flex-1 pt-0.5">
+                      <p className="text-xs text-muted-foreground">{relativeTime(e.created_at)}</p>
+                      <p className="mt-0.5 text-sm font-medium text-foreground">{e.title}</p>
+                      {e.detail && (
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground" title={e.detail}>
+                          {e.channel ? `${channelLabel(e.channel)} • ` : ''}
+                          {e.detail}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
           )}
         </div>
       </section>
