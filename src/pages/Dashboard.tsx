@@ -51,6 +51,16 @@ interface ActivityRow {
   created_at: string;
 }
 
+type TimelineKind = 'message' | 'knowledge' | 'channel' | 'notification';
+
+interface TimelineEvent {
+  kind: TimelineKind;
+  title: string;
+  detail?: string;
+  channel?: PlatformKey | 'web';
+  created_at: string;
+}
+
 interface BotMetrics {
   model: string;
   lastTrainedAt: string | null;
