@@ -18,6 +18,7 @@ import {
   ChartCard, MessagesTrendChart, ActiveUsersChart, ChannelsChart, ResponseRateChart,
   type DailyPoint, type ChannelPoint,
 } from '@/components/dashboard/DashboardCharts';
+import { AIInsights, type AIStats } from '@/components/dashboard/AIInsights';
 
 type PlatformKey = 'telegram' | 'facebook' | 'instagram' | 'whatsapp';
 
@@ -125,6 +126,14 @@ export default function DashboardPage() {
     automationRate: 0,
     avgResponseSec: null,
   });
+  const [aiStats, setAiStats] = useState<AIStats>({
+    automationRate: 0,
+    accuracy: 0,
+    confidence: 0,
+    knowledgeQuality: 0,
+    lastTrainedAt: null,
+    suggestions: [],
+  });
 
   // Refresh the "last updated" label without refetching data.
   useEffect(() => {
@@ -144,6 +153,7 @@ export default function DashboardPage() {
         waContactsRes, tgUsersRes,
         llmRes, knowledgeRes,
         webAllRes, tgAllRes, waAllRes,
+        webBotRes, tgBotRes, waBotRes,
       ] = await Promise.all([
         supabase.from('channels').select('platform, is_connected, created_at').eq('chatbot_id', chatbot.id),
         supabase.from('social_connections').select('platform, page_name, created_at').eq('chatbot_id', chatbot.id),
@@ -163,6 +173,9 @@ export default function DashboardPage() {
         supabase.from('web_chat_messages').select('user_id, role, created_at').eq('chatbot_id', chatbot.id).order('created_at', { ascending: false }).limit(400),
         supabase.from('telegram_messages').select('telegram_user_id, role, created_at').eq('chatbot_id', chatbot.id).order('created_at', { ascending: false }).limit(400),
         supabase.from('whatsapp_messages').select('phone_number, role, created_at').eq('chatbot_id', chatbot.id).order('created_at', { ascending: false }).limit(400),
+        supabase.from('web_chat_messages').select('content').eq('chatbot_id', chatbot.id).neq('role', 'user').order('created_at', { ascending: false }).limit(300),
+        supabase.from('telegram_messages').select('content').eq('chatbot_id', chatbot.id).neq('role', 'user').order('created_at', { ascending: false }).limit(300),
+        supabase.from('whatsapp_messages').select('content').eq('chatbot_id', chatbot.id).neq('role', 'user').order('created_at', { ascending: false }).limit(300),
       ]);
 
       const map: Record<PlatformKey, boolean> = {
@@ -335,6 +348,52 @@ export default function DashboardPage() {
         conversationsToday,
         automationRate,
         avgResponseSec,
+      });
+
+      // ---- AI experience metrics -------------------------------------------
+      const botReplies = [
+        ...((webBotRes.data || []) as any[]),
+        ...((tgBotRes.data || []) as any[]),
+        ...((waBotRes.data || []) as any[]),
+      ].map((m) => (m.content || '').trim()).filter(Boolean);
+      const fallbackSample = (chatbot.fallback_message || '').trim().slice(0, 25);
+      const fallbackCount = fallbackSample
+        ? botReplies.filter((c) => c.includes(fallbackSample)).length
+        : 0;
+      const accuracy = botReplies.length
+        ? Math.max(0, Math.round(((botReplies.length - fallbackCount) / botReplies.length) * 100))
+        : 0;
+
+      const faqCount = kItems.filter((k) => k.type === 'faq').length;
+      const knowledgeQuality = Math.min(
+        100,
+        Math.round(
+          Math.min(25, kItems.length * 5) +
+            Math.min(30, (knowledgeChars / 3000) * 30) +
+            Math.min(25, faqCount * 8) +
+            (documents > 0 ? 10 : 0) +
+            (lastTrainedAt && Date.now() - +new Date(lastTrainedAt) < 30 * 86400000 ? 10 : 0)
+        )
+      );
+      const confidence = Math.round(
+        accuracy * 0.5 + knowledgeQuality * 0.3 + automationRate * 0.2
+      );
+
+      const suggestions: string[] = [];
+      if (kItems.length < 5) suggestions.push('أضف المزيد من مصادر المعرفة (نصوص، ملفات أو روابط) — لديك عدد قليل من العناصر.');
+      if (faqCount < 3) suggestions.push('أضف أسئلة شائعة (FAQ) تغطي أكثر الاستفسارات تكرارًا لدى عملائك.');
+      if (knowledgeChars < 3000) suggestions.push('محتوى المعرفة قصير نسبيًا؛ وسّع تفاصيل المنتجات والأسعار وسياسات العمل.');
+      if (documents === 0) suggestions.push('ارفع ملفًا أو صورة (كتالوج، قائمة أسعار) ليستخرج البوت الإجابات منها.');
+      if (fallbackCount > 0) suggestions.push(`تم استخدام رسالة التعذّر ${fallbackCount} مرة — راجع الأسئلة غير المُجابة وأضف إجاباتها.`);
+      if (!lastTrainedAt || Date.now() - +new Date(lastTrainedAt) > 30 * 86400000) suggestions.push('لم يتم تحديث قاعدة المعرفة منذ فترة؛ حدّثها لتبقى الإجابات دقيقة.');
+
+      setAiStats({
+        automationRate,
+        accuracy,
+        confidence,
+        knowledgeQuality,
+        lastTrainedAt,
+        suggestions: suggestions.slice(0, 4),
       });
       setSyncedAt(new Date());
     } catch (e) {
@@ -554,7 +613,15 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* 4 — Charts + 5 — Recent activity */}
+      {/* 4 — AI experience */}
+      <AIInsights
+        stats={aiStats}
+        model={metrics.model}
+        knowledgeLabel={formatSize(metrics.knowledgeChars)}
+        relativeTime={relativeTime}
+      />
+
+      {/* 5 — Charts + Recent activity */}
       <section className="grid gap-4 lg:grid-cols-3">
         <ChartCard
           className="lg:col-span-2"
