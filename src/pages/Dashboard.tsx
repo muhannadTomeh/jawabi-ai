@@ -359,21 +359,78 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button variant="outline" asChild>
-                <Link to="/dashboard/settings">
-                  <Settings className="ms-2 h-4 w-4" />
-                  إعدادات البوت
-                </Link>
-              </Button>
+            <div className="flex flex-wrap items-center gap-2">
               <Button asChild>
                 <Link to="/dashboard/test">
                   <MessageSquare className="ms-2 h-4 w-4" />
-                  تجربة الشات
+                  تجربة البوت
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link to="/dashboard/knowledge">
+                  <GraduationCap className="ms-2 h-4 w-4" />
+                  تدريب البوت
+                </Link>
+              </Button>
+              <Button variant="ghost" asChild>
+                <Link to="/dashboard/settings">
+                  <Settings className="ms-2 h-4 w-4" />
+                  الإعدادات
                 </Link>
               </Button>
             </div>
           </div>
+
+          {/* Dense overview grid — the panel now carries real operational data */}
+          <dl className="relative mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3 xl:grid-cols-6">
+            {[
+              {
+                icon: Cpu,
+                label: 'نموذج الذكاء الاصطناعي',
+                value: metrics.model.split('/').pop(),
+              },
+              {
+                icon: GraduationCap,
+                label: 'آخر تدريب',
+                value: metrics.lastTrainedAt ? relativeTime(metrics.lastTrainedAt) : 'لم يتم بعد',
+              },
+              {
+                icon: Database,
+                label: 'حجم قاعدة المعرفة',
+                value: formatSize(metrics.knowledgeChars),
+              },
+              {
+                icon: FileText,
+                label: 'عدد المستندات',
+                value: `${metrics.documents} من ${metrics.knowledgeItems}`,
+              },
+              {
+                icon: MessagesSquare,
+                label: 'محادثات اليوم',
+                value: metrics.conversationsToday.toLocaleString('ar-SA'),
+              },
+              {
+                icon: Zap,
+                label: 'نسبة الأتمتة',
+                value: `${metrics.automationRate}%`,
+              },
+              {
+                icon: Timer,
+                label: 'متوسط زمن الرد',
+                value: metrics.avgResponseSec !== null ? `${metrics.avgResponseSec} ثانية` : '—',
+              },
+            ].map((m) => (
+              <div key={m.label} className="bg-card p-4">
+                <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <m.icon className="h-3.5 w-3.5" />
+                  {m.label}
+                </dt>
+                <dd className="mt-1.5 truncate text-sm font-semibold text-foreground" title={String(m.value)}>
+                  {m.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </section>
       )}
 
