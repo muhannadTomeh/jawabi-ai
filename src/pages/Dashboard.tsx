@@ -613,9 +613,16 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      {/* 4 — Charts + 5 — Recent activity */}
-      <section className="grid gap-4 lg:grid-cols-3">
+      {/* 4 — AI experience */}
+      <AIInsights
+        stats={aiStats}
+        model={metrics.model}
+        knowledgeLabel={formatSize(metrics.knowledgeChars)}
+        relativeTime={relativeTime}
+      />
 
+      {/* 5 — Charts + Recent activity */}
+      <section className="grid gap-4 lg:grid-cols-3">
         <ChartCard
           className="lg:col-span-2"
           title="نشاط الرسائل — آخر ٧ أيام"
