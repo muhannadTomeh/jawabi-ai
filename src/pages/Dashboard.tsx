@@ -51,6 +51,16 @@ interface ActivityRow {
   created_at: string;
 }
 
+type TimelineKind = 'message' | 'knowledge' | 'channel' | 'notification';
+
+interface TimelineEvent {
+  kind: TimelineKind;
+  title: string;
+  detail?: string;
+  channel?: PlatformKey | 'web';
+  created_at: string;
+}
+
 interface BotMetrics {
   model: string;
   lastTrainedAt: string | null;
@@ -71,6 +81,13 @@ function formatSize(chars: number) {
 
 const channelLabel = (c: ActivityRow['channel']) =>
   c === 'web' ? 'الدردشة على الموقع' : platformLabels[c];
+
+const timelineStyles: Record<TimelineKind, { icon: typeof MessageSquare; bg: string; fg: string }> = {
+  message: { icon: MessageSquare, bg: 'bg-primary/10', fg: 'text-primary' },
+  knowledge: { icon: GraduationCap, bg: 'bg-info/10', fg: 'text-info' },
+  channel: { icon: Share2, bg: 'bg-success/10', fg: 'text-success' },
+  notification: { icon: Sparkles, bg: 'bg-warning/10', fg: 'text-warning' },
+};
 
 function relativeTime(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();
@@ -95,6 +112,7 @@ export default function DashboardPage() {
   const [uniqueContacts, setUniqueContacts] = useState(0);
   const [topQuestions, setTopQuestions] = useState<TopQuestion[]>([]);
   const [activity, setActivity] = useState<ActivityRow[]>([]);
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [dailySeries, setDailySeries] = useState<DailyPoint[]>([]);
   const [channelDist, setChannelDist] = useState<ChannelPoint[]>([]);
   const [metrics, setMetrics] = useState<BotMetrics>({
@@ -127,8 +145,8 @@ export default function DashboardPage() {
         llmRes, knowledgeRes,
         webAllRes, tgAllRes, waAllRes,
       ] = await Promise.all([
-        supabase.from('channels').select('platform, is_connected').eq('chatbot_id', chatbot.id),
-        supabase.from('social_connections').select('platform').eq('chatbot_id', chatbot.id),
+        supabase.from('channels').select('platform, is_connected, created_at').eq('chatbot_id', chatbot.id),
+        supabase.from('social_connections').select('platform, page_name, created_at').eq('chatbot_id', chatbot.id),
         supabase.from('web_chat_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
         supabase.from('telegram_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
         supabase.from('whatsapp_messages').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
@@ -141,7 +159,7 @@ export default function DashboardPage() {
         supabase.from('whatsapp_contacts').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
         supabase.from('telegram_users').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
         supabase.from('llm_settings').select('model').limit(1).maybeSingle(),
-        supabase.from('knowledge_items').select('type, content, answer, created_at, last_synced_at').eq('chatbot_id', chatbot.id).limit(1000),
+        supabase.from('knowledge_items').select('type, title, content, answer, created_at, last_synced_at').eq('chatbot_id', chatbot.id).limit(1000),
         supabase.from('web_chat_messages').select('user_id, role, created_at').eq('chatbot_id', chatbot.id).order('created_at', { ascending: false }).limit(400),
         supabase.from('telegram_messages').select('telegram_user_id, role, created_at').eq('chatbot_id', chatbot.id).order('created_at', { ascending: false }).limit(400),
         supabase.from('whatsapp_messages').select('phone_number, role, created_at').eq('chatbot_id', chatbot.id).order('created_at', { ascending: false }).limit(400),
@@ -262,6 +280,51 @@ export default function DashboardPage() {
         { label: platformLabels.telegram, value: convByChannel.telegram.size, color: 'hsl(199 89% 48%)' },
         { label: platformLabels.whatsapp, value: convByChannel.whatsapp.size, color: 'hsl(142 70% 45%)' },
       ]);
+
+      // ---- Unified activity timeline ---------------------------------------
+      const events: TimelineEvent[] = [];
+      all.forEach((a) => {
+        events.push({
+          kind: 'message',
+          title: 'وصلت رسالة جديدة',
+          detail: a.content,
+          channel: a.channel,
+          created_at: a.created_at,
+        });
+      });
+      kItems.forEach((k) => {
+        const at = k.last_synced_at || k.created_at;
+        if (!at) return;
+        events.push({
+          kind: 'knowledge',
+          title: k.last_synced_at ? 'تمت مزامنة قاعدة المعرفة' : 'تم تحديث قاعدة المعرفة',
+          detail: k.title || undefined,
+          created_at: at,
+        });
+      });
+      ((tgChRes.data || []) as any[]).forEach((c) => {
+        if (!c.is_connected || !c.created_at) return;
+        events.push({
+          kind: 'channel',
+          title: 'تم ربط قناة جديدة',
+          detail: platformLabels[c.platform as PlatformKey] || c.platform,
+          channel: c.platform as PlatformKey,
+          created_at: c.created_at,
+        });
+      });
+      ((socialRes.data || []) as any[]).forEach((c) => {
+        if (!c.created_at) return;
+        events.push({
+          kind: 'channel',
+          title: 'تم ربط قناة جديدة',
+          detail: c.page_name || platformLabels[c.platform as PlatformKey] || c.platform,
+          channel: c.platform as PlatformKey,
+          created_at: c.created_at,
+        });
+      });
+      setTimeline(
+        events.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at)).slice(0, 12)
+      );
 
       setMetrics({
         model: (llmRes.data as any)?.model || 'google/gemini-2.5-flash',
@@ -514,22 +577,44 @@ export default function DashboardPage() {
             <Activity className="h-4 w-4 text-primary" />
             <h3 className="font-semibold text-foreground">آخر النشاطات</h3>
           </div>
-          {activity.length === 0 ? (
-            <p className="text-sm text-muted-foreground">لا توجد نشاطات بعد.</p>
+          {timeline.length === 0 ? (
+            <div className="flex h-56 flex-col items-center justify-center gap-2 text-center">
+              <Activity className="h-8 w-8 text-muted-foreground/40" />
+              <p className="text-sm text-muted-foreground">لا توجد نشاطات بعد.</p>
+              <p className="text-xs text-muted-foreground/70">
+                ستظهر هنا الرسائل الواردة وتحديثات قاعدة المعرفة وربط القنوات.
+              </p>
+            </div>
           ) : (
-            <ul className="max-h-64 space-y-4 overflow-y-auto pe-1">
-              {activity.slice(0, 8).map((a, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <ChannelIcon channel={a.channel} withBg />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-foreground">{a.content}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {channelLabel(a.channel)} • {relativeTime(a.created_at)}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <ol className="relative max-h-[19rem] space-y-5 overflow-y-auto pe-1 ps-1">
+              <span
+                className="pointer-events-none absolute bottom-2 end-[13px] top-2 w-px bg-border"
+                aria-hidden
+              />
+              {timeline.map((e, i) => {
+                const style = timelineStyles[e.kind];
+                const Icon = style.icon;
+                return (
+                  <li key={i} className="relative flex gap-3">
+                    <span
+                      className={`relative z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full ring-4 ring-card ${style.bg}`}
+                    >
+                      <Icon className={`h-3.5 w-3.5 ${style.fg}`} />
+                    </span>
+                    <div className="min-w-0 flex-1 pt-0.5">
+                      <p className="text-xs text-muted-foreground">{relativeTime(e.created_at)}</p>
+                      <p className="mt-0.5 text-sm font-medium text-foreground">{e.title}</p>
+                      {e.detail && (
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground" title={e.detail}>
+                          {e.channel ? `${channelLabel(e.channel)} • ` : ''}
+                          {e.detail}
+                        </p>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
           )}
         </div>
       </section>
