@@ -141,10 +141,10 @@ export default function Onboarding() {
     setTrainingProgress(25);
     try {
       const items: any[] = [];
-      if (knowledgeText.trim()) items.push({ chatbot_id: chatbot.id, source_type: 'text', title: 'معلومات عامة', content: knowledgeText.trim(), status: 'ready' });
+      if (knowledgeText.trim()) items.push({ chatbot_id: chatbot.id, type: 'text', title: 'معلومات عامة', content: knowledgeText.trim() });
       setTrainingProgress(50);
-      if (websiteUrl.trim()) items.push({ chatbot_id: chatbot.id, source_type: 'url', title: websiteUrl.trim(), content: websiteUrl.trim(), status: 'pending' });
-      if (socialLink.trim()) items.push({ chatbot_id: chatbot.id, source_type: 'social', title: socialLink.trim(), content: socialLink.trim(), status: 'pending' });
+      if (websiteUrl.trim()) items.push({ chatbot_id: chatbot.id, type: 'url', title: websiteUrl.trim(), content: websiteUrl.trim(), file_url: websiteUrl.trim() });
+      if (socialLink.trim()) items.push({ chatbot_id: chatbot.id, type: 'social', title: socialLink.trim(), content: socialLink.trim(), file_url: socialLink.trim() });
       setTrainingProgress(75);
       if (items.length) {
         const { error } = await supabase.from('knowledge_items').insert(items);
