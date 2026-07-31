@@ -190,26 +190,26 @@ export default function Landing() {
             <p className="mt-4 text-muted-foreground">شاهد ما الذي يتغيّر عندما ينضم جوابي إلى فريقك.</p>
           </div>
           <Card className="mx-auto max-w-4xl overflow-hidden p-0">
-            <div className="grid grid-cols-3 border-b border-border bg-card text-center text-sm font-semibold">
-              <div className="p-4 text-muted-foreground">المقارنة</div>
-              <div className="p-4 text-destructive">بدون جوابي</div>
-              <div className="p-4 text-primary">مع جوابي</div>
+            <div className="grid grid-cols-3 border-b border-border bg-card text-center text-xs font-semibold sm:text-sm">
+              <div className="p-2.5 text-muted-foreground sm:p-4">المقارنة</div>
+              <div className="p-2.5 text-destructive sm:p-4">بدون جوابي</div>
+              <div className="p-2.5 text-primary sm:p-4">مع جوابي</div>
             </div>
             {comparison.map((row, i) => (
               <div
                 key={row.label}
                 className={cn(
-                  "grid grid-cols-3 items-center border-b border-border text-center text-sm last:border-0",
+                  "grid grid-cols-3 items-center border-b border-border text-center text-xs last:border-0 sm:text-sm",
                   i % 2 === 1 && "bg-secondary/30"
                 )}
               >
-                <div className="p-4 font-medium">{row.label}</div>
-                <div className="flex items-center justify-center gap-2 p-4 text-muted-foreground">
-                  <XCircle className="h-4 w-4 text-destructive" />
+                <div className="p-2.5 font-medium sm:p-4">{row.label}</div>
+                <div className="flex flex-col items-center justify-center gap-1 p-2.5 text-muted-foreground sm:flex-row sm:gap-2 sm:p-4">
+                  <XCircle className="h-4 w-4 shrink-0 text-destructive" />
                   <span>{row.without}</span>
                 </div>
-                <div className="flex items-center justify-center gap-2 p-4 text-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                <div className="flex flex-col items-center justify-center gap-1 p-2.5 text-foreground sm:flex-row sm:gap-2 sm:p-4">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
                   <span>{row.with}</span>
                 </div>
               </div>
