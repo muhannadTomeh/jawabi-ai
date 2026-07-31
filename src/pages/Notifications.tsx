@@ -128,7 +128,7 @@ export default function NotificationsPage() {
         <ListSkeleton rows={4} />
       ) : filtered.length === 0 ? (
         <Card className="flex flex-col items-center gap-3 border-dashed p-14 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Bell className="h-7 w-7" />
           </div>
           <p className="font-medium">كل شيء تحت السيطرة</p>
@@ -143,7 +143,7 @@ export default function NotificationsPage() {
             return (
               <Card
                 key={n.id}
-                className={`group relative overflow-hidden rounded-2xl border-border/60 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
+                className={`group relative overflow-hidden rounded-lg border-border/60 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
                   !n.is_read ? "bg-primary/[0.04] shadow-sm" : "bg-card"
                 }`}
               >
@@ -231,7 +231,7 @@ export default function NotificationsPage() {
       )}
 
       <Dialog open={!!replyTarget} onOpenChange={(o) => !o && setReplyTarget(null)}>
-        <DialogContent className="rounded-2xl" dir="rtl">
+        <DialogContent className="rounded-lg" dir="rtl">
           <DialogHeader>
             <DialogTitle className="text-right">الرد عبر تلجرام</DialogTitle>
           </DialogHeader>

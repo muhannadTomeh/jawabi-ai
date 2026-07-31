@@ -144,7 +144,7 @@ export default function Landing() {
               className="group flex flex-col items-center gap-3 p-6 transition-all hover:-translate-y-1 hover:shadow-lg"
             >
               <div
-                className="flex h-14 w-14 items-center justify-center rounded-2xl transition-transform group-hover:scale-110"
+                className="flex h-14 w-14 items-center justify-center rounded-lg transition-transform group-hover:scale-110"
                 style={{ backgroundColor: `${c.color}15` }}
               >
                 <c.icon size={30} style={{ color: c.color }} />
@@ -255,22 +255,22 @@ export default function Landing() {
             </div>
             <div className="space-y-3 p-6">
               <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-secondary px-4 py-2 text-sm">
+                <div className="max-w-[80%] rounded-lg rounded-tr-sm bg-secondary px-4 py-2 text-sm">
                   السلام عليكم، هل المنتج متوفر؟
                 </div>
               </div>
               <div className="flex justify-end">
-                <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-primary px-4 py-2 text-sm text-primary-foreground">
+                <div className="max-w-[80%] rounded-lg rounded-tl-sm bg-primary px-4 py-2 text-sm text-primary-foreground">
                   وعليكم السلام 👋 نعم متوفر بجميع المقاسات والألوان. تحب أرسلك الكتالوج؟
                 </div>
               </div>
               <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-secondary px-4 py-2 text-sm">
+                <div className="max-w-[80%] rounded-lg rounded-tr-sm bg-secondary px-4 py-2 text-sm">
                   أكيد، وكم سعر التوصيل؟
                 </div>
               </div>
               <div className="flex justify-end">
-                <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-primary px-4 py-2 text-sm text-primary-foreground">
+                <div className="max-w-[80%] rounded-lg rounded-tl-sm bg-primary px-4 py-2 text-sm text-primary-foreground">
                   التوصيل مجاني للطلبات فوق 200 شيكل 🚚
                 </div>
               </div>
@@ -282,7 +282,7 @@ export default function Landing() {
       {/* Final CTA */}
       <section id="cta" className="container mx-auto px-4 pb-24">
         <div
-          className="relative overflow-hidden rounded-2xl px-8 py-16 text-center text-primary-foreground"
+          className="relative overflow-hidden rounded-lg px-8 py-16 text-center text-primary-foreground"
           style={{ background: "var(--gradient-primary)" }}
         >
           <Globe className="absolute -bottom-10 -left-10 h-48 w-48 opacity-10" />

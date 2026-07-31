@@ -59,7 +59,7 @@ export function AIInsights({
   relativeTime: (iso: string) => string;
 }) {
   return (
-    <section className="relative overflow-hidden rounded-2xl border border-primary/20 bg-card p-4 shadow-sm sm:p-6">
+    <section className="relative overflow-hidden rounded-lg border border-primary/20 bg-card p-4 shadow-sm sm:p-6">
       <div
         className="pointer-events-none absolute -top-24 left-0 h-48 w-48 rounded-full bg-primary/10 blur-3xl"
         aria-hidden

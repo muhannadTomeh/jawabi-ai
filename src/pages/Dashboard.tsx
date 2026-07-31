@@ -416,7 +416,7 @@ export default function DashboardPage() {
     return (
       <div className="space-y-4 animate-fade-in">
         <PageHeader title="لوحة التحكم" description="نظرة شاملة على أداء الشات بوت عبر جميع القنوات" />
-        <div className="rounded-2xl border border-border bg-card p-6">
+        <div className="rounded-lg border border-border bg-card p-6">
           <div className="flex items-center gap-4">
             <Skeleton className="h-14 w-14 rounded-xl" />
             <div className="space-y-2 flex-1">
@@ -472,7 +472,7 @@ export default function DashboardPage() {
 
       {/* 2 — Main bot overview (primary focal point) */}
       {chatbot && (
-        <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6">
+        <section className="relative overflow-hidden rounded-lg border border-border bg-card p-4 shadow-sm sm:p-6">
           <div
             className="pointer-events-none absolute -left-24 -top-24 h-64 w-64 rounded-full opacity-20 blur-3xl"
             style={{ background: 'var(--gradient-primary)' }}
@@ -480,7 +480,7 @@ export default function DashboardPage() {
           />
           <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-5">
-              <div className="rounded-2xl p-4 shadow-sm" style={{ background: 'var(--gradient-primary)' }}>
+              <div className="rounded-lg p-4 shadow-sm" style={{ background: 'var(--gradient-primary)' }}>
                 <Bot className="h-8 w-8 text-primary-foreground" />
               </div>
               <div className="min-w-0">
@@ -639,7 +639,7 @@ export default function DashboardPage() {
           <MessagesTrendChart data={dailySeries} />
         </ChartCard>
 
-        <div className="card-elevated rounded-2xl p-4 sm:p-6">
+        <div className="card-elevated rounded-lg p-4 sm:p-6">
           <div className="mb-4 flex items-center gap-2">
             <Activity className="h-4 w-4 text-primary" />
             <h3 className="text-section-title">آخر النشاطات</h3>
@@ -701,7 +701,7 @@ export default function DashboardPage() {
 
       {/* 6 — Connected channels + 7 — Popular questions */}
       <section className="grid gap-4 md:grid-cols-2">
-        <div className="card-elevated rounded-2xl p-4 sm:p-6">
+        <div className="card-elevated rounded-lg p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-section-title">القنوات المتصلة</h3>
             <Button variant="ghost" size="sm" asChild>
@@ -727,7 +727,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="card-elevated rounded-2xl p-4 sm:p-6">
+        <div className="card-elevated rounded-lg p-4 sm:p-6">
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-section-title">الأسئلة الأكثر شيوعاً</h3>
             <Button variant="ghost" size="sm" asChild>

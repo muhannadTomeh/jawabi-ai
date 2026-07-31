@@ -51,7 +51,7 @@ export default function ResetPassword() {
 
   return (
     <div dir="rtl" className="flex min-h-screen items-center justify-center bg-background p-6">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <div className="w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-sm">
         <div className="mb-6 text-right">
           <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Lock className="h-5 w-5" />

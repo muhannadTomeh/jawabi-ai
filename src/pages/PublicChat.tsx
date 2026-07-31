@@ -126,7 +126,7 @@ export default function PublicChat() {
           <div key={i} className={cn('flex', m.role === 'user' ? 'justify-start' : 'justify-end')}>
             <div
               className={cn(
-                'max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm leading-relaxed shadow-sm',
+                'max-w-[85%] whitespace-pre-wrap rounded-lg px-4 py-2 text-sm leading-relaxed shadow-sm',
                 m.role === 'user'
                   ? 'rounded-tr-sm border border-border bg-card text-foreground'
                   : 'rounded-tl-sm bg-primary text-primary-foreground'
@@ -138,7 +138,7 @@ export default function PublicChat() {
         ))}
         {sending && (
           <div className="flex justify-end">
-            <div className="rounded-2xl rounded-tl-sm bg-primary px-4 py-2 text-primary-foreground">
+            <div className="rounded-lg rounded-tl-sm bg-primary px-4 py-2 text-primary-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
             </div>
           </div>
