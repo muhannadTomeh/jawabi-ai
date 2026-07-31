@@ -254,6 +254,7 @@ export function ChatbotsList() {
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </CardContent>
     </Card>
