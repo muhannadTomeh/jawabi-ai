@@ -260,7 +260,7 @@ export default function CustomersPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Select value={c.tag} onValueChange={(v) => updateTag(c.id, v as Tag)}>
-                    <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-full sm:w-[130px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {(['new', 'prospect', 'regular', 'vip', 'blocked'] as Tag[]).map((t) => (
                         <SelectItem key={t} value={t}>{tagLabels[t]}</SelectItem>
