@@ -73,17 +73,17 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full w-full flex-col bg-sidebar">
         {/* Logo */}
-        <div className="flex h-16 items-center border-b border-sidebar-border px-6">
+        <div className="flex h-14 items-center border-b border-sidebar-border px-4">
           <Link to="/dashboard" className="flex items-center gap-2">
-            <img src={logo.url} alt="جوابي" width={32} height={32} className="h-8 w-8" />
-            <span className="text-xl font-semibold tracking-tight text-foreground">
+            <img src={logo.url} alt="جوابي" width={28} height={28} className="h-7 w-7" />
+            <span className="text-lg font-semibold tracking-tight text-foreground">
               جوابي
             </span>
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-2 py-3">
+        <nav className="flex-1 overflow-y-auto px-3 py-2">
           {navGroups.map((group) => (
             <div key={group.label} className="space-y-0.5">
               <p className="nav-group-label">{group.label}</p>
@@ -168,7 +168,7 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
 
 export function AppSidebar() {
   return (
-    <aside className="fixed right-0 top-0 z-40 hidden h-screen w-64 border-l border-sidebar-border bg-sidebar lg:block">
+    <aside className="fixed right-0 top-0 z-40 hidden h-screen w-56 border-l border-sidebar-border bg-sidebar lg:block">
       <SidebarInner />
     </aside>
   );

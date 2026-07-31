@@ -8,8 +8,8 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 220 25% 10%;
+    --background: 240 20% 98%;
+    --foreground: 220 39% 11%;
 
     --card: 0 0% 100%;
     --card-foreground: 220 25% 10%;
@@ -42,11 +42,11 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
+    --border: 220 14% 93%;
     --input: 220 13% 91%;
     --ring: 230 65% 52%;
 
-    --radius: 0.625rem;
+    --radius: 0.5rem;
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 220 25% 10%;
@@ -54,17 +54,17 @@
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 230 65% 96%;
     --sidebar-accent-foreground: 230 65% 52%;
-    --sidebar-border: 220 13% 91%;
+    --sidebar-border: 220 14% 93%;
     --sidebar-ring: 230 65% 52%;
 
     --gradient-primary: linear-gradient(135deg, hsl(230, 65%, 52%) 0%, hsl(230, 65%, 65%) 100%);
     --gradient-soft: linear-gradient(180deg, hsl(0, 0%, 100%) 0%, hsl(210, 20%, 98%) 100%);
 
     /* Elevation — soft, Linear/Stripe-style layered shadows */
-    --shadow-xs: 0 1px 2px 0 hsl(220 25% 10% / 0.04);
-    --shadow-sm: 0 1px 3px 0 hsl(220 25% 10% / 0.06), 0 1px 2px -1px hsl(220 25% 10% / 0.04);
-    --shadow-md: 0 4px 12px -2px hsl(220 25% 10% / 0.08), 0 2px 4px -2px hsl(220 25% 10% / 0.04);
-    --shadow-lg: 0 12px 28px -6px hsl(220 25% 10% / 0.12), 0 4px 8px -4px hsl(220 25% 10% / 0.06);
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 2px 8px -2px rgb(0 0 0 / 0.07), 0 1px 3px rgb(0 0 0 / 0.04);
+    --shadow-lg: 0 8px 24px -6px rgb(0 0 0 / 0.1), 0 2px 6px -2px rgb(0 0 0 / 0.05);
   }
 
   .dark {
@@ -199,7 +199,7 @@
   }
 
   .text-metric {
-    @apply text-[28px] font-bold leading-none tracking-tight text-foreground tabular-nums sm:text-3xl;
+    @apply text-[30px] font-semibold leading-none tracking-tight text-foreground tabular-nums sm:text-[36px];
   }
 
   .text-eyebrow {
@@ -208,7 +208,21 @@
 
   /* Card elevation */
   .card-elevated {
-    @apply bg-card rounded-lg border border-border shadow-sm transition-all duration-200 ease-out hover:shadow-md hover:border-primary/20;
+    @apply bg-card rounded-lg border border-border/70 shadow-sm transition-all duration-200 ease-out hover:shadow-md;
+  }
+
+  /* Flat surface panel — no hover lift, used for tables and forms */
+  .surface-panel {
+    @apply bg-card rounded-lg border border-border/70 shadow-sm;
+  }
+
+  /* Minimalist empty state */
+  .empty-state {
+    @apply flex flex-col items-center justify-center gap-2 px-6 py-16 text-center;
+  }
+
+  .empty-state-icon {
+    @apply flex h-11 w-11 items-center justify-center rounded-lg border border-border/70 bg-muted/40 text-muted-foreground;
   }
 
   /* Interactive lift for clickable cards */
@@ -229,37 +243,33 @@
 
   /* Stat card styling */
   .stat-card {
-    @apply bg-card rounded-xl border border-border p-6 transition-all duration-200 hover:shadow-md hover:border-primary/20;
+    @apply bg-card rounded-lg border border-border/70 p-6 shadow-sm transition-all duration-200 hover:shadow-md;
   }
 
   /* Nav item styling */
   .nav-item {
-    @apply relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ease-out;
+    @apply relative flex items-center gap-2.5 px-2.5 py-[7px] rounded-md text-[13px] font-medium transition-colors duration-150 ease-out;
   }
 
   .nav-item-active {
-    @apply bg-sidebar-accent text-primary font-semibold;
+    @apply bg-foreground/[0.06] text-foreground font-semibold;
   }
 
   .nav-item-inactive {
-    @apply text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-foreground hover:-translate-x-0.5;
+    @apply text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground;
   }
 
   .nav-item-active::before {
     content: "";
-    @apply absolute right-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-full bg-primary;
+    @apply absolute -right-2 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full bg-foreground;
   }
 
   .nav-item .nav-icon {
-    @apply h-[18px] w-[18px] shrink-0 transition-transform duration-200;
-  }
-
-  .nav-item:hover .nav-icon {
-    @apply scale-110;
+    @apply h-4 w-4 shrink-0;
   }
 
   .nav-group-label {
-    @apply px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70;
+    @apply px-2.5 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60;
   }
 }
 

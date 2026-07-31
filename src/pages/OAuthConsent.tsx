@@ -86,7 +86,7 @@ export default function OAuthConsent() {
   if (error) {
     return (
       <main dir="rtl" className="min-h-screen flex items-center justify-center p-6 bg-background text-right">
-        <div className="max-w-md w-full rounded-2xl border border-border bg-card p-6 shadow-sm space-y-4">
+        <div className="max-w-md w-full rounded-lg border border-border bg-card p-6 shadow-sm space-y-4">
           <h1 className="text-xl font-bold">تعذّر تحميل طلب الربط</h1>
           <p className="text-sm text-muted-foreground">{error}</p>
           <Button asChild variant="outline"><Link to="/dashboard">العودة للوحة التحكم</Link></Button>
@@ -107,7 +107,7 @@ export default function OAuthConsent() {
 
   return (
     <main dir="rtl" className="min-h-screen flex items-center justify-center p-6 bg-background text-right">
-      <div className="max-w-md w-full rounded-2xl border border-border bg-card p-6 shadow-sm space-y-5">
+      <div className="max-w-md w-full rounded-lg border border-border bg-card p-6 shadow-sm space-y-5">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
             <ShieldCheck className="h-5 w-5 text-primary" />

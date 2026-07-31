@@ -242,7 +242,7 @@ export default function TestChatPage() {
               </div>
               <div
                 className={cn(
-                  'max-w-[70%] rounded-2xl px-4 py-2.5',
+                  'max-w-[70%] rounded-lg px-4 py-2.5',
                   message.role === 'bot'
                     ? 'bg-muted text-foreground'
                     : 'bg-primary text-primary-foreground'
@@ -260,7 +260,7 @@ export default function TestChatPage() {
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
                 <Bot className="h-4 w-4 text-primary" />
               </div>
-              <div className="rounded-2xl bg-muted px-4 py-2.5">
+              <div className="rounded-lg bg-muted px-4 py-2.5">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
             </div>
