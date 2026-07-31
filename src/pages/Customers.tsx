@@ -208,7 +208,7 @@ export default function CustomersPage() {
           />
         </div>
         <Select value={channelFilter} onValueChange={setChannelFilter}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="القناة" /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="القناة" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">كل القنوات</SelectItem>
             {Object.entries(channelLabels).map(([k, v]) => (
@@ -217,7 +217,7 @@ export default function CustomersPage() {
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="recent">الأحدث تواصلاً</SelectItem>
             <SelectItem value="oldest">الأقدم تواصلاً</SelectItem>
