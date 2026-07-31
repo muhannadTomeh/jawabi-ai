@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ExternalLink, Settings, Loader2, Unlink, Copy, Check, Globe, Info, ChevronDown } from 'lucide-react';
+import { ExternalLink, Settings, Loader2, Unlink, Copy, Check, Globe, Info, ChevronDown, MoreHorizontal } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { CardGridSkeleton } from '@/components/layout/PageSkeletons';
 import { FaTelegram, FaFacebookMessenger, FaInstagram, FaWhatsapp } from 'react-icons/fa';
@@ -19,6 +19,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useChatbot } from '@/hooks/useChatbot';
 import { useToast } from '@/hooks/use-toast';
