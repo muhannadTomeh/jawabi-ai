@@ -189,11 +189,13 @@ export default function CustomersPage() {
       <PageHeader title="العملاء" description="كل من تواصل مع البوت يُسجَّل هنا تلقائياً بدون تكرار" />
 
       {/* Tag pills */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         <button
           onClick={() => setTagFilter('all')}
-          className={`rounded-full border px-3 py-1 text-sm transition ${
-            tagFilter === 'all' ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'
+          className={`rounded-md border px-2.5 py-1 text-[13px] font-medium transition-colors ${
+            tagFilter === 'all'
+              ? 'border-transparent bg-foreground text-background'
+              : 'border-border/70 bg-card text-muted-foreground hover:text-foreground'
           }`}
         >
           الكل ({counts.all})
@@ -202,8 +204,10 @@ export default function CustomersPage() {
           <button
             key={t}
             onClick={() => setTagFilter(t)}
-            className={`rounded-full border px-3 py-1 text-sm transition ${
-              tagFilter === t ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'
+            className={`rounded-md border px-2.5 py-1 text-[13px] font-medium transition-colors ${
+              tagFilter === t
+                ? 'border-transparent bg-foreground text-background'
+                : 'border-border/70 bg-card text-muted-foreground hover:text-foreground'
             }`}
           >
             {tagLabels[t]} ({counts[t]})
@@ -212,8 +216,8 @@ export default function CustomersPage() {
       </div>
 
       {/* Filters */}
-      <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
-        <div className="relative">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative w-full sm:max-w-sm">
           <Search className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="بحث بالاسم أو اسم المستخدم أو الرقم..."
@@ -242,54 +246,96 @@ export default function CustomersPage() {
         </Select>
       </div>
 
-      {/* List */}
+      {/* Data table */}
       {filtered.length === 0 ? (
-        <div className="card-elevated flex flex-col items-center justify-center gap-2 p-12 text-center">
-          <UsersIcon className="h-10 w-10 text-muted-foreground" />
-          <p className="font-medium text-foreground">لا يوجد عملاء بعد</p>
-          <p className="text-sm text-muted-foreground">سيظهر هنا كل شخص يتواصل مع البوت تلقائياً</p>
+        <div className="surface-panel empty-state">
+          <div className="empty-state-icon">
+            <UsersIcon className="h-5 w-5" />
+          </div>
+          <p className="mt-2 font-semibold text-foreground">لا يوجد عملاء بعد</p>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            سيظهر هنا كل شخص يتواصل مع البوت تلقائياً، بدون تكرار.
+          </p>
         </div>
       ) : (
-        <div className="grid gap-3">
-          {filtered.map((c) => (
-            <div key={c.id} className="card-elevated p-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <ChannelIcon channel={c.channel} size={18} />
-                    <span className="font-semibold text-foreground">
-                      {c.name || c.username || c.phone || c.external_id}
-                    </span>
-                    <Badge variant="outline" className={tagColors[c.tag]}>{tagLabels[c.tag]}</Badge>
-                    <Badge variant="outline">{channelLabels[c.channel] || c.channel}</Badge>
-                  </div>
-                  <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    {c.username && <span dir="ltr">@{c.username}</span>}
-                    {c.phone && <span dir="ltr">{c.phone}</span>}
-                    <span>{c.message_count} رسالة</span>
-                    <span>آخر تواصل: {new Date(c.last_seen_at).toLocaleString('ar-SA')}</span>
-                  </div>
-                  {c.last_message && (
-                    <p className="mt-2 line-clamp-1 text-sm text-foreground/80">"{c.last_message}"</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Select value={c.tag} onValueChange={(v) => updateTag(c.id, v as Tag)}>
-                    <SelectTrigger className="w-full sm:w-[130px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {(['new', 'prospect', 'regular', 'vip', 'blocked'] as Tag[]).map((t) => (
-                        <SelectItem key={t} value={t}>{tagLabels[t]}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button variant="outline" size="sm" onClick={() => setEditing(c)}>تفاصيل</Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(c.id)}>
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="surface-panel overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>الاسم</TableHead>
+                  <TableHead className="hidden sm:table-cell">القناة</TableHead>
+                  <TableHead>التصنيف</TableHead>
+                  <TableHead className="hidden md:table-cell">الرسائل</TableHead>
+                  <TableHead className="hidden lg:table-cell">آخر تواصل</TableHead>
+                  <TableHead className="w-12 text-end">إجراءات</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell>
+                      <div className="min-w-0">
+                        <p className="truncate font-medium text-foreground">
+                          {c.name || c.username || c.phone || c.external_id}
+                        </p>
+                        {(c.username || c.phone) && (
+                          <p className="truncate text-xs text-muted-foreground" dir="ltr">
+                            {c.username ? `@${c.username}` : c.phone}
+                          </p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                        <ChannelIcon channel={c.channel} size={16} />
+                        {channelLabels[c.channel] || c.channel}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={tagColors[c.tag]}>
+                        {tagLabels[c.tag]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden text-sm tabular-nums text-muted-foreground md:table-cell">
+                      {c.message_count}
+                    </TableCell>
+                    <TableCell className="hidden text-sm text-muted-foreground lg:table-cell">
+                      {new Date(c.last_seen_at).toLocaleDateString('ar-SA')}
+                    </TableCell>
+                    <TableCell className="text-end">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-44">
+                          <DropdownMenuItem onClick={() => setEditing(c)}>
+                            <Pencil className="me-2 h-4 w-4" />
+                            تفاصيل وتعديل
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {(['new', 'prospect', 'regular', 'vip', 'blocked'] as Tag[])
+                            .filter((t) => t !== c.tag)
+                            .map((t) => (
+                              <DropdownMenuItem key={t} onClick={() => updateTag(c.id, t)}>
+                                تصنيف: {tagLabels[t]}
+                              </DropdownMenuItem>
+                            ))}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive" onClick={() => remove(c.id)}>
+                            <Trash2 className="me-2 h-4 w-4" />
+                            حذف
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       )}
 
