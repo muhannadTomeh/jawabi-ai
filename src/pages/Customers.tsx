@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Search, Users as UsersIcon, Trash2, Save } from 'lucide-react';
+import { Search, Users as UsersIcon, Trash2, Save, MoreHorizontal, Pencil } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { TableSkeleton } from '@/components/layout/PageSkeletons';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,21 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useChatbot } from '@/hooks/useChatbot';
 import { toast } from 'sonner';
