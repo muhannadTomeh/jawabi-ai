@@ -332,17 +332,17 @@ export default function ChannelsPage() {
       </details>
 
       {publicUrl && (
-        <div className="card-elevated p-6">
+        <div className="surface-panel p-6 sm:p-8">
           <div className="flex items-start gap-4">
-            <div className="rounded-xl bg-primary/10 p-3">
-              <Globe className="h-6 w-6 text-primary" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border/70 bg-muted/40">
+              <Globe className="h-5 w-5 text-muted-foreground" />
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-foreground">رابط الشات بوت العام</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 شارك هذا الرابط مع عملائك ليتمكنوا من التحدث مع البوت مباشرة من المتصفح
               </p>
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 flex max-w-[600px] flex-col gap-2 sm:flex-row">
                 <Input value={publicUrl} readOnly dir="ltr" className="font-mono text-sm" />
                 <Button onClick={copyLink} variant="outline" className="shrink-0">
                   {copied ? <Check className="ml-2 h-4 w-4" /> : <Copy className="ml-2 h-4 w-4" />}
