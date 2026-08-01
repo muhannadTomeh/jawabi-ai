@@ -67,6 +67,33 @@ export interface RateLimitOptions {
 }
 
 /**
+ * Resolves the effective limits for a chatbot from its subscription plan.
+ * Falls back to the chatbot's own column, then to the global defaults.
+ */
+export async function resolvePlanLimits(
+  supabase: SupabaseLike,
+  chatbotId: string,
+): Promise<{ daily: number; perMinute: number }> {
+  try {
+    const { data } = await supabase
+      .from("chatbots")
+      .select(
+        "daily_message_limit, plans:plan_id (messages_per_day, messages_per_minute_per_chatbot)",
+      )
+      .eq("id", chatbotId)
+      .maybeSingle();
+    const plan = (data as any)?.plans;
+    return {
+      daily: plan?.messages_per_day ?? (data as any)?.daily_message_limit ??
+        DEFAULT_DAILY_LIMIT,
+      perMinute: plan?.messages_per_minute_per_chatbot ?? CHATBOT_PER_MINUTE,
+    };
+  } catch (_e) {
+    return { daily: DEFAULT_DAILY_LIMIT, perMinute: CHATBOT_PER_MINUTE };
+  }
+}
+
+/**
  * Runs the protection layers in order: IP/minute -> chatbot/minute -> chatbot/day.
  * Returns as soon as one layer denies, and records the violation.
  */
@@ -75,7 +102,8 @@ export async function enforceRateLimits(
   opts: RateLimitOptions,
 ): Promise<RateLimitResult> {
   const { chatbotId, ip, channel } = opts;
-  const daily = opts.dailyLimit ?? DEFAULT_DAILY_LIMIT;
+  let daily = opts.dailyLimit ?? DEFAULT_DAILY_LIMIT;
+  let perMinute = CHATBOT_PER_MINUTE;
 
   if (ip && ip !== "unknown") {
     const key = `ip:${ip}`;
@@ -92,8 +120,15 @@ export async function enforceRateLimits(
   }
 
   if (chatbotId) {
+    // Plan-driven limits take precedence over the legacy per-chatbot column.
+    if (chatbotId !== "00000000-0000-0000-0000-000000000000") {
+      const resolved = await resolvePlanLimits(supabase, chatbotId);
+      daily = resolved.daily;
+      perMinute = resolved.perMinute;
+    }
+
     const minuteKey = `chatbot:${chatbotId}`;
-    if (!(await allow(supabase, minuteKey, 60, CHATBOT_PER_MINUTE))) {
+    if (!(await allow(supabase, minuteKey, 60, perMinute))) {
       await logViolation(supabase, {
         bucket_key: minuteKey,
         limit_type: "chatbot_per_minute",
