@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { DailyUsageCard } from '@/components/dashboard/DailyUsageCard';
 import { StatusBadge } from '@/components/dashboard/StatusBadge';
 import { supabase } from '@/integrations/supabase/client';
 import { useChatbot } from '@/hooks/useChatbot';
@@ -614,6 +615,8 @@ export default function DashboardPage() {
       </section>
 
       {/* 4 — AI experience */}
+      <DailyUsageCard chatbotId={chatbot?.id} />
+
       <AIInsights
         stats={aiStats}
         model={metrics.model}
