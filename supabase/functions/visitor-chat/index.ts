@@ -1,4 +1,11 @@
 // Public chat for landing-page visitors. Answers questions about Jawabi platform.
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  enforceRateLimits,
+  getClientIp,
+  rateLimitResponse,
+} from "../_shared/rate-limit.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -45,6 +52,19 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // ---- Rate limiting: runs BEFORE any external/paid API call ----
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const rl = await enforceRateLimits(supabase, {
+      // The visitor assistant is platform-wide, so it shares one virtual bucket.
+      chatbotId: "00000000-0000-0000-0000-000000000000",
+      ip: getClientIp(req),
+      channel: "visitor",
+    });
+    if (!rl.allowed) return rateLimitResponse(corsHeaders);
 
     // Cap context to last 20 messages
     const trimmed = messages.slice(-20);
