@@ -4,7 +4,9 @@
 // deno-lint-ignore no-explicit-any
 type SupabaseLike = any;
 
+// Fallbacks only — used when a chatbot has no plan row attached.
 export const DEFAULT_DAILY_LIMIT = 300;
+// Platform-wide anti-abuse guard. Deliberately NOT plan-driven.
 export const IP_PER_MINUTE = 20;
 export const CHATBOT_PER_MINUTE = 60;
 
@@ -62,8 +64,30 @@ export interface RateLimitOptions {
   chatbotId?: string | null;
   ip?: string | null;
   channel?: string;
-  /** null/undefined falls back to DEFAULT_DAILY_LIMIT */
+  /** Legacy per-chatbot column; only used when no plan row is available. */
   dailyLimit?: number | null;
+  /**
+   * Plan limits already fetched by the caller (e.g. joined onto the chatbot
+   * row in chat/index.ts). Passing this avoids a second round-trip.
+   */
+  planLimits?: PlanLimits | null;
+}
+
+export interface PlanLimits {
+  daily: number;
+  perMinute: number;
+}
+
+/** Normalizes an embedded `plans:plan_id (...)` join into PlanLimits. */
+// deno-lint-ignore no-explicit-any
+export function planLimitsFromRow(row: any): PlanLimits | null {
+  const plan = Array.isArray(row?.plans) ? row.plans[0] : row?.plans;
+  if (!plan) return null;
+  return {
+    daily: plan.messages_per_day ?? row?.daily_message_limit ??
+      DEFAULT_DAILY_LIMIT,
+    perMinute: plan.messages_per_minute_per_chatbot ?? CHATBOT_PER_MINUTE,
+  };
 }
 
 /**
@@ -73,7 +97,7 @@ export interface RateLimitOptions {
 export async function resolvePlanLimits(
   supabase: SupabaseLike,
   chatbotId: string,
-): Promise<{ daily: number; perMinute: number }> {
+): Promise<PlanLimits> {
   try {
     const { data } = await supabase
       .from("chatbots")
@@ -82,11 +106,10 @@ export async function resolvePlanLimits(
       )
       .eq("id", chatbotId)
       .maybeSingle();
-    const plan = (data as any)?.plans;
-    return {
-      daily: plan?.messages_per_day ?? (data as any)?.daily_message_limit ??
-        DEFAULT_DAILY_LIMIT,
-      perMinute: plan?.messages_per_minute_per_chatbot ?? CHATBOT_PER_MINUTE,
+    return planLimitsFromRow(data) ?? {
+      // deno-lint-ignore no-explicit-any
+      daily: (data as any)?.daily_message_limit ?? DEFAULT_DAILY_LIMIT,
+      perMinute: CHATBOT_PER_MINUTE,
     };
   } catch (_e) {
     return { daily: DEFAULT_DAILY_LIMIT, perMinute: CHATBOT_PER_MINUTE };
@@ -121,7 +144,10 @@ export async function enforceRateLimits(
 
   if (chatbotId) {
     // Plan-driven limits take precedence over the legacy per-chatbot column.
-    if (chatbotId !== "00000000-0000-0000-0000-000000000000") {
+    if (opts.planLimits) {
+      daily = opts.planLimits.daily;
+      perMinute = opts.planLimits.perMinute;
+    } else if (chatbotId !== "00000000-0000-0000-0000-000000000000") {
       const resolved = await resolvePlanLimits(supabase, chatbotId);
       daily = resolved.daily;
       perMinute = resolved.perMinute;
