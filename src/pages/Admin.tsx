@@ -5,7 +5,8 @@ import { UsersList } from '@/components/admin/UsersList';
 import { ChatbotsList } from '@/components/admin/ChatbotsList';
 import { LlmSettings } from '@/components/admin/LlmSettings';
 import { AuditLog } from '@/components/admin/AuditLog';
-import { ShieldCheck, Cpu, Users, Bot, ScrollText } from 'lucide-react';
+import { PlansManager } from '@/components/admin/PlansManager';
+import { ShieldCheck, Cpu, Users, Bot, ScrollText, CreditCard } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { PageSkeleton } from '@/components/layout/PageSkeletons';
@@ -48,6 +49,10 @@ export default function AdminPage() {
             <Cpu className="h-4 w-4" />
             نموذج الذكاء
           </TabsTrigger>
+          <TabsTrigger value="plans" className="gap-2">
+            <CreditCard className="h-4 w-4" />
+            الباقات
+          </TabsTrigger>
           <TabsTrigger value="audit" className="gap-2">
             <ScrollText className="h-4 w-4" />
             سجل العمليات
@@ -61,6 +66,9 @@ export default function AdminPage() {
         </TabsContent>
         <TabsContent value="llm">
           <LlmSettings />
+        </TabsContent>
+        <TabsContent value="plans">
+          <PlansManager />
         </TabsContent>
         <TabsContent value="audit">
           <AuditLog />
