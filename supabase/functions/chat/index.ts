@@ -1,4 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  enforceRateLimits,
+  getClientIp,
+  rateLimitResponse,
+} from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,6 +45,23 @@ Deno.serve(async (req) => {
         );
       }
       chatbot_id = bySlug.id;
+    }
+
+    // ---- Rate limiting: runs BEFORE any external/paid API call ----
+    {
+      const { data: limitRow } = await supabase
+        .from("chatbots")
+        .select("daily_message_limit")
+        .eq("id", chatbot_id)
+        .maybeSingle();
+
+      const rl = await enforceRateLimits(supabase, {
+        chatbotId: chatbot_id,
+        ip: getClientIp(req),
+        channel: "web",
+        dailyLimit: limitRow?.daily_message_limit ?? null,
+      });
+      if (!rl.allowed) return rateLimitResponse(corsHeaders);
     }
 
     // Record customer profile for web channel (if identifiable)
