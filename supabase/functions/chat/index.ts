@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   enforceRateLimits,
   getClientIp,
+  planLimitsFromRow,
   rateLimitResponse,
 } from "../_shared/rate-limit.ts";
 
@@ -51,7 +52,9 @@ Deno.serve(async (req) => {
     {
       const { data: limitRow } = await supabase
         .from("chatbots")
-        .select("daily_message_limit")
+        .select(
+          "daily_message_limit, plans:plan_id (messages_per_day, messages_per_minute_per_chatbot)",
+        )
         .eq("id", chatbot_id)
         .maybeSingle();
 
@@ -60,6 +63,7 @@ Deno.serve(async (req) => {
         ip: getClientIp(req),
         channel: "web",
         dailyLimit: limitRow?.daily_message_limit ?? null,
+        planLimits: planLimitsFromRow(limitRow),
       });
       if (!rl.allowed) return rateLimitResponse(corsHeaders);
     }
