@@ -100,6 +100,7 @@ export type Database = {
           business_name: string | null
           created_at: string
           custom_instructions: string
+          daily_message_limit: number
           dialect: string
           fallback_message: string
           id: string
@@ -123,6 +124,7 @@ export type Database = {
           business_name?: string | null
           created_at?: string
           custom_instructions?: string
+          daily_message_limit?: number
           dialect?: string
           fallback_message?: string
           id?: string
@@ -146,6 +148,7 @@ export type Database = {
           business_name?: string | null
           created_at?: string
           custom_instructions?: string
+          daily_message_limit?: number
           dialect?: string
           fallback_message?: string
           id?: string
@@ -616,6 +619,60 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_counters: {
+        Row: {
+          bucket_key: string
+          created_at: string
+          id: string
+          request_count: number
+          window_start: string
+        }
+        Insert: {
+          bucket_key: string
+          created_at?: string
+          id?: string
+          request_count?: number
+          window_start: string
+        }
+        Update: {
+          bucket_key?: string
+          created_at?: string
+          id?: string
+          request_count?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
+      rate_limit_violations: {
+        Row: {
+          bucket_key: string
+          channel: string | null
+          chatbot_id: string | null
+          created_at: string
+          id: string
+          identifier: string | null
+          limit_type: string
+        }
+        Insert: {
+          bucket_key: string
+          channel?: string | null
+          chatbot_id?: string | null
+          created_at?: string
+          id?: string
+          identifier?: string | null
+          limit_type: string
+        }
+        Update: {
+          bucket_key?: string
+          channel?: string | null
+          chatbot_id?: string | null
+          created_at?: string
+          id?: string
+          identifier?: string | null
+          limit_type?: string
+        }
+        Relationships: []
+      }
       social_connections: {
         Row: {
           access_token: string
@@ -876,6 +933,14 @@ export type Database = {
           p_external_id: string
           p_stale_seconds?: number
           p_timeout_ms?: number
+        }
+        Returns: boolean
+      }
+      check_and_increment_rate_limit: {
+        Args: {
+          p_bucket_key: string
+          p_max_requests: number
+          p_window_seconds: number
         }
         Returns: boolean
       }
