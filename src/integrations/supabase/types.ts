@@ -954,6 +954,13 @@ export type Database = {
           welcome_message: string
         }[]
       }
+      get_chatbot_daily_usage: {
+        Args: { _chatbot_id: string }
+        Returns: {
+          limit_value: number
+          used: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
