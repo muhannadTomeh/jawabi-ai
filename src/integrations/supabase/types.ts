@@ -110,6 +110,7 @@ export type Database = {
           onboarding_completed: boolean
           onboarding_step: number
           owner_telegram_chat_id: string | null
+          plan_id: string | null
           public_slug: string | null
           tone: string
           updated_at: string
@@ -134,6 +135,7 @@ export type Database = {
           onboarding_completed?: boolean
           onboarding_step?: number
           owner_telegram_chat_id?: string | null
+          plan_id?: string | null
           public_slug?: string | null
           tone?: string
           updated_at?: string
@@ -158,13 +160,22 @@ export type Database = {
           onboarding_completed?: boolean
           onboarding_step?: number
           owner_telegram_chat_id?: string | null
+          plan_id?: string | null
           public_slug?: string | null
           tone?: string
           updated_at?: string
           user_id?: string
           welcome_message?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chatbots_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       conversation_locks: {
         Row: {
@@ -579,6 +590,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      plans: {
+        Row: {
+          allowed_model: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          max_channels: number
+          max_knowledge_items: number | null
+          messages_per_day: number
+          messages_per_minute_per_chatbot: number
+          name: string
+          price_monthly: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_model?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          max_channels?: number
+          max_knowledge_items?: number | null
+          messages_per_day?: number
+          messages_per_minute_per_chatbot?: number
+          name: string
+          price_monthly?: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_model?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          max_channels?: number
+          max_knowledge_items?: number | null
+          messages_per_day?: number
+          messages_per_minute_per_chatbot?: number
+          name?: string
+          price_monthly?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
