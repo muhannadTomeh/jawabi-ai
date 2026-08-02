@@ -1014,6 +1014,7 @@ export type Database = {
         Args: { _chatbot_id: string }
         Returns: {
           limit_value: number
+          plan_name: string
           used: number
         }[]
       }
