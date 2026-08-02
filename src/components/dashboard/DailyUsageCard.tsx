@@ -28,12 +28,14 @@ export function DailyUsageCard({ chatbotId }: Props) {
       return {
         used: Number(row?.used ?? 0),
         limit: Number(row?.limit_value ?? 300),
+        planName: (row as { plan_name?: string | null })?.plan_name ?? null,
       };
     },
   });
 
   const used = data?.used ?? 0;
   const limit = data?.limit ?? 300;
+  const planName = data?.planName ?? null;
   const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
   const near = pct >= 80;
 
@@ -43,6 +45,11 @@ export function DailyUsageCard({ chatbotId }: Props) {
         <div className="flex items-center gap-2">
           <Gauge className="h-4 w-4 text-muted-foreground" />
           <h3 className="text-sm font-semibold text-foreground">استخدام اليوم</h3>
+          {planName && (
+            <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              باقة {planName}
+            </span>
+          )}
         </div>
         <span
           className={cn(
