@@ -199,7 +199,7 @@
   }
 
   .text-metric {
-    @apply text-[30px] font-semibold leading-none tracking-tight text-foreground tabular-nums sm:text-[36px];
+    @apply text-[28px] font-semibold leading-[1.1] tracking-tight text-foreground tabular-nums sm:text-[32px];
   }
 
   .text-eyebrow {
@@ -208,12 +208,12 @@
 
   /* Card elevation */
   .card-elevated {
-    @apply bg-card rounded-lg border border-border/70 shadow-sm transition-all duration-200 ease-out hover:shadow-md;
+    @apply bg-card rounded-xl border border-border/60 shadow-xs transition-all duration-200 ease-out hover:border-border hover:shadow-sm;
   }
 
   /* Flat surface panel — no hover lift, used for tables and forms */
   .surface-panel {
-    @apply bg-card rounded-lg border border-border/70 shadow-sm;
+    @apply bg-card rounded-xl border border-border/60 shadow-xs;
   }
 
   /* Minimalist empty state */
@@ -243,7 +243,7 @@
 
   /* Stat card styling */
   .stat-card {
-    @apply bg-card rounded-lg border border-border/70 p-6 shadow-sm transition-all duration-200 hover:shadow-md;
+    @apply bg-card rounded-xl border border-border/60 p-6 shadow-xs transition-all duration-200 hover:border-border hover:shadow-sm;
   }
 
   /* Nav item styling */
