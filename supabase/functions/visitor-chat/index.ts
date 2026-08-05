@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    let apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "missing LOVABLE_API_KEY" }), {
         status: 500,
@@ -69,6 +69,24 @@ Deno.serve(async (req) => {
     // Cap context to last 20 messages
     const trimmed = messages.slice(-20);
 
+    // Resolve model + key from the admin-configured active provider.
+    // Fail-safe: falls back to Lovable AI Gateway defaults.
+    let model = "google/gemini-2.5-flash";
+    const { data: activeProvider } = await supabase
+      .from("api_providers")
+      .select("id, api_key")
+      .eq("is_active", true)
+      .maybeSingle();
+    if (activeProvider) {
+      apiKey = activeProvider.api_key || apiKey;
+      const { data: providerModels } = await supabase
+        .from("api_provider_models")
+        .select("model_id")
+        .eq("provider_id", activeProvider.id)
+        .limit(1);
+      if (providerModels?.length) model = providerModels[0].model_id;
+    }
+
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -76,7 +94,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           ...trimmed,
