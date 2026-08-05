@@ -310,16 +310,29 @@ ${knowledgeContext ? `\n# قاعدة المعرفة المتاحة:\n${knowledge
     // Add current message
     messages.push({ role: "user", content: message });
 
-    // Resolve model + API key (admin-configurable via llm_settings)
-    const { data: llmCfg } = await supabase
-      .from("llm_settings")
-      .select("model, custom_api_key")
-      .order("updated_at", { ascending: false })
-      .limit(1)
+    // Resolve model + API key (admin-configurable via api_providers)
+    const { data: activeProvider } = await supabase
+      .from("api_providers")
+      .select("id, provider_key, api_key")
+      .eq("is_active", true)
       .maybeSingle();
 
-    const model = llmCfg?.model || "google/gemini-2.5-flash";
-    const apiKey = llmCfg?.custom_api_key || Deno.env.get("LOVABLE_API_KEY");
+    let model = "google/gemini-2.5-flash";
+    let apiKey = Deno.env.get("LOVABLE_API_KEY");
+
+    if (activeProvider) {
+      apiKey = activeProvider.api_key || apiKey;
+      // Get the first model for this provider as default if none specified
+      const { data: providerModels } = await supabase
+        .from("api_provider_models")
+        .select("model_id")
+        .eq("provider_id", activeProvider.id)
+        .limit(1);
+      
+      if (providerModels && providerModels.length > 0) {
+        model = providerModels[0].model_id;
+      }
+    }
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
