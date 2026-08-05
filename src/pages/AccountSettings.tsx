@@ -878,7 +878,7 @@ export default function AccountSettingsPage() {
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
-                اضف الصفحات والمعلومات  التي تلزم لأن تقبل ميتا تطبيقي ويتم نشره live
+                اللغة
               </Label>
               <Select value={language} onValueChange={(v) => setLanguage(v as 'ar' | 'en')}>
                 <SelectTrigger>
