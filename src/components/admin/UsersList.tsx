@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
+import { Label } from '@/components/ui/label';
 
 interface UserProfile {
   id: string;
