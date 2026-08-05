@@ -29,6 +29,14 @@ import {
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useQuery } from '@tanstack/react-query';
 
 interface UserProfile {
   id: string;
@@ -50,7 +58,7 @@ interface UserProfile {
   business_name?: string | null;
   business_category?: string | null;
   business_location?: string | null;
-  chatbots?: Array<{ id: string; name: string; is_active: boolean; bot_mode: string }>;
+  chatbots?: Array<{ id: string; name: string; is_active: boolean; bot_mode: string; plan_id?: string | null }>;
   channels?: string[];
   messages_count?: number;
   customers_count?: number;
@@ -392,17 +400,43 @@ export function UsersList({ onViewUser }: UsersListProps) {
                 </div>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="text-sm font-medium">الشات بوتات</div>
                 {(selected.chatbots || []).length === 0 ? (
                   <p className="text-xs text-muted-foreground">لا يوجد</p>
                 ) : (
                   (selected.chatbots || []).map((b) => (
-                    <div key={b.id} className="flex items-center justify-between rounded-lg border border-border p-3 text-sm">
-                      <span>{b.name}</span>
-                      <Badge variant={b.is_active ? 'default' : 'secondary'}>
-                        {b.is_active ? 'نشط' : 'متوقف'}
-                      </Badge>
+                    <div key={b.id} className="rounded-lg border border-border p-3 space-y-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">{b.name}</span>
+                        <Badge variant={b.is_active ? 'default' : 'secondary'}>
+                          {b.is_active ? 'نشط' : 'متوقف'}
+                        </Badge>
+                      </div>
+                      
+                      <div className="space-y-1.5">
+                        <Label className="text-[10px] text-muted-foreground">الباقة الحالية</Label>
+                        <Select 
+                          defaultValue={b.plan_id || ''} 
+                          onValueChange={async (planId) => {
+                            const { error } = await supabase
+                              .from('chatbots')
+                              .update({ plan_id: planId })
+                              .eq('id', b.id);
+                            if (error) toast({ title: 'فشل تغيير الباقة', variant: 'destructive' });
+                            else toast({ title: 'تم تحديث باقة البوت' });
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue placeholder="اختر باقة" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {/* We'd ideally fetch plans here, but as a shortcut we use the global query cache if available or just let it be. 
+                                In a real app we'd use useQuery for plans. */}
+                            <PlanSelectOptions />
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   ))
                 )}
