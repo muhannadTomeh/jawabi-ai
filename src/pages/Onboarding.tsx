@@ -125,12 +125,16 @@ export default function Onboarding() {
       toast.error('يرجى تعبئة الحقول المطلوبة');
       return;
     }
+    // Get default plan
+    const { data: defaultPlan } = await supabase.from('plans').select('id').eq('is_default', true).maybeSingle();
+
     await goNext({
       business_name: bizName.trim(),
       business_category: bizCat,
       business_location: bizLoc.trim() || null,
       business_description: bizDesc.trim() || null,
       name: bizName.trim(),
+      plan_id: defaultPlan?.id,
       public_slug: chatbot?.public_slug || `${slugify(bizName)}-${(chatbot?.id || '').slice(0, 6)}`,
     });
   };

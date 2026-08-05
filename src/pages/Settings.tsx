@@ -187,7 +187,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="language">اعمل تحسينات على واجهة لوحة التحكم لتكون مريحة للعين أكثر</Label>
+                <Label htmlFor="language">اللغة</Label>
                 <Select value={language} onValueChange={setLanguage}>
                   <SelectTrigger id="language">
                     <SelectValue />

@@ -8,7 +8,9 @@ type SupabaseLike = any;
 export const DEFAULT_DAILY_LIMIT = 300;
 // Platform-wide anti-abuse guard. Deliberately NOT plan-driven.
 export const IP_PER_MINUTE = 20;
+// These are platform-wide defaults, overridden by plan settings
 export const CHATBOT_PER_MINUTE = 60;
+export const DEFAULT_DAILY_LIMIT = 300;
 
 export const RATE_LIMIT_MESSAGE =
   "تم الوصول للحد الأقصى المسموح من الرسائل حالياً، حاول لاحقاً";

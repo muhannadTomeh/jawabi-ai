@@ -878,7 +878,7 @@ export default function AccountSettingsPage() {
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Globe className="h-4 w-4" />
-                اعمل تحسينات على واجهة لوحة التحكم لتكون مريحة للعين أكثر
+                اللغة
               </Label>
               <Select value={language} onValueChange={(v) => setLanguage(v as 'ar' | 'en')}>
                 <SelectTrigger>

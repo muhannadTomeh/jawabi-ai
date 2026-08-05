@@ -3,7 +3,7 @@ import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { UsersList } from '@/components/admin/UsersList';
 import { ChatbotsList } from '@/components/admin/ChatbotsList';
-import { LlmSettings } from '@/components/admin/LlmSettings';
+import { ApiIntegrations } from '@/components/admin/ApiIntegrations';
 import { AuditLog } from '@/components/admin/AuditLog';
 import { PlansManager } from '@/components/admin/PlansManager';
 import { ShieldCheck, Cpu, Users, Bot, ScrollText, CreditCard } from 'lucide-react';
@@ -65,7 +65,7 @@ export default function AdminPage() {
           <ChatbotsList />
         </TabsContent>
         <TabsContent value="llm">
-          <LlmSettings />
+          <ApiIntegrations />
         </TabsContent>
         <TabsContent value="plans">
           <PlansManager />
