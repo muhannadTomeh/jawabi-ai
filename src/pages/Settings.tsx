@@ -187,7 +187,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="language">اضف الصفحات والمعلومات  التي تلزم لأن تقبل ميتا تطبيقي ويتم نشره live</Label>
+                <Label htmlFor="language">لغة البوت</Label>
                 <Select value={language} onValueChange={setLanguage}>
                   <SelectTrigger id="language">
                     <SelectValue />
