@@ -4,11 +4,9 @@
 // deno-lint-ignore no-explicit-any
 type SupabaseLike = any;
 
-// Fallbacks only — used when a chatbot has no plan row attached.
-export const DEFAULT_DAILY_LIMIT = 300;
 // Platform-wide anti-abuse guard. Deliberately NOT plan-driven.
 export const IP_PER_MINUTE = 20;
-// These are platform-wide defaults, overridden by plan settings
+// Fallbacks only — used when a chatbot has no plan row attached.
 export const CHATBOT_PER_MINUTE = 60;
 export const DEFAULT_DAILY_LIMIT = 300;
 
