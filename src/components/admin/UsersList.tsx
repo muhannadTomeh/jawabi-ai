@@ -509,6 +509,24 @@ export function UsersList({ onViewUser }: UsersListProps) {
   );
 }
 
+function PlanSelectOptions() {
+  const { data: plans } = useQuery({
+    queryKey: ['admin-plans-list'],
+    queryFn: async () => {
+      const { data } = await supabase.from('plans').select('id, name').order('price_monthly');
+      return data || [];
+    }
+  });
+
+  return (
+    <>
+      {plans?.map(p => (
+        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+      ))}
+    </>
+  );
+}
+
 function Row({ icon: Icon, label, value }: { icon: any; label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-2 border-b border-border pb-2">
