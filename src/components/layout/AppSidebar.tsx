@@ -20,7 +20,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { useEffect, useState } from 'react';
-const logo = { url: '/logo.png' };
+import logo from '@/assets/logo.png.asset.json';
 
 const navigation = [
   { name: 'لوحة التحكم', href: '/dashboard', icon: Bot },

@@ -2,8 +2,8 @@ import { Link } from "react-router-dom";
 import { VisitorChat } from "@/components/landing/VisitorChat";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-const logo = { url: "/logo.png" };
-const robotMascot = { url: "/robot-mascot.png" };
+import robotMascot from "@/assets/robot-mascot.png.asset.json";
+import logo from "@/assets/logo.png.asset.json";
 import {
   Bot,
   MessageSquare,
