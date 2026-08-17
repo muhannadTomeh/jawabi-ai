@@ -1,18 +1,28 @@
+# Plan - Fix has_role Permissions and Knowledge Base Features
 
-## Plan
+The user reported a `permission denied for function has_role` error and requested to fix non-functional features while removing seed data.
 
-Fix Facebook Webhook verification in `supabase/functions/messenger-webhook/index.ts`.
+## User Requirements
+- Fix `permission denied for function has_role`.
+- Remove all seed/mock data (real data only).
+- Ensure all features work correctly.
 
-### Problem
-The current GET handler uses Supabase `.filter("metadata->verify_token", "eq", token)` to match JSONB fields. This operator does not work reliably for nested JSON string matching in Supabase PostgREST, causing webhook verification to fail silently.
+## Proposed Changes
 
-### Solution
-Replace both verification lookups (social_connections and legacy channels) with a fetch-then-filter pattern:
-1. Query all matching rows by basic filters (platform, is_connected).
-2. Filter the returned array in JavaScript by comparing `c.metadata?.verify_token === token` and `c.config?.verify_token === token`.
+### 1. Database & Security
+- **Fix function permissions**: Add a migration to explicitly grant `EXECUTE` on `has_role` and `is_chatbot_owner` to `authenticated` and `service_role`. Although previously granted, they might have been lost or conflict with schema changes.
+- **Fix table permissions**: Ensure all core tables (`user_roles`, `profiles`, `chatbots`, `knowledge_items`, `channels`, `handover_settings`) have proper `GRANT` statements to `authenticated` and `service_role`. Many early migrations missed these.
+- **Remove mock data**: Truncate all tables to remove any remaining seed data from development.
 
-### Exact change
-- Replace lines 46–71 in `supabase/functions/messenger-webhook/index.ts` with the code provided by the user.
+### 2. Implementation details
 
-### Deploy
-- Lovable-managed edge functions deploy automatically after file change.
+#### Migration: `fix_permissions_and_cleanup.sql`
+- `GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role) TO authenticated, service_role;`
+- `GRANT EXECUTE ON FUNCTION public.is_chatbot_owner(uuid) TO authenticated, service_role;`
+- `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authenticated;`
+- `GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;`
+- `TRUNCATE TABLE public.user_roles, public.profiles, public.chatbots, public.knowledge_items, public.channels, public.handover_settings, public.telegram_users, public.telegram_messages, public.whatsapp_contacts, public.whatsapp_messages, public.web_chat_messages, public.social_connections, public.notifications, public.customers, public.messenger_messages, public.messenger_users, public.llm_settings, public.conversation_takeovers, public.pending_sale_orders, public.conversation_locks, public.admin_audit_log, public.rate_limit_counters, public.rate_limit_violations, public.plans, public.api_providers, public.api_provider_models CASCADE;`
+
+### 3. Verification
+- Verify that the `permission denied` error disappears in the frontend when accessing protected routes.
+- Confirm that the database is clean and only contains data created by real interactions.
