@@ -28,8 +28,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { PageSkeleton } from '@/components/layout/PageSkeletons';
 import { Progress } from '@/components/ui/progress';
 import {
   Select,
@@ -122,7 +120,6 @@ export default function AccountSettingsPage() {
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [changingEmail, setChangingEmail] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
-  const [sendingReset, setSendingReset] = useState(false);
   const [loggingOutAll, setLoggingOutAll] = useState(false);
 
   // Profile
@@ -332,26 +329,6 @@ export default function AccountSettingsPage() {
 
   const handleChangePassword = async () => {
     if (!user?.email) return;
-    void 0;
-    return handleChangePasswordInner();
-  };
-
-  const handleSendResetLink = async () => {
-    if (!user?.email) return;
-    setSendingReset(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-      redirectTo: window.location.origin + '/reset-password',
-    });
-    setSendingReset(false);
-    if (error) {
-      toast.error('تعذّر إرسال الرابط', { description: error.message });
-      return;
-    }
-    toast.success('تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني');
-  };
-
-  const handleChangePasswordInner = async () => {
-    if (!user?.email) return;
     if (!currentPassword) {
       toast.error('الرجاء إدخال كلمة المرور الحالية');
       return;
@@ -453,9 +430,8 @@ export default function AccountSettingsPage() {
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-4xl space-y-6" dir="rtl">
-        <PageHeader title="إعدادات الحساب" description="إدارة معلوماتك الشخصية والأمان وتفضيلات الحساب." />
-        <PageSkeleton />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -469,16 +445,21 @@ export default function AccountSettingsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 text-right" dir="rtl">
-      <PageHeader
-        title="إعدادات الحساب"
-        description="إدارة معلوماتك الشخصية والأمان وتفضيلات الحساب."
-        actions={
-          <Button variant="outline" onClick={handleLogout} className="gap-2">
-            <LogOut className="h-4 w-4" />
-            تسجيل الخروج
-          </Button>
-        }
-      />
+      {/* Header */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            إعدادات الحساب
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            إدارة معلوماتك الشخصية والأمان وتفضيلات الحساب.
+          </p>
+        </div>
+        <Button variant="outline" onClick={handleLogout} className="gap-2 self-start">
+          <LogOut className="h-4 w-4" />
+          تسجيل الخروج
+        </Button>
+      </div>
 
       {/* Personal information */}
       <Card>
@@ -753,20 +734,7 @@ export default function AccountSettingsPage() {
             </div>
           )}
 
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Button
-              variant="outline"
-              onClick={handleSendResetLink}
-              disabled={sendingReset}
-              className="gap-2"
-            >
-              {sendingReset ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Mail className="h-4 w-4" />
-              )}
-              نسيت كلمة المرور؟ أرسل رابط إعادة التعيين
-            </Button>
+          <div className="flex justify-end">
             <Button onClick={handleChangePassword} disabled={changingPassword} className="gap-2">
               {changingPassword ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

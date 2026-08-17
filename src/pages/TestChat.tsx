@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, Trash2 } from 'lucide-react';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -187,34 +186,39 @@ export default function TestChatPage() {
 
   if (chatbotLoading) {
     return (
-      <div className="space-y-6" dir="rtl">
-        <PageHeader title="تجربة الشات" description="اختبر ردود الشات بوت بناءً على قاعدة المعرفة الفعلية" />
-        <div className="card-elevated h-[60vh] animate-pulse bg-muted/30" />
+      <div className="flex h-[calc(100vh-8rem)] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] flex-col" dir="rtl">
-      <PageHeader
-        title="تجربة الشات"
-        description="اختبر ردود الشات بوت بناءً على قاعدة المعرفة الفعلية"
-        actions={
-          messages.length > 1 ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearHistory}
-              disabled={clearing}
-              className="gap-2 text-destructive hover:text-destructive"
-            >
-              {clearing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-              مسح المحادثة
-            </Button>
-          ) : undefined
-        }
-      />
-      <div className="mb-6" />
+    <div className="animate-fade-in flex h-[calc(100vh-8rem)] flex-col" dir="rtl">
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">تجربة الشات</h1>
+          <p className="mt-1 text-muted-foreground">
+            اختبر ردود الشات بوت بناءً على قاعدة المعرفة الفعلية
+          </p>
+        </div>
+        {messages.length > 1 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleClearHistory}
+            disabled={clearing}
+            className="gap-2 text-destructive hover:text-destructive"
+          >
+            {clearing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Trash2 className="h-4 w-4" />
+            )}
+            مسح المحادثة
+          </Button>
+        )}
+      </div>
 
       {/* Chat Container */}
       <div className="card-elevated flex flex-1 flex-col overflow-hidden">
@@ -242,7 +246,7 @@ export default function TestChatPage() {
               </div>
               <div
                 className={cn(
-                  'max-w-[70%] rounded-lg px-4 py-2.5',
+                  'max-w-[70%] rounded-2xl px-4 py-2.5',
                   message.role === 'bot'
                     ? 'bg-muted text-foreground'
                     : 'bg-primary text-primary-foreground'
@@ -260,7 +264,7 @@ export default function TestChatPage() {
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
                 <Bot className="h-4 w-4 text-primary" />
               </div>
-              <div className="rounded-lg bg-muted px-4 py-2.5">
+              <div className="rounded-2xl bg-muted px-4 py-2.5">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               </div>
             </div>

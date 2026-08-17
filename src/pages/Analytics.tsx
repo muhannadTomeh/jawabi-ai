@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, MessageSquare, TrendingUp, Share2, Users } from 'lucide-react';
+import { BarChart3, MessageSquare, TrendingUp, Share2, Loader2, Users } from 'lucide-react';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { useChatbot } from '@/hooks/useChatbot';
 import { supabase } from '@/integrations/supabase/client';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { StatCardsSkeleton } from '@/components/layout/PageSkeletons';
 
 interface AnalyticsData {
   totalMessages: number;
@@ -82,9 +80,8 @@ export default function AnalyticsPage() {
 
   if (chatbotLoading || loading) {
     return (
-      <div className="space-y-8 animate-fade-in" dir="rtl">
-        <PageHeader title="الإحصائيات" description="تتبع أداء الشات بوت والتفاعل بناءً على البيانات الحقيقية" />
-        <StatCardsSkeleton />
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -99,8 +96,14 @@ export default function AnalyticsPage() {
   };
 
   return (
-    <div className="space-y-8" dir="rtl">
-      <PageHeader title="الإحصائيات" description="تتبع أداء الشات بوت والتفاعل بناءً على البيانات الحقيقية" />
+    <div className="animate-fade-in space-y-8" dir="rtl">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">الإحصائيات</h1>
+        <p className="mt-1 text-muted-foreground">
+          تتبع أداء الشات بوت والتفاعل بناءً على البيانات الحقيقية
+        </p>
+      </div>
 
       {/* Stats */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

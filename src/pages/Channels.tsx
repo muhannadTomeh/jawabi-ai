@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ExternalLink, Settings, Loader2, Unlink, Copy, Check, Globe, Info, ChevronDown, MoreHorizontal } from 'lucide-react';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { CardGridSkeleton } from '@/components/layout/PageSkeletons';
+import { ExternalLink, Settings, Loader2, Unlink, Copy, Check, Globe } from 'lucide-react';
 import { FaTelegram, FaFacebookMessenger, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
 import { Button } from '@/components/ui/button';
@@ -19,27 +17,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useChatbot } from '@/hooks/useChatbot';
 import { useToast } from '@/hooks/use-toast';
 import { TelegramConnectDialog } from '@/components/channels/TelegramConnectDialog';
 import { OAuthConnectDialog } from '@/components/channels/OAuthConnectDialog';
-import { EmbedWidgetCard } from '@/components/channels/EmbedWidgetCard';
 
 type Platform = 'telegram' | 'facebook' | 'instagram' | 'whatsapp';
 
@@ -282,9 +264,8 @@ export default function ChannelsPage() {
 
   if (chatbotLoading || loading) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        <PageHeader title="القنوات" description="اربط الشات بوت بمنصات المراسلة" />
-        <CardGridSkeleton count={4} />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -303,46 +284,24 @@ export default function ChannelsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="القنوات" description="اربط الشات بوت بمنصات المراسلة" />
-
-      <details className="card-elevated p-5 group">
-        <summary className="flex items-center gap-3 cursor-pointer list-none">
-          <div className="rounded-lg bg-amber-500/10 p-2">
-            <Info className="h-5 w-5 text-amber-600" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-foreground">ملاحظة مهمة لربط قنوات Meta (فيسبوك / إنستغرام / واتساب)</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">تطبيق جوابي حالياً في وضع التطوير — يجب إضافتك كمختبِر (Tester) لتتمكن من الربط.</p>
-          </div>
-          <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform group-open:rotate-180" />
-        </summary>
-        <div className="mt-4 ps-11 space-y-3 text-sm text-foreground">
-          <p>لربط أي قناة من Meta، يجب أن يضيفك مالك التطبيق كـ <strong>Tester</strong> أو <strong>Developer</strong> في Meta for Developers. الخطوات:</p>
-          <ol className="list-decimal ps-6 space-y-1.5 text-muted-foreground">
-            <li>أرسل لنا اسم حساب فيسبوك الخاص بك على: <a href="mailto:muhannad.tomeh22@gmail.com" className="text-primary hover:underline">muhannad.tomeh22@gmail.com</a></li>
-            <li>سنرسل لك دعوة كـ Tester على تطبيق جوابي في Meta.</li>
-            <li>افتح <a href="https://developers.facebook.com/settings/developer/requests/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-1">إعدادات المطوّر في Meta <ExternalLink className="h-3 w-3" /></a> واقبل الدعوة.</li>
-            <li>ارجع إلى هذه الصفحة واضغط "ربط" على القناة المطلوبة.</li>
-          </ol>
-          <p className="text-xs text-muted-foreground pt-2 border-t border-border">
-            💡 <strong>تيليجرام</strong> يعمل مباشرة بدون هذه الخطوة. ننصح بالبدء به.
-          </p>
-        </div>
-      </details>
+    <div className="animate-fade-in space-y-6">
+      <div>
+        <h1 className="text-2xl font-semibold text-foreground">القنوات</h1>
+        <p className="mt-1 text-muted-foreground">اربط الشات بوت بمنصات المراسلة</p>
+      </div>
 
       {publicUrl && (
-        <div className="surface-panel p-6 sm:p-8">
+        <div className="card-elevated p-6">
           <div className="flex items-start gap-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border/70 bg-muted/40">
-              <Globe className="h-5 w-5 text-muted-foreground" />
+            <div className="rounded-xl bg-primary/10 p-3">
+              <Globe className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-foreground">رابط الشات بوت العام</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 شارك هذا الرابط مع عملائك ليتمكنوا من التحدث مع البوت مباشرة من المتصفح
               </p>
-              <div className="mt-4 flex max-w-[600px] flex-col gap-2 sm:flex-row">
+              <div className="mt-4 flex gap-2">
                 <Input value={publicUrl} readOnly dir="ltr" className="font-mono text-sm" />
                 <Button onClick={copyLink} variant="outline" className="shrink-0">
                   {copied ? <Check className="ml-2 h-4 w-4" /> : <Copy className="ml-2 h-4 w-4" />}
@@ -360,108 +319,90 @@ export default function ChannelsPage() {
         </div>
       )}
 
-      {chatbot?.public_slug && <EmbedWidgetCard slug={chatbot.public_slug} />}
+      <div className="grid gap-6 md:grid-cols-2">
+        {platforms.map((platform) => {
+          const info = channelInfo[platform];
+          const connected = isConnected(platform);
+          const connInfo = getConnectionInfo(platform);
+          const botStatus = getBotStatus(platform);
+          const isToggling = togglingPlatform === platform;
+          const Icon = info.Icon;
 
-      <div className="surface-panel overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead>القناة</TableHead>
-                <TableHead className="hidden md:table-cell">الحساب</TableHead>
-                <TableHead>الحالة</TableHead>
-                <TableHead className="hidden sm:table-cell">تشغيل البوت</TableHead>
-                <TableHead className="w-12 text-end">إجراءات</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {platforms.map((platform) => {
-                const info = channelInfo[platform];
-                const connected = isConnected(platform);
-                const connInfo = getConnectionInfo(platform);
-                const botStatus = getBotStatus(platform);
-                const isToggling = togglingPlatform === platform;
-                const Icon = info.Icon;
+          return (
+            <div key={platform} className="card-elevated p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-4">
+                  <div className={`rounded-xl p-3 ${info.color}`}>
+                    <Icon className={`h-6 w-6 ${info.textColor}`} />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground">{info.name}</h3>
+                    <StatusBadge status={connected ? 'connected' : 'disconnected'} className="mt-1" />
+                  </div>
+                </div>
+              </div>
 
-                return (
-                  <TableRow key={platform}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${info.color}`}>
-                          <Icon className={`h-[18px] w-[18px] ${info.textColor}`} />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="font-medium text-foreground">{info.name}</p>
-                          <p className="line-clamp-1 max-w-[320px] text-xs text-muted-foreground">
-                            {info.description}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden text-sm text-muted-foreground md:table-cell" dir="ltr">
-                      {connected && connInfo ? connInfo : '—'}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={connected ? 'connected' : 'disconnected'} />
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      {connected ? (
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            id={`bot-status-${platform}`}
-                            checked={botStatus === 'active'}
-                            disabled={isToggling}
-                            onCheckedChange={(checked) => handleToggleBotStatus(platform, checked)}
-                          />
-                          <Label
-                            htmlFor={`bot-status-${platform}`}
-                            className={`text-xs font-medium ${
-                              botStatus === 'active' ? 'text-success' : 'text-muted-foreground'
-                            }`}
-                          >
-                            {isToggling ? 'جارٍ التحديث...' : botStatus === 'active' ? 'نشط' : 'موقوف'}
-                          </Label>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-end">
-                      {connected ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-40">
-                            <DropdownMenuItem onClick={() => handleConnect(platform)}>
-                              <Settings className="me-2 h-4 w-4" />
-                              إعدادات
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => setDisconnectPlatform(platform)}
-                            >
-                              <Unlink className="me-2 h-4 w-4" />
-                              إلغاء الربط
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : (
-                        <Button size="sm" variant="outline" onClick={() => handleConnect(platform)}>
-                          <ExternalLink className="me-2 h-4 w-4" />
-                          ربط
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+              <p className="mt-4 text-sm text-muted-foreground">{info.description}</p>
+
+              {connected && connInfo && (
+                <div className="mt-3 rounded-lg bg-muted/50 p-3 text-sm">
+                  <p className="text-muted-foreground">
+                    {platform === 'telegram' ? 'البوت' : platform === 'whatsapp' ? 'الرقم' : 'الحساب'}:{' '}
+                    <span className="font-medium text-foreground" dir="ltr">{connInfo}</span>
+                  </p>
+                </div>
+              )}
+
+              {connected && (
+                <div className="mt-4 flex items-center justify-between rounded-lg border border-border bg-card p-3">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor={`bot-status-${platform}`} className="text-sm font-medium">
+                      حالة البوت
+                    </Label>
+                    <span
+                      className={`text-xs font-medium ${
+                        botStatus === 'active' ? 'text-success' : 'text-muted-foreground'
+                      }`}
+                    >
+                      {isToggling ? 'جارٍ التحديث...' : botStatus === 'active' ? 'نشط' : 'غير نشط'}
+                    </span>
+                  </div>
+                  <Switch
+                    id={`bot-status-${platform}`}
+                    checked={botStatus === 'active'}
+                    disabled={isToggling}
+                    onCheckedChange={(checked) => handleToggleBotStatus(platform, checked)}
+                  />
+                </div>
+              )}
+
+              <div className="mt-6 flex items-center gap-3">
+                {connected ? (
+                  <>
+                    <Button variant="outline" size="sm" onClick={() => handleConnect(platform)}>
+                      <Settings className="ml-2 h-4 w-4" />
+                      إعدادات
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setDisconnectPlatform(platform)}
+                    >
+                      <Unlink className="ml-2 h-4 w-4" />
+                      إلغاء الربط
+                    </Button>
+                  </>
+                ) : (
+                  <Button size="sm" onClick={() => handleConnect(platform)}>
+                    <ExternalLink className="ml-2 h-4 w-4" />
+                    ربط
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Telegram Dialog */}

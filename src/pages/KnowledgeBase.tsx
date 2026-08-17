@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, FileText, MessageCircle, File, MoreHorizontal, Trash2, Edit, Upload, Image as ImageIcon, Globe, Share2, RefreshCw } from 'lucide-react';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { ListSkeleton } from '@/components/layout/PageSkeletons';
+import { Plus, Search, FileText, MessageCircle, File, MoreHorizontal, Trash2, Edit, Upload, Loader2, Image as ImageIcon, Globe, Share2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,14 +19,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useChatbot } from '@/hooks/useChatbot';
 import { useToast } from '@/hooks/use-toast';
@@ -184,31 +174,33 @@ export default function KnowledgeBasePage() {
 
   if (chatbotLoading || loading) {
     return (
-      <div className="space-y-6 animate-fade-in" dir="rtl">
-        <PageHeader title="قاعدة المعرفة" description="أضف محتوى ليتعلم منه الشات بوت" />
-        <ListSkeleton rows={5} />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 text-right" dir="rtl">
-      <PageHeader
-        title="قاعدة المعرفة"
-        description="أضف محتوى ليتعلم منه الشات بوت"
-        actions={
-          <>
-            <Button variant="outline" onClick={() => setUploadDialogOpen(true)}>
-              <Upload className="me-2 h-4 w-4" />
-              رفع ملف
-            </Button>
-            <Button onClick={() => setAddDialogOpen(true)}>
-              <Plus className="me-2 h-4 w-4" />
-              إضافة محتوى
-            </Button>
-          </>
-        }
-      />
+    <div className="animate-fade-in space-y-6 text-right" dir="rtl">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">قاعدة المعرفة</h1>
+          <p className="mt-1 text-muted-foreground">
+            أضف محتوى ليتعلم منه الشات بوت
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setUploadDialogOpen(true)}>
+            <Upload className="me-2 h-4 w-4" />
+            رفع ملف
+          </Button>
+          <Button onClick={() => setAddDialogOpen(true)}>
+            <Plus className="me-2 h-4 w-4" />
+            إضافة محتوى
+          </Button>
+        </div>
+      </div>
 
       {/* Search */}
       <div className="relative max-w-md">
@@ -221,89 +213,72 @@ export default function KnowledgeBasePage() {
         />
       </div>
 
-      {/* Content table */}
+      {/* Content List */}
       {filteredItems.length > 0 ? (
-        <div className="surface-panel overflow-hidden">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>العنوان</TableHead>
-                  <TableHead className="hidden sm:table-cell">النوع</TableHead>
-                  <TableHead className="hidden lg:table-cell">التفاصيل</TableHead>
-                  <TableHead className="hidden md:table-cell">تاريخ الإضافة</TableHead>
-                  <TableHead className="w-12 text-end">إجراءات</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredItems.map((item) => {
-                  const Icon = typeIcons[item.type] || FileText;
-                  const detail =
-                    item.type === 'faq' ? item.question : item.file_name || item.file_url || item.content;
-                  return (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-muted/40">
-                            <Icon className="h-4 w-4 text-muted-foreground" />
-                          </span>
-                          <span className="truncate font-medium text-foreground">{item.title}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden text-sm text-muted-foreground sm:table-cell">
-                        {typeLabels[item.type] || item.type}
-                      </TableCell>
-                      <TableCell className="hidden max-w-[280px] lg:table-cell">
-                        <span className="line-clamp-1 text-sm text-muted-foreground">{detail || '—'}</span>
-                      </TableCell>
-                      <TableCell className="hidden text-sm text-muted-foreground md:table-cell">
-                        {new Date(item.created_at).toLocaleDateString('ar-SA')}
-                      </TableCell>
-                      <TableCell className="text-end">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-40">
-                            <DropdownMenuItem onClick={() => setEditItem(item)}>
-                              <Edit className="me-2 h-4 w-4" />
-                              تعديل
-                            </DropdownMenuItem>
-                            {item.type === 'social' && item.source_ref && (
-                              <DropdownMenuItem
-                                onClick={() => handleSyncSocial(item)}
-                                disabled={syncingId === item.id}
-                              >
-                                <RefreshCw className={`me-2 h-4 w-4 ${syncingId === item.id ? 'animate-spin' : ''}`} />
-                                مزامنة الآن
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive" onClick={() => setDeleteItem(item)}>
-                              <Trash2 className="me-2 h-4 w-4" />
-                              حذف
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+        <div className="space-y-3">
+          {filteredItems.map((item) => {
+            const Icon = typeIcons[item.type] || FileText;
+            return (
+              <div
+                key={item.id}
+                className="card-elevated flex items-center gap-4 p-4 transition-all hover:shadow-md"
+              >
+                <div className="rounded-lg bg-primary/10 p-2.5">
+                  <Icon className="h-5 w-5 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-medium text-foreground">{item.title}</h3>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {typeLabels[item.type]}
+                    {item.type === 'faq' && item.question && (
+                      <span className="ms-1">• {item.question}</span>
+                    )}
+                    {item.type === 'file' && item.file_name && (
+                      <span className="ms-1">• {item.file_name}</span>
+                    )}
+                  </p>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="shrink-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setEditItem(item)}>
+                      <Edit className="me-2 h-4 w-4" />
+                      تعديل
+                    </DropdownMenuItem>
+                    {item.type === 'social' && item.source_ref && (
+                      <DropdownMenuItem
+                        onClick={() => handleSyncSocial(item)}
+                        disabled={syncingId === item.id}
+                      >
+                        <RefreshCw className={`me-2 h-4 w-4 ${syncingId === item.id ? 'animate-spin' : ''}`} />
+                        مزامنة الآن
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={() => setDeleteItem(item)}
+                    >
+                      <Trash2 className="me-2 h-4 w-4" />
+                      حذف
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            );
+          })}
         </div>
       ) : (
-        <div className="surface-panel empty-state">
-          <div className="empty-state-icon">
-            <FileText className="h-5 w-5" />
-          </div>
-          <h3 className="mt-2 font-semibold text-foreground">
+        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border py-12">
+          <FileText className="h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-4 font-semibold text-foreground">
             {searchQuery ? 'لا توجد نتائج' : 'لا يوجد محتوى'}
           </h3>
-          <p className="max-w-sm text-sm text-muted-foreground">
+          <p className="mt-1 text-center text-sm text-muted-foreground">
             {searchQuery
               ? 'جرب البحث بكلمات مختلفة'
               : 'أضف أسئلة شائعة أو محتوى نصي أو ملفات لتدريب الشات بوت'}

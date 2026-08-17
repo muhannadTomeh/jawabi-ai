@@ -22,33 +22,15 @@ import { Menu } from 'lucide-react';
 import { useEffect, useState } from 'react';
 const logo = { url: '/logo.png' };
 
-const navGroups = [
-  {
-    label: 'الرئيسية',
-    items: [
-      { name: 'لوحة التحكم', href: '/dashboard', icon: Bot },
-      { name: 'الإحصائيات', href: '/dashboard/analytics', icon: BarChart3 },
-    ],
-  },
-  {
-    label: 'إدارة البوت',
-    items: [
-      { name: 'قاعدة المعرفة', href: '/dashboard/knowledge', icon: BookOpen },
-      { name: 'القنوات', href: '/dashboard/channels', icon: Share2 },
-      { name: 'تجربة الشات', href: '/dashboard/test', icon: MessageSquare },
-    ],
-  },
-  {
-    label: 'التواصل',
-    items: [
-      { name: 'العملاء', href: '/dashboard/customers', icon: Users },
-      { name: 'الإشعارات', href: '/dashboard/notifications', icon: Bell },
-    ],
-  },
-  {
-    label: 'النظام',
-    items: [{ name: 'الإعدادات', href: '/dashboard/settings', icon: Settings }],
-  },
+const navigation = [
+  { name: 'لوحة التحكم', href: '/dashboard', icon: Bot },
+  { name: 'قاعدة المعرفة', href: '/dashboard/knowledge', icon: BookOpen },
+  { name: 'القنوات', href: '/dashboard/channels', icon: Share2 },
+  { name: 'العملاء', href: '/dashboard/customers', icon: Users },
+  { name: 'الإحصائيات', href: '/dashboard/analytics', icon: BarChart3 },
+  { name: 'تجربة الشات', href: '/dashboard/test', icon: MessageSquare },
+  { name: 'الإشعارات', href: '/dashboard/notifications', icon: Bell },
+  { name: 'الإعدادات', href: '/dashboard/settings', icon: Settings },
 ];
 
 const accountNavItem = { name: 'إعدادات الحساب', href: '/dashboard/account', icon: UserCog };
@@ -73,44 +55,39 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full w-full flex-col bg-sidebar">
         {/* Logo */}
-        <div className="flex h-14 items-center border-b border-sidebar-border px-4">
+        <div className="flex h-16 items-center border-b border-sidebar-border px-6">
           <Link to="/dashboard" className="flex items-center gap-2">
-            <img src={logo.url} alt="جوابي" width={28} height={28} className="h-7 w-7" />
-            <span className="text-lg font-semibold tracking-tight text-foreground">
+            <img src={logo.url} alt="جوابي" width={32} height={32} className="h-8 w-8" />
+            <span className="text-xl font-semibold tracking-tight text-foreground">
               جوابي
             </span>
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-2">
-          {navGroups.map((group) => (
-            <div key={group.label} className="space-y-0.5">
-              <p className="nav-group-label">{group.label}</p>
-              {group.items.map((item) => {
-                const active = isActive(item.href);
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    onClick={onNavigate}
-                    className={cn(
-                      'nav-item',
-                      active ? 'nav-item-active' : 'nav-item-inactive'
-                    )}
-                  >
-                    <item.icon className="nav-icon" />
-                    <span className="flex-1 truncate">{item.name}</span>
-                    {item.href === '/dashboard/notifications' && unreadCount > 0 && (
-                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
-                        {unreadCount > 99 ? '99+' : unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
+        <nav className="flex-1 space-y-1 px-3 py-4">
+          {navigation.map((item) => {
+            const active = isActive(item.href);
+            return (
+              <Link
+                key={item.name}
+                to={item.href}
+                onClick={onNavigate}
+                className={cn(
+                  'nav-item',
+                  active ? 'nav-item-active' : 'nav-item-inactive'
+                )}
+              >
+                <item.icon className="h-5 w-5" />
+                <span className="flex-1">{item.name}</span>
+                {item.href === '/dashboard/notifications' && unreadCount > 0 && (
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
           
           {/* Admin Link */}
           {isAdmin && (
@@ -122,7 +99,7 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
                 isActive('/dashboard/admin') ? 'nav-item-active' : 'nav-item-inactive'
               )}
             >
-              <ShieldCheck className="nav-icon text-amber-500" />
+              <ShieldCheck className="h-5 w-5 text-amber-500" />
               <span>لوحة الأدمن</span>
             </Link>
           )}
@@ -138,7 +115,7 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
               isActive(accountNavItem.href) ? 'nav-item-active' : 'nav-item-inactive'
             )}
           >
-            <accountNavItem.icon className="nav-icon" />
+            <accountNavItem.icon className="h-5 w-5" />
             <span>{accountNavItem.name}</span>
           </Link>
           <div className="flex items-center gap-3 rounded-lg px-3 py-2">
@@ -168,7 +145,7 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
 
 export function AppSidebar() {
   return (
-    <aside className="fixed right-0 top-0 z-40 hidden h-screen w-56 border-l border-sidebar-border bg-sidebar lg:block">
+    <aside className="fixed right-0 top-0 z-40 hidden h-screen w-64 border-l border-sidebar-border bg-sidebar lg:block">
       <SidebarInner />
     </aside>
   );

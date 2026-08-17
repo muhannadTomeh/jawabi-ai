@@ -1,11 +1,4 @@
 // Public chat for landing-page visitors. Answers questions about Jawabi platform.
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import {
-  enforceRateLimits,
-  getClientIp,
-  rateLimitResponse,
-} from "../_shared/rate-limit.ts";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -45,7 +38,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    let apiKey = Deno.env.get("LOVABLE_API_KEY");
+    const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "missing LOVABLE_API_KEY" }), {
         status: 500,
@@ -53,39 +46,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ---- Rate limiting: runs BEFORE any external/paid API call ----
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-    const rl = await enforceRateLimits(supabase, {
-      // The visitor assistant is platform-wide, so it shares one virtual bucket.
-      chatbotId: "00000000-0000-0000-0000-000000000000",
-      ip: getClientIp(req),
-      channel: "visitor",
-    });
-    if (!rl.allowed) return rateLimitResponse(corsHeaders);
-
     // Cap context to last 20 messages
     const trimmed = messages.slice(-20);
-
-    // Resolve model + key from the admin-configured active provider.
-    // Fail-safe: falls back to Lovable AI Gateway defaults.
-    let model = "google/gemini-2.5-flash";
-    const { data: activeProvider } = await supabase
-      .from("api_providers")
-      .select("id, api_key")
-      .eq("is_active", true)
-      .maybeSingle();
-    if (activeProvider) {
-      apiKey = activeProvider.api_key || apiKey;
-      const { data: providerModels } = await supabase
-        .from("api_provider_models")
-        .select("model_id")
-        .eq("provider_id", activeProvider.id)
-        .limit(1);
-      if (providerModels?.length) model = providerModels[0].model_id;
-    }
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -94,7 +56,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model,
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           ...trimmed,

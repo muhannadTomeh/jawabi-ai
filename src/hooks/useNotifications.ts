@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useChatbot } from "./useChatbot";
-import { toast } from "@/hooks/use-toast";
 
 export interface Notification {
   id: string;
@@ -50,17 +49,6 @@ export function useNotifications() {
     return () => entry.release();
   }, [chatbotId, queryClient]);
 
-  // Ask once for browser notification permission so alerts reach the owner
-  // even when the dashboard tab is in the background.
-  useEffect(() => {
-    if (!chatbotId) return;
-    if (typeof Notification === "undefined") return;
-    if (Notification.permission !== "default") return;
-    if (localStorage.getItem("jawabi_notif_prompted")) return;
-    localStorage.setItem("jawabi_notif_prompted", "1");
-    Notification.requestPermission().catch(() => {});
-  }, [chatbotId]);
-
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const markRead = async (id: string) => {
@@ -99,35 +87,6 @@ type Entry = {
 };
 const registry = new Map<string, Entry>();
 
-const CHANNEL_LABELS: Record<string, string> = {
-  telegram: "تيليجرام",
-  whatsapp: "واتساب",
-  facebook: "ماسنجر",
-  instagram: "إنستغرام",
-  web: "الويب",
-};
-
-/** Instant, in-app + OS level alert for a newly created notification. */
-function announce(n: Notification) {
-  const who = n.contact_name || n.contact_identifier || "عميل";
-  const via = CHANNEL_LABELS[n.channel] || n.channel;
-  const body = `${who} • ${via}${n.last_message ? ` — ${n.last_message.slice(0, 90)}` : ""}`;
-
-  toast({ title: n.title || "تدخل بشري مطلوب", description: body });
-
-  try {
-    if (typeof Notification !== "undefined" && window.Notification?.permission === "granted") {
-      new window.Notification(n.title || "جوابي — تدخل بشري مطلوب", {
-        body,
-        icon: "/logo.png",
-        tag: n.id,
-      });
-    }
-  } catch {
-    /* notifications unavailable — the toast already covers it */
-  }
-}
-
 function acquireNotificationsChannel(chatbotId: string, onChange: () => void) {
   let entry = registry.get(chatbotId);
   if (!entry) {
@@ -142,12 +101,7 @@ function acquireNotificationsChannel(chatbotId: string, onChange: () => void) {
           table: "notifications",
           filter: `chatbot_id=eq.${chatbotId}`,
         },
-        (payload) => {
-          if (payload.eventType === "INSERT") {
-            announce(payload.new as Notification);
-          }
-          listeners.forEach((fn) => fn());
-        }
+        () => listeners.forEach((fn) => fn())
       )
       .subscribe();
     entry = { channel, listeners, count: 0 };

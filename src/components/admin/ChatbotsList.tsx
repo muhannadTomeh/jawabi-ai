@@ -178,7 +178,6 @@ export function ChatbotsList() {
             لا يوجد شات بوتات بعد
           </p>
         ) : (
-          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -254,7 +253,6 @@ export function ChatbotsList() {
               ))}
             </TableBody>
           </Table>
-          </div>
         )}
       </CardContent>
     </Card>

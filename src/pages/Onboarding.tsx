@@ -125,16 +125,12 @@ export default function Onboarding() {
       toast.error('يرجى تعبئة الحقول المطلوبة');
       return;
     }
-    // Get default plan
-    const { data: defaultPlan } = await supabase.from('plans').select('id').eq('is_default', true).maybeSingle();
-
     await goNext({
       business_name: bizName.trim(),
       business_category: bizCat,
       business_location: bizLoc.trim() || null,
       business_description: bizDesc.trim() || null,
       name: bizName.trim(),
-      plan_id: defaultPlan?.id,
       public_slug: chatbot?.public_slug || `${slugify(bizName)}-${(chatbot?.id || '').slice(0, 6)}`,
     });
   };
@@ -145,10 +141,10 @@ export default function Onboarding() {
     setTrainingProgress(25);
     try {
       const items: any[] = [];
-      if (knowledgeText.trim()) items.push({ chatbot_id: chatbot.id, type: 'text', title: 'معلومات عامة', content: knowledgeText.trim() });
+      if (knowledgeText.trim()) items.push({ chatbot_id: chatbot.id, source_type: 'text', title: 'معلومات عامة', content: knowledgeText.trim(), status: 'ready' });
       setTrainingProgress(50);
-      if (websiteUrl.trim()) items.push({ chatbot_id: chatbot.id, type: 'url', title: websiteUrl.trim(), content: websiteUrl.trim(), file_url: websiteUrl.trim() });
-      if (socialLink.trim()) items.push({ chatbot_id: chatbot.id, type: 'social', title: socialLink.trim(), content: socialLink.trim(), file_url: socialLink.trim() });
+      if (websiteUrl.trim()) items.push({ chatbot_id: chatbot.id, source_type: 'url', title: websiteUrl.trim(), content: websiteUrl.trim(), status: 'pending' });
+      if (socialLink.trim()) items.push({ chatbot_id: chatbot.id, source_type: 'social', title: socialLink.trim(), content: socialLink.trim(), status: 'pending' });
       setTrainingProgress(75);
       if (items.length) {
         const { error } = await supabase.from('knowledge_items').insert(items);
@@ -191,7 +187,7 @@ export default function Onboarding() {
       <div className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-lg">
+          <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg">
             <Sparkles className="h-7 w-7" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">

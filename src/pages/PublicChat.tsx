@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
-import { Send, Loader2, Sparkles, X } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { Send, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,8 +20,6 @@ function getGuestId(slug: string) {
 
 export default function PublicChat() {
   const { slug = '' } = useParams();
-  const [searchParams] = useSearchParams();
-  const embed = searchParams.get('embed') === '1';
   const [bot, setBot] = useState<{ id: string; name: string; welcome_message: string; fallback_message: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -94,7 +92,7 @@ export default function PublicChat() {
   }
 
   return (
-    <div dir="rtl" className={cn('flex flex-col bg-secondary/30', embed ? 'h-screen' : 'min-h-screen')}>
+    <div dir="rtl" className="flex min-h-screen flex-col bg-secondary/30">
       <header
         className="flex items-center gap-3 px-4 py-3 text-primary-foreground shadow"
         style={{ background: 'var(--gradient-primary)' }}
@@ -109,16 +107,6 @@ export default function PublicChat() {
             متصل الآن
           </div>
         </div>
-        {embed && (
-          <button
-            type="button"
-            aria-label="إغلاق"
-            onClick={() => window.parent?.postMessage('jawabi:close', '*')}
-            className="rounded-full p-1.5 transition-colors hover:bg-white/20"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        )}
       </header>
 
       <div ref={scrollRef} className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-3 overflow-y-auto p-4">
@@ -126,7 +114,7 @@ export default function PublicChat() {
           <div key={i} className={cn('flex', m.role === 'user' ? 'justify-start' : 'justify-end')}>
             <div
               className={cn(
-                'max-w-[85%] whitespace-pre-wrap rounded-lg px-4 py-2 text-sm leading-relaxed shadow-sm',
+                'max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm leading-relaxed shadow-sm',
                 m.role === 'user'
                   ? 'rounded-tr-sm border border-border bg-card text-foreground'
                   : 'rounded-tl-sm bg-primary text-primary-foreground'
@@ -138,7 +126,7 @@ export default function PublicChat() {
         ))}
         {sending && (
           <div className="flex justify-end">
-            <div className="rounded-lg rounded-tl-sm bg-primary px-4 py-2 text-primary-foreground">
+            <div className="rounded-2xl rounded-tl-sm bg-primary px-4 py-2 text-primary-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
             </div>
           </div>

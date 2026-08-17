@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Save, Bot, MessageSquare, Shield, Loader2, Send } from 'lucide-react';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { PageSkeleton } from '@/components/layout/PageSkeletons';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -134,25 +132,27 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6" dir="rtl">
-        <PageHeader title="الإعدادات" description="تخصيص سلوك الشات بوت وردوده" />
-        <PageSkeleton />
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6" dir="rtl">
-      <PageHeader
-        title="الإعدادات"
-        description="تخصيص سلوك الشات بوت وردوده"
-        actions={
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <Save className="me-2 h-4 w-4" />}
-            حفظ التغييرات
-          </Button>
-        }
-      />
+    <div className="animate-fade-in space-y-6" dir="rtl">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">الإعدادات</h1>
+          <p className="mt-1 text-muted-foreground">
+            تخصيص سلوك الشات بوت وردوده
+          </p>
+        </div>
+        <Button onClick={handleSave} disabled={saving}>
+          {saving ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <Save className="me-2 h-4 w-4" />}
+          حفظ التغييرات
+        </Button>
+      </div>
 
       {/* Settings Tabs */}
       <Tabs defaultValue="general" className="space-y-6" dir="rtl">
@@ -187,7 +187,7 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="language">لغة البوت</Label>
+                <Label htmlFor="language">اللغة</Label>
                 <Select value={language} onValueChange={setLanguage}>
                   <SelectTrigger id="language">
                     <SelectValue />

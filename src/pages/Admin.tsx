@@ -3,22 +3,17 @@ import { useAdminCheck } from '@/hooks/useAdminCheck';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { UsersList } from '@/components/admin/UsersList';
 import { ChatbotsList } from '@/components/admin/ChatbotsList';
-import { ApiIntegrations } from '@/components/admin/ApiIntegrations';
-import { AuditLog } from '@/components/admin/AuditLog';
-import { PlansManager } from '@/components/admin/PlansManager';
-import { ShieldCheck, Cpu, Users, Bot, ScrollText, CreditCard } from 'lucide-react';
+import { LlmSettings } from '@/components/admin/LlmSettings';
+import { Loader2, ShieldCheck, Cpu, Users, Bot } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { PageSkeleton } from '@/components/layout/PageSkeletons';
 
 export default function AdminPage() {
   const { isAdmin, loading } = useAdminCheck();
 
   if (loading) {
     return (
-      <div dir="rtl" className="space-y-6">
-        <PageHeader title="لوحة تحكم الأدمن" description="إدارة المستخدمين والشات بوتات والإحصائيات العامة" />
-        <PageSkeleton />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -29,7 +24,18 @@ export default function AdminPage() {
 
   return (
     <div dir="rtl" className="space-y-8 text-right">
-      <PageHeader title="لوحة تحكم الأدمن" description="إدارة المستخدمين والشات بوتات والإحصائيات العامة" />
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-500/10">
+          <ShieldCheck className="h-5 w-5 text-amber-600" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold">لوحة تحكم الأدمن</h1>
+          <p className="text-muted-foreground">
+            إدارة المستخدمين والشات بوتات والإحصائيات العامة
+          </p>
+        </div>
+      </div>
 
       {/* Stats */}
       <AdminStats />
@@ -49,14 +55,6 @@ export default function AdminPage() {
             <Cpu className="h-4 w-4" />
             نموذج الذكاء
           </TabsTrigger>
-          <TabsTrigger value="plans" className="gap-2">
-            <CreditCard className="h-4 w-4" />
-            الباقات
-          </TabsTrigger>
-          <TabsTrigger value="audit" className="gap-2">
-            <ScrollText className="h-4 w-4" />
-            سجل العمليات
-          </TabsTrigger>
         </TabsList>
         <TabsContent value="users">
           <UsersList />
@@ -65,13 +63,7 @@ export default function AdminPage() {
           <ChatbotsList />
         </TabsContent>
         <TabsContent value="llm">
-          <ApiIntegrations />
-        </TabsContent>
-        <TabsContent value="plans">
-          <PlansManager />
-        </TabsContent>
-        <TabsContent value="audit">
-          <AuditLog />
+          <LlmSettings />
         </TabsContent>
       </Tabs>
     </div>

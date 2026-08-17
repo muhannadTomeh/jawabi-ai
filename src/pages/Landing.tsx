@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { VisitorChat } from "@/components/landing/VisitorChat";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 const logo = { url: "/logo.png" };
 const robotMascot = { url: "/robot-mascot.png" };
 import {
@@ -11,35 +10,45 @@ import {
   Sparkles,
   Zap,
   Globe,
+  Shield,
   CheckCircle2,
   ArrowLeft,
+  BookOpen,
+  Users,
   BarChart3,
 } from "lucide-react";
-import { Brain, Target, UserCheck, FileText, XCircle } from "lucide-react";
-import { FaWhatsapp, FaFacebookMessenger, FaInstagram, FaTelegramPlane } from "react-icons/fa";
 
-const channels = [
-  { icon: FaWhatsapp, name: "واتساب", color: "#25D366" },
-  { icon: FaFacebookMessenger, name: "ماسنجر", color: "#0084FF" },
-  { icon: FaInstagram, name: "انستجرام", color: "#E1306C" },
-  { icon: FaTelegramPlane, name: "تيليجرام", color: "#229ED9" },
-];
-
-const comparison = [
-  { label: "الرد على العملاء", without: "يدوي وبطيء", with: "فوري وذكي" },
-  { label: "تفويت العملاء", without: "رسائل ضائعة", with: "لا تفوت أي عميل" },
-  { label: "ساعات العمل", without: "محدودة", with: "24/7 بدون توقف" },
-  { label: "الضغط على الموظفين", without: "مرهق", with: "أتمتة كاملة" },
-  { label: "متابعة العملاء", without: "صعبة", with: "تحليلات وتقارير ذكية" },
-];
-
-const capabilities = [
-  { icon: Brain, title: "يفهم نية العميل", desc: "يحلّل الرسالة ويستخرج القصد الحقيقي." },
-  { icon: MessageSquare, title: "يحاكي أسلوب الإنسان", desc: "ردود طبيعية بلهجتك بدون طابع آلي." },
-  { icon: Target, title: "يقنع بالشراء", desc: "يتعامل مع الاعتراضات ويغلق الصفقة." },
-  { icon: UserCheck, title: "يحوّل للموظف عند الحاجة", desc: "تسليم سلس مع كامل سياق المحادثة." },
-  { icon: FileText, title: "يوثّق ويلخّص", desc: "يحفظ تفاصيل العملاء ويقدّم ملخصات جاهزة." },
-  { icon: BarChart3, title: "تحليلات لحظية", desc: "لوحة متكاملة للأداء والنمو والفرص." },
+const features = [
+  {
+    icon: Bot,
+    title: "بوت ذكي بالعربية",
+    desc: "ردود طبيعية بلهجتك المفضلة مدعومة بأحدث نماذج الذكاء الاصطناعي.",
+  },
+  {
+    icon: BookOpen,
+    title: "قاعدة معرفة شاملة",
+    desc: "درّب بوتك من نصوص، ملفات، روابط، وصور وصفحات تواصل اجتماعي.",
+  },
+  {
+    icon: MessageSquare,
+    title: "قنوات متعددة",
+    desc: "تيليجرام، واتساب، فيسبوك وانستجرام من لوحة واحدة موحدة.",
+  },
+  {
+    icon: Users,
+    title: "إدارة العملاء",
+    desc: "ملفات تعريف تلقائية لكل عميل مع سجل المحادثات والتصنيف.",
+  },
+  {
+    icon: BarChart3,
+    title: "تحليلات لحظية",
+    desc: "تابع الأداء، معدل النجاح، وعدد الرسائل في الوقت الفعلي.",
+  },
+  {
+    icon: Shield,
+    title: "أمان وخصوصية",
+    desc: "بياناتك محمية بأعلى معايير الأمان مع عزل كامل بين الحسابات.",
+  },
 ];
 
 const steps = [
@@ -47,6 +56,15 @@ const steps = [
   { n: "2", title: "درّب بوتك", desc: "أضف معلومات عملك ومنتجاتك بسهولة." },
   { n: "3", title: "اربط قنواتك", desc: "فعّل البوت على واتساب وتيليجرام وغيرها." },
   { n: "4", title: "ابدأ البيع", desc: "دع البوت يجيب عملاءك 24/7 ويغلق الصفقات." },
+];
+
+const benefits = [
+  "إعداد سريع بدون أي خبرة تقنية",
+  "دعم كامل للغة العربية وجميع اللهجات",
+  "تكامل مباشر مع منصات التواصل الاجتماعي",
+  "تحويل المحادثات لموظف بشري عند الحاجة",
+  "تحديث المعرفة من صفحاتك تلقائياً",
+  "بدون رسوم خفية — جرّب مجاناً الآن",
 ];
 
 export default function Landing() {
@@ -103,13 +121,13 @@ export default function Landing() {
             </div>
             <h1 className="text-balance text-4xl font-bold leading-tight tracking-tight md:text-6xl">
               بوت ذكاء اصطناعي يرد على عملاءك
-              <span className="block bg-clip-text text-transparent pb-2 leading-[1.3]" style={{ backgroundImage: "var(--gradient-primary)" }}>
+              <span className="block bg-clip-text text-transparent" style={{ backgroundImage: "var(--gradient-primary)" }}>
                 بالعربية، على مدار الساعة
               </span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-              موظف ذكاء اصطناعي يعمل 24 ساعة، يحوّل المحادثات إلى فرص بيع.
-              لا يمل، لا ينسى، لا يأخذ إجازات، ويرد على كل عملاءك في نفس اللحظة.
+              أنشئ مساعدك الذكي خلال دقائق، اربطه بواتساب وتيليجرام وفيسبوك،
+              ودعه يجيب أسئلة عملاءك ويزيد مبيعاتك تلقائياً.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button asChild size="lg" className="min-w-56 text-base">
@@ -129,92 +147,24 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Channels */}
-      <section id="channels" className="container mx-auto px-4 py-20">
-        <div className="mx-auto mb-12 max-w-2xl text-center">
-          <h2 className="text-3xl font-bold md:text-4xl">يعمل على كل قنواتك</h2>
-          <p className="mt-4 text-muted-foreground">
-            اربط جوابي بمنصات التواصل بضغطة زر — لوحة واحدة موحّدة لكل المحادثات.
-          </p>
-        </div>
-        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
-          {channels.map((c) => (
-            <Card
-              key={c.name}
-              className="group flex flex-col items-center gap-3 p-6 transition-all hover:-translate-y-1 hover:shadow-lg"
-            >
-              <div
-                className="flex h-14 w-14 items-center justify-center rounded-lg transition-transform group-hover:scale-110"
-                style={{ backgroundColor: `${c.color}15` }}
-              >
-                <c.icon size={30} style={{ color: c.color }} />
-              </div>
-              <span className="text-sm font-semibold">{c.name}</span>
-            </Card>
-          ))}
-        </div>
-      </section>
-
-      {/* Capabilities */}
+      {/* Features */}
       <section id="features" className="container mx-auto px-4 py-20">
         <div className="mx-auto mb-14 max-w-2xl text-center">
-          <h2 className="text-3xl font-bold md:text-4xl">
-            جوابي لا يرد فقط...
-            <span className="block bg-clip-text text-transparent pb-2 leading-[1.3]" style={{ backgroundImage: "var(--gradient-primary)" }}>
-              بل يفهم ويتصرف
-            </span>
-          </h2>
-          <p className="mt-4 text-muted-foreground">موظف ذكي يفكّر ويتفاعل كأنه فرد من فريقك.</p>
+          <h2 className="text-3xl font-bold md:text-4xl">كل ما تحتاجه لخدمة عملاءك</h2>
+          <p className="mt-4 text-muted-foreground">
+            منصة متكاملة تجمع بين الذكاء الاصطناعي وسهولة الاستخدام.
+          </p>
         </div>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {capabilities.map((c) => (
-            <Card key={c.title} className="group p-6 transition-all hover:shadow-lg hover:-translate-y-1">
-              <div
-                className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl text-primary-foreground shadow-md"
-                style={{ background: "var(--gradient-primary)" }}
-              >
-                <c.icon className="h-5 w-5" />
+          {features.map((f) => (
+            <Card key={f.title} className="group p-6 transition-all hover:shadow-lg hover:-translate-y-1">
+              <div className="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+                <f.icon className="h-5 w-5" />
               </div>
-              <h3 className="mb-2 text-lg font-semibold">{c.title}</h3>
-              <p className="text-sm leading-relaxed text-muted-foreground">{c.desc}</p>
+              <h3 className="mb-2 text-lg font-semibold">{f.title}</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
             </Card>
           ))}
-        </div>
-      </section>
-
-      {/* With / Without Jawabi */}
-      <section className="bg-secondary/40 py-20">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto mb-14 max-w-2xl text-center">
-            <h2 className="text-3xl font-bold md:text-4xl">الفرق واضح</h2>
-            <p className="mt-4 text-muted-foreground">شاهد ما الذي يتغيّر عندما ينضم جوابي إلى فريقك.</p>
-          </div>
-          <Card className="mx-auto max-w-4xl overflow-hidden p-0">
-            <div className="grid grid-cols-3 border-b border-border bg-card text-center text-xs font-semibold sm:text-sm">
-              <div className="p-2.5 text-muted-foreground sm:p-4">المقارنة</div>
-              <div className="p-2.5 text-destructive sm:p-4">بدون جوابي</div>
-              <div className="p-2.5 text-primary sm:p-4">مع جوابي</div>
-            </div>
-            {comparison.map((row, i) => (
-              <div
-                key={row.label}
-                className={cn(
-                  "grid grid-cols-3 items-center border-b border-border text-center text-xs last:border-0 sm:text-sm",
-                  i % 2 === 1 && "bg-secondary/30"
-                )}
-              >
-                <div className="p-2.5 font-medium sm:p-4">{row.label}</div>
-                <div className="flex flex-col items-center justify-center gap-1 p-2.5 text-muted-foreground sm:flex-row sm:gap-2 sm:p-4">
-                  <XCircle className="h-4 w-4 shrink-0 text-destructive" />
-                  <span>{row.without}</span>
-                </div>
-                <div className="flex flex-col items-center justify-center gap-1 p-2.5 text-foreground sm:flex-row sm:gap-2 sm:p-4">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-primary" />
-                  <span>{row.with}</span>
-                </div>
-              </div>
-            ))}
-          </Card>
         </div>
       </section>
 
@@ -239,39 +189,46 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Chat example */}
+      {/* Benefits */}
       <section className="container mx-auto px-4 py-20">
-        <div className="mx-auto mb-12 max-w-2xl text-center">
-          <h2 className="text-3xl font-bold md:text-4xl">شاهد جوابي أثناء العمل</h2>
-          <p className="mt-4 text-muted-foreground">محادثة حقيقية بأسلوب طبيعي، بلهجتك، وفي أي وقت.</p>
-        </div>
-        <div className="mx-auto max-w-2xl">
+        <div className="grid items-center gap-12 md:grid-cols-2">
+          <div>
+            <h2 className="text-3xl font-bold md:text-4xl">لماذا جوابي؟</h2>
+            <p className="mt-4 text-muted-foreground">
+              صُمم خصيصاً للسوق العربي مع فهم عميق للهجات واحتياجات الأعمال المحلية.
+            </p>
+            <ul className="mt-6 space-y-3">
+              {benefits.map((b) => (
+                <li key={b} className="flex items-start gap-3">
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
+                  <span className="text-sm">{b}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
           <Card className="overflow-hidden border-2 p-0">
             <div className="border-b border-border bg-secondary/60 px-4 py-3 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Bot className="h-4 w-4 text-primary" />
-                <span>محادثة مباشرة • مثال</span>
-              </div>
+              محادثة مباشرة • مثال
             </div>
             <div className="space-y-3 p-6">
               <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-lg rounded-tr-sm bg-secondary px-4 py-2 text-sm">
+                <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-secondary px-4 py-2 text-sm">
                   السلام عليكم، هل المنتج متوفر؟
                 </div>
               </div>
               <div className="flex justify-end">
-                <div className="max-w-[80%] rounded-lg rounded-tl-sm bg-primary px-4 py-2 text-sm text-primary-foreground">
+                <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-primary px-4 py-2 text-sm text-primary-foreground">
                   وعليكم السلام 👋 نعم متوفر بجميع المقاسات والألوان. تحب أرسلك الكتالوج؟
                 </div>
               </div>
               <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-lg rounded-tr-sm bg-secondary px-4 py-2 text-sm">
+                <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-secondary px-4 py-2 text-sm">
                   أكيد، وكم سعر التوصيل؟
                 </div>
               </div>
               <div className="flex justify-end">
-                <div className="max-w-[80%] rounded-lg rounded-tl-sm bg-primary px-4 py-2 text-sm text-primary-foreground">
-                  التوصيل مجاني للطلبات فوق 200 شيكل 🚚
+                <div className="max-w-[80%] rounded-2xl rounded-tl-sm bg-primary px-4 py-2 text-sm text-primary-foreground">
+                  التوصيل مجاني للطلبات فوق 200 ريال 🚚
                 </div>
               </div>
             </div>
@@ -282,7 +239,7 @@ export default function Landing() {
       {/* Final CTA */}
       <section id="cta" className="container mx-auto px-4 pb-24">
         <div
-          className="relative overflow-hidden rounded-lg px-8 py-16 text-center text-primary-foreground"
+          className="relative overflow-hidden rounded-2xl px-8 py-16 text-center text-primary-foreground"
           style={{ background: "var(--gradient-primary)" }}
         >
           <Globe className="absolute -bottom-10 -left-10 h-48 w-48 opacity-10" />
@@ -311,11 +268,6 @@ export default function Landing() {
             </div>
             <span className="font-semibold">جوابي</span>
           </div>
-          <nav className="flex items-center gap-4 text-xs text-muted-foreground">
-            <Link to="/legal/privacy" className="hover:text-foreground">سياسة الخصوصية</Link>
-            <Link to="/legal/terms" className="hover:text-foreground">شروط الاستخدام</Link>
-            <Link to="/legal/data-deletion" className="hover:text-foreground">حذف البيانات</Link>
-          </nav>
           <p className="text-xs text-muted-foreground">
             © {new Date().getFullYear()} جوابي. جميع الحقوق محفوظة.
           </p>

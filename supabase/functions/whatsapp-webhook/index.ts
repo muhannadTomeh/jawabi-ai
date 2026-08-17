@@ -1,5 +1,4 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { enforceRateLimits } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -242,17 +241,6 @@ Deno.serve(async (req) => {
         const accessToken = channel.config?.access_token;
 
         if (!value.messages) continue;
-
-        // ---- Rate limiting (per chatbot only) before any paid API call ----
-        const rl = await enforceRateLimits(supabase, {
-          chatbotId: (chatbot as any).id,
-          channel: "whatsapp",
-          dailyLimit: (chatbot as any).daily_message_limit ?? null,
-        });
-        if (!rl.allowed) {
-          console.log("whatsapp-webhook rate limited:", rl.limitType);
-          continue;
-        }
 
         // Build a map of contact names from the contacts array
         const contactNames: Record<string, string> = {};

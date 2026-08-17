@@ -5,24 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Loader2, Sparkles, MessageSquare, Bot, Globe, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { lovable } from '@/integrations/lovable';
-import { supabase } from '@/integrations/supabase/client';
-
-// Managed OAuth is served by Lovable hosting, so deployments on other hosts
-// (Vercel, custom domains) run the OAuth round-trip on this origin and get the
-// session handed back in the URL hash.
-const BRIDGE_ORIGIN = 'https://jawabi-ai.lovable.app';
-const isLovableHost = (hostname: string) => /(^|\.)lovable\.(app|dev)$/.test(hostname);
 
 export default function AuthPage() {
   const { user, loading, signIn, signUp } = useAuth();
@@ -32,10 +17,7 @@ export default function AuthPage() {
   const nextPath =
     rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/onboarding';
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [oauthLoading, setOauthLoading] = useState<'google' | null>(null);
-  const [forgotOpen, setForgotOpen] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [sendingReset, setSendingReset] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<'google' | 'apple' | null>(null);
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -54,28 +36,6 @@ export default function AuthPage() {
         description: 'مرحباً بك في جوابي',
       });
     }
-  }, []);
-
-  // Install a session handed back by the login bridge (tokens arrive in the
-  // hash, which never reaches a server), then scrub it from the URL.
-  useEffect(() => {
-    const hash = window.location.hash.replace(/^#/, '');
-    if (!hash) return;
-    const params = new URLSearchParams(hash);
-    const access_token = params.get('access_token');
-    const refresh_token = params.get('refresh_token');
-    if (!access_token || !refresh_token) return;
-
-    window.history.replaceState(null, '', window.location.pathname + window.location.search);
-    setOauthLoading('google');
-    supabase.auth.setSession({ access_token, refresh_token }).then(({ error }) => {
-      setOauthLoading(null);
-      if (error) {
-        toast.error('فشل تسجيل الدخول', { description: error.message });
-        return;
-      }
-      toast.success('تم تسجيل الدخول بنجاح', { description: 'مرحباً بك في جوابي' });
-    });
   }, []);
 
   if (loading) {
@@ -140,53 +100,15 @@ export default function AuthPage() {
     }
   };
 
-  const handleOAuth = async (provider: 'google') => {
-    setOauthLoading(provider);
-    return handleOAuthInner(provider);
-  };
-
-  const handleSendReset = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const email = forgotEmail.trim();
-    if (!email) return;
-    setSendingReset(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setSendingReset(false);
-    if (error) {
-      toast.error('تعذّر إرسال الرابط', { description: error.message });
-      return;
-    }
-    toast.success('تم إرسال رابط إعادة التعيين', {
-      description: 'تفقّد بريدك الإلكتروني واتبع الرابط لتعيين كلمة مرور جديدة.',
-    });
-    setForgotOpen(false);
-    setForgotEmail('');
-  };
-
-  const handleOAuthInner = async (provider: 'google') => {
+  const handleOAuth = async (provider: 'google' | 'apple') => {
     setOauthLoading(provider);
     try {
       sessionStorage.setItem('oauth_pending', provider);
-      const redirectTo =
-        window.location.origin +
-        '/auth' +
-        (rawNext ? `?next=${encodeURIComponent(nextPath)}` : '');
-
-      // Outside Lovable hosting (e.g. Vercel) the managed OAuth routes
-      // (/~oauth/*) do not exist, so we run the flow on the Lovable origin and
-      // come back here with the session.
-      if (!isLovableHost(window.location.hostname)) {
-        const bridge = new URL('/auth/bridge', BRIDGE_ORIGIN);
-        bridge.searchParams.set('provider', provider);
-        bridge.searchParams.set('return', redirectTo);
-        window.location.href = bridge.toString();
-        return;
-      }
-
       const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri: redirectTo,
+        redirect_uri:
+          window.location.origin +
+          '/auth' +
+          (rawNext ? `?next=${encodeURIComponent(nextPath)}` : ''),
       });
       if (result.error) {
         toast.error('فشل تسجيل الدخول', { description: result.error.message });
@@ -286,7 +208,7 @@ export default function AuthPage() {
             </p>
           </div>
 
-          <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
           {/* Social auth buttons */}
           <div className="space-y-3 mb-6">
             <Button
@@ -307,6 +229,22 @@ export default function AuthPage() {
                 </svg>
               )}
               <span className="ms-1">تسجيل الدخول بـ Google</span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-12 text-base font-medium border-border hover:bg-[#f5f5f7] hover:border-[#000]/20 transition-colors"
+              disabled={!!oauthLoading}
+              onClick={() => handleOAuth('apple')}
+            >
+              {oauthLoading === 'apple' ? (
+                <Loader2 className="me-2 h-5 w-5 animate-spin" />
+              ) : (
+                <svg className="me-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                </svg>
+              )}
+              <span className="ms-1">تسجيل الدخول بـ Apple</span>
             </Button>
           </div>
 
@@ -360,16 +298,6 @@ export default function AuthPage() {
                   ) : null}
                   تسجيل الدخول
                 </Button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setForgotEmail(loginEmail);
-                    setForgotOpen(true);
-                  }}
-                  className="block w-full text-center text-sm text-primary hover:underline"
-                >
-                  نسيت كلمة المرور؟
-                </button>
               </form>
             </TabsContent>
 
@@ -430,38 +358,6 @@ export default function AuthPage() {
         </div>
         </div>
       </div>
-
-      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
-        <DialogContent dir="rtl" className="sm:max-w-md text-right">
-          <DialogHeader className="text-right">
-            <DialogTitle>إعادة تعيين كلمة المرور</DialogTitle>
-            <DialogDescription>
-              أدخل بريدك الإلكتروني وسنرسل لك رابطاً لتعيين كلمة مرور جديدة.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSendReset} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="forgot-email" className="block text-right">البريد الإلكتروني</Label>
-              <Input
-                id="forgot-email"
-                type="email"
-                value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
-                placeholder="example@email.com"
-                required
-                dir="ltr"
-                className="text-right"
-              />
-            </div>
-            <DialogFooter>
-              <Button type="submit" className="w-full h-11" disabled={sendingReset}>
-                {sendingReset ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : null}
-                إرسال الرابط
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

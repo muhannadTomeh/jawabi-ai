@@ -14,113 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      admin_audit_log: {
-        Row: {
-          action: string
-          admin_email: string | null
-          admin_user_id: string
-          created_at: string
-          details: Json
-          id: string
-          ip_address: string | null
-          target_email: string | null
-          target_user_id: string | null
-          user_agent: string | null
-        }
-        Insert: {
-          action: string
-          admin_email?: string | null
-          admin_user_id: string
-          created_at?: string
-          details?: Json
-          id?: string
-          ip_address?: string | null
-          target_email?: string | null
-          target_user_id?: string | null
-          user_agent?: string | null
-        }
-        Update: {
-          action?: string
-          admin_email?: string | null
-          admin_user_id?: string
-          created_at?: string
-          details?: Json
-          id?: string
-          ip_address?: string | null
-          target_email?: string | null
-          target_user_id?: string | null
-          user_agent?: string | null
-        }
-        Relationships: []
-      }
-      api_provider_models: {
-        Row: {
-          display_name: string
-          fetched_at: string
-          id: string
-          model_id: string
-          provider_id: string
-        }
-        Insert: {
-          display_name: string
-          fetched_at?: string
-          id?: string
-          model_id: string
-          provider_id: string
-        }
-        Update: {
-          display_name?: string
-          fetched_at?: string
-          id?: string
-          model_id?: string
-          provider_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "api_provider_models_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "api_providers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      api_providers: {
-        Row: {
-          api_key: string | null
-          created_at: string
-          display_name: string
-          id: string
-          is_active: boolean
-          last_models_sync_at: string | null
-          last_validated_at: string | null
-          provider_key: string
-          updated_at: string
-        }
-        Insert: {
-          api_key?: string | null
-          created_at?: string
-          display_name: string
-          id?: string
-          is_active?: boolean
-          last_models_sync_at?: string | null
-          last_validated_at?: string | null
-          provider_key: string
-          updated_at?: string
-        }
-        Update: {
-          api_key?: string | null
-          created_at?: string
-          display_name?: string
-          id?: string
-          is_active?: boolean
-          last_models_sync_at?: string | null
-          last_validated_at?: string | null
-          provider_key?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       channels: {
         Row: {
           bot_status: string
@@ -168,7 +61,6 @@ export type Database = {
           business_name: string | null
           created_at: string
           custom_instructions: string
-          daily_message_limit: number
           dialect: string
           fallback_message: string
           id: string
@@ -178,7 +70,6 @@ export type Database = {
           onboarding_completed: boolean
           onboarding_step: number
           owner_telegram_chat_id: string | null
-          plan_id: string | null
           public_slug: string | null
           tone: string
           updated_at: string
@@ -193,7 +84,6 @@ export type Database = {
           business_name?: string | null
           created_at?: string
           custom_instructions?: string
-          daily_message_limit?: number
           dialect?: string
           fallback_message?: string
           id?: string
@@ -203,7 +93,6 @@ export type Database = {
           onboarding_completed?: boolean
           onboarding_step?: number
           owner_telegram_chat_id?: string | null
-          plan_id?: string | null
           public_slug?: string | null
           tone?: string
           updated_at?: string
@@ -218,7 +107,6 @@ export type Database = {
           business_name?: string | null
           created_at?: string
           custom_instructions?: string
-          daily_message_limit?: number
           dialect?: string
           fallback_message?: string
           id?: string
@@ -228,22 +116,13 @@ export type Database = {
           onboarding_completed?: boolean
           onboarding_step?: number
           owner_telegram_chat_id?: string | null
-          plan_id?: string | null
           public_slug?: string | null
           tone?: string
           updated_at?: string
           user_id?: string
           welcome_message?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "chatbots_plan_id_fkey"
-            columns: ["plan_id"]
-            isOneToOne: false
-            referencedRelation: "plans"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       conversation_locks: {
         Row: {
@@ -659,51 +538,6 @@ export type Database = {
           },
         ]
       }
-      plans: {
-        Row: {
-          allowed_model: string | null
-          created_at: string
-          id: string
-          is_default: boolean
-          max_channels: number
-          max_knowledge_items: number | null
-          messages_per_day: number
-          messages_per_minute_per_chatbot: number
-          name: string
-          price_monthly: number
-          slug: string
-          updated_at: string
-        }
-        Insert: {
-          allowed_model?: string | null
-          created_at?: string
-          id?: string
-          is_default?: boolean
-          max_channels?: number
-          max_knowledge_items?: number | null
-          messages_per_day?: number
-          messages_per_minute_per_chatbot?: number
-          name: string
-          price_monthly?: number
-          slug: string
-          updated_at?: string
-        }
-        Update: {
-          allowed_model?: string | null
-          created_at?: string
-          id?: string
-          is_default?: boolean
-          max_channels?: number
-          max_knowledge_items?: number | null
-          messages_per_day?: number
-          messages_per_minute_per_chatbot?: number
-          name?: string
-          price_monthly?: number
-          slug?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -740,60 +574,6 @@ export type Database = {
           updated_at?: string
           user_id?: string
           username?: string | null
-        }
-        Relationships: []
-      }
-      rate_limit_counters: {
-        Row: {
-          bucket_key: string
-          created_at: string
-          id: string
-          request_count: number
-          window_start: string
-        }
-        Insert: {
-          bucket_key: string
-          created_at?: string
-          id?: string
-          request_count?: number
-          window_start: string
-        }
-        Update: {
-          bucket_key?: string
-          created_at?: string
-          id?: string
-          request_count?: number
-          window_start?: string
-        }
-        Relationships: []
-      }
-      rate_limit_violations: {
-        Row: {
-          bucket_key: string
-          channel: string | null
-          chatbot_id: string | null
-          created_at: string
-          id: string
-          identifier: string | null
-          limit_type: string
-        }
-        Insert: {
-          bucket_key: string
-          channel?: string | null
-          chatbot_id?: string | null
-          created_at?: string
-          id?: string
-          identifier?: string | null
-          limit_type: string
-        }
-        Update: {
-          bucket_key?: string
-          channel?: string | null
-          chatbot_id?: string | null
-          created_at?: string
-          id?: string
-          identifier?: string | null
-          limit_type?: string
         }
         Relationships: []
       }
@@ -1060,14 +840,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      check_and_increment_rate_limit: {
-        Args: {
-          p_bucket_key: string
-          p_max_requests: number
-          p_window_seconds: number
-        }
-        Returns: boolean
-      }
       get_chatbot_by_slug: {
         Args: { _slug: string }
         Returns: {
@@ -1076,14 +848,6 @@ export type Database = {
           language: string
           name: string
           welcome_message: string
-        }[]
-      }
-      get_chatbot_daily_usage: {
-        Args: { _chatbot_id: string }
-        Returns: {
-          limit_value: number
-          plan_name: string
-          used: number
         }[]
       }
       has_role: {
@@ -1129,7 +893,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "user" | "admin" | "platform_admin" | "mill_owner"
+      app_role: "user" | "admin"
       customer_tag: "new" | "prospect" | "regular" | "vip" | "blocked"
     }
     CompositeTypes: {
@@ -1258,7 +1022,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["user", "admin", "platform_admin", "mill_owner"],
+      app_role: ["user", "admin"],
       customer_tag: ["new", "prospect", "regular", "vip", "blocked"],
     },
   },

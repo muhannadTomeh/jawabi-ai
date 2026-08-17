@@ -4,15 +4,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { AuthProvider } from "@/hooks/useAuth";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { PageSkeleton } from "@/components/layout/PageSkeletons";
 
 // Route-based code splitting: each page is loaded on demand,
 // dramatically reducing the initial JS bundle and improving FCP/TTI.
 const AuthPage = lazy(() => import("@/pages/Auth"));
-const AuthBridge = lazy(() => import("@/pages/AuthBridge"));
-const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
 const Landing = lazy(() => import("@/pages/Landing"));
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
 const DashboardPage = lazy(() => import("@/pages/Dashboard"));
@@ -28,9 +26,6 @@ const CustomersPage = lazy(() => import("@/pages/Customers"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const PublicChat = lazy(() => import("@/pages/PublicChat"));
 const OAuthConsent = lazy(() => import("@/pages/OAuthConsent"));
-const PrivacyPolicy = lazy(() => import("@/pages/legal/PrivacyPolicy"));
-const TermsOfService = lazy(() => import("@/pages/legal/TermsOfService"));
-const DataDeletion = lazy(() => import("@/pages/legal/DataDeletion"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,9 +39,11 @@ const queryClient = new QueryClient({
 });
 
 function RouteFallback() {
-  // Skeleton instead of a full-screen spinner — the shell is already
-  // painted, so we only need to fill the main content area.
-  return <PageSkeleton />;
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    </div>
+  );
 }
 
 const App = () => (
@@ -61,12 +58,6 @@ const App = () => (
             {/* Auth route */}
             <Route path="/auth" element={<AuthPage />} />
 
-            {/* OAuth login bridge (used by non-Lovable deployments) */}
-            <Route path="/auth/bridge" element={<AuthBridge />} />
-
-            {/* Password recovery landing */}
-            <Route path="/reset-password" element={<ResetPassword />} />
-
             {/* OAuth consent screen for MCP / agent integrations */}
             <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
             
@@ -75,11 +66,6 @@ const App = () => (
 
             {/* Public shareable chat */}
             <Route path="/chat/:slug" element={<PublicChat />} />
-
-            {/* Legal pages (required for Meta App Review) */}
-            <Route path="/legal/privacy" element={<PrivacyPolicy />} />
-            <Route path="/legal/terms" element={<TermsOfService />} />
-            <Route path="/legal/data-deletion" element={<DataDeletion />} />
 
             {/* Onboarding (auth required, no sidebar) */}
             <Route path="/onboarding" element={<Onboarding />} />
