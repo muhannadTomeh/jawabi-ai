@@ -39,10 +39,10 @@ export function UsersList() {
   useEffect(() => {
     async function fetchUsers() {
       try {
-        // Fetch profiles
+        // Fetch profiles using the new function to get emails
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
-          .select('*')
+          .select('*, email:get_user_email(user_id)')
           .order('created_at', { ascending: false });
 
         if (profilesError) throw profilesError;
