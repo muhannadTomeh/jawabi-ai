@@ -12,9 +12,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Eye, Shield, User } from 'lucide-react';
+import { Loader2, Eye, Shield, User, Building2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { UserDetailsDialog } from './UserDetailsDialog';
 
 interface UserProfile {
   id: string;
@@ -24,15 +25,16 @@ interface UserProfile {
   created_at: string;
   role?: 'admin' | 'user';
   chatbots_count?: number;
+  business_name?: string;
+  email?: string;
 }
 
-interface UsersListProps {
-  onViewUser?: (userId: string) => void;
-}
 
-export function UsersList({ onViewUser }: UsersListProps) {
+export function UsersList() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   useEffect(() => {
     async function fetchUsers() {
@@ -52,26 +54,37 @@ export function UsersList({ onViewUser }: UsersListProps) {
 
         if (rolesError) throw rolesError;
 
-        // Fetch chatbots count per user
+        // Fetch chatbots info per user
         const { data: chatbots, error: chatbotsError } = await supabase
           .from('chatbots')
-          .select('user_id');
+          .select('user_id, business_name');
 
         if (chatbotsError) throw chatbotsError;
 
+        // Fetch user emails from auth (requires service role, but we can try to get them from a custom table if we had one, 
+        // since we don't, we'll focus on what we have)
+        // Note: profiles in this project don't have email, but we might have it in metadata or wait for future implementation.
+        // For now, let's use the business name from chatbots as requested.
+
         // Map roles to users
-        const rolesMap = new Map(roles?.map(r => [r.user_id, r.role]) || []);
+        const rolesMap = new Map(roles?.map((r: any) => [r.user_id, r.role]) || []);
         
-        // Count chatbots per user
+        // Count chatbots per user and store business name
         const chatbotsCount = new Map<string, number>();
-        chatbots?.forEach(c => {
+        const businessNames = new Map<string, string>();
+        
+        chatbots?.forEach((c: any) => {
           chatbotsCount.set(c.user_id, (chatbotsCount.get(c.user_id) || 0) + 1);
+          if (c.business_name && !businessNames.has(c.user_id)) {
+            businessNames.set(c.user_id, c.business_name);
+          }
         });
 
-        const enrichedUsers = (profiles || []).map(profile => ({
+        const enrichedUsers = (profiles || []).map((profile: any) => ({
           ...profile,
           role: rolesMap.get(profile.user_id) as 'admin' | 'user' | undefined,
           chatbots_count: chatbotsCount.get(profile.user_id) || 0,
+          business_name: businessNames.get(profile.user_id) || 'غير محدد',
         }));
 
         setUsers(enrichedUsers);
@@ -108,6 +121,7 @@ export function UsersList({ onViewUser }: UsersListProps) {
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -126,7 +140,7 @@ export function UsersList({ onViewUser }: UsersListProps) {
               <TableRow>
                 <TableHead className="text-right">المستخدم</TableHead>
                 <TableHead className="text-right">الصلاحية</TableHead>
-                <TableHead className="text-right">الشات بوتات</TableHead>
+                <TableHead className="text-right">المصلحة التجارية</TableHead>
                 <TableHead className="text-right">تاريخ التسجيل</TableHead>
                 <TableHead className="text-right">الإجراءات</TableHead>
               </TableRow>
@@ -158,7 +172,10 @@ export function UsersList({ onViewUser }: UsersListProps) {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{user.chatbots_count}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{user.business_name}</span>
+                    </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {format(new Date(user.created_at), 'dd MMM yyyy', { locale: ar })}
@@ -167,7 +184,10 @@ export function UsersList({ onViewUser }: UsersListProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onViewUser?.(user.user_id)}
+                       onClick={() => {
+                        setSelectedUser(user);
+                        setDetailsOpen(true);
+                      }}
                     >
                       <Eye className="h-4 w-4 ml-1" />
                       عرض
@@ -180,5 +200,12 @@ export function UsersList({ onViewUser }: UsersListProps) {
         )}
       </CardContent>
     </Card>
+
+    <UserDetailsDialog 
+      user={selectedUser} 
+      open={detailsOpen} 
+      onOpenChange={setDetailsOpen} 
+    />
+    </>
   );
 }
