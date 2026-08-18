@@ -73,23 +73,23 @@ export default function Landing() {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <Button asChild size="sm">
-              <Link to="/auth?mode=signup">تجربة مجانية</Link>
-            </Button>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/auth">تسجيل الدخول</Link>
-            </Button>
-          </div>
-          <nav className="hidden items-center gap-8 md:flex">
-            <a href="#cta" className="text-sm text-muted-foreground hover:text-foreground">ابدأ الآن</a>
-            <a href="#how" className="text-sm text-muted-foreground hover:text-foreground">كيف يعمل</a>
-            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground">المميزات</a>
-          </nav>
           <Link to="/" className="flex items-center gap-2">
             <span className="text-xl font-bold">جوابي</span>
             <img src={logo.url} alt="جوابي" width={36} height={36} className="h-9 w-9" />
           </Link>
+          <nav className="hidden items-center gap-8 md:flex">
+            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground">المميزات</a>
+            <a href="#how" className="text-sm text-muted-foreground hover:text-foreground">كيف يعمل</a>
+            <a href="#cta" className="text-sm text-muted-foreground hover:text-foreground">ابدأ الآن</a>
+          </nav>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/auth">تسجيل الدخول</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link to="/auth?mode=signup">تجربة مجانية</Link>
+            </Button>
+          </div>
         </div>
       </header>
 
