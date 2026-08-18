@@ -82,7 +82,6 @@ export function UsersList() {
 
         const enrichedUsers = (profiles || []).map((profile: any) => ({
           ...profile,
-          full_name: profile.full_name || 'مستخدم جديد',
           role: rolesMap.get(profile.user_id) as 'admin' | 'user' | undefined,
           chatbots_count: chatbotsCount.get(profile.user_id) || 0,
           business_name: businessNames.get(profile.user_id) || 'غير محدد',
