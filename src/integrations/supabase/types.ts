@@ -241,12 +241,14 @@ export type Database = {
       }
       customers: {
         Row: {
+          ai_classification: string | null
           channel: string
           chatbot_id: string
           created_at: string
           external_id: string
           first_seen_at: string
           id: string
+          last_classification_at: string | null
           last_message: string | null
           last_seen_at: string
           message_count: number
@@ -258,12 +260,14 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          ai_classification?: string | null
           channel: string
           chatbot_id: string
           created_at?: string
           external_id: string
           first_seen_at?: string
           id?: string
+          last_classification_at?: string | null
           last_message?: string | null
           last_seen_at?: string
           message_count?: number
@@ -275,12 +279,14 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          ai_classification?: string | null
           channel?: string
           chatbot_id?: string
           created_at?: string
           external_id?: string
           first_seen_at?: string
           id?: string
+          last_classification_at?: string | null
           last_message?: string | null
           last_seen_at?: string
           message_count?: number

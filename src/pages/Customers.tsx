@@ -105,7 +105,7 @@ export default function CustomersPage() {
       .eq('chatbot_id', chatbot.id)
       .order('last_seen_at', { ascending: false });
     if (error) toast.error('فشل تحميل العملاء');
-    else setCustomers((data || []) as Customer[]);
+    else setCustomers((data || []) as any[]);
     setLoading(false);
   };
 
