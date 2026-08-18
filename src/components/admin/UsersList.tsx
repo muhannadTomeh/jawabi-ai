@@ -42,7 +42,7 @@ export function UsersList() {
         // Fetch profiles using the new function to get emails
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
-          .select('*, email:get_user_email(user_id)')
+          .select('*')
           .order('created_at', { ascending: false });
 
         if (profilesError) throw profilesError;
@@ -129,6 +129,7 @@ export function UsersList() {
           المستخدمون ({users.length})
           <span className="sr-only">
             '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+            انحذفت اسماء المستخدمين بعد التعديلات التي قمت بتعديلها !!
           </span>
         </CardTitle>
       </CardHeader>
