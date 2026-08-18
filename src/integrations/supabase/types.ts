@@ -53,74 +53,6 @@ export type Database = {
         }
         Relationships: []
       }
-      api_provider_models: {
-        Row: {
-          display_name: string
-          fetched_at: string
-          id: string
-          model_id: string
-          provider_id: string
-        }
-        Insert: {
-          display_name: string
-          fetched_at?: string
-          id?: string
-          model_id: string
-          provider_id: string
-        }
-        Update: {
-          display_name?: string
-          fetched_at?: string
-          id?: string
-          model_id?: string
-          provider_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "api_provider_models_provider_id_fkey"
-            columns: ["provider_id"]
-            isOneToOne: false
-            referencedRelation: "api_providers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      api_providers: {
-        Row: {
-          api_key: string | null
-          created_at: string
-          display_name: string
-          id: string
-          is_active: boolean
-          last_models_sync_at: string | null
-          last_validated_at: string | null
-          provider_key: string
-          updated_at: string
-        }
-        Insert: {
-          api_key?: string | null
-          created_at?: string
-          display_name: string
-          id?: string
-          is_active?: boolean
-          last_models_sync_at?: string | null
-          last_validated_at?: string | null
-          provider_key: string
-          updated_at?: string
-        }
-        Update: {
-          api_key?: string | null
-          created_at?: string
-          display_name?: string
-          id?: string
-          is_active?: boolean
-          last_models_sync_at?: string | null
-          last_validated_at?: string | null
-          provider_key?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       channels: {
         Row: {
           bot_status: string
@@ -1129,7 +1061,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "user" | "admin" | "platform_admin" | "mill_owner"
+      app_role: "user" | "admin"
       customer_tag: "new" | "prospect" | "regular" | "vip" | "blocked"
     }
     CompositeTypes: {
@@ -1258,7 +1190,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["user", "admin", "platform_admin", "mill_owner"],
+      app_role: ["user", "admin"],
       customer_tag: ["new", "prospect", "regular", "vip", "blocked"],
     },
   },

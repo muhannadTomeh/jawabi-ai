@@ -72,24 +72,24 @@ export default function Landing() {
     <div dir="rtl" className="min-h-screen bg-background text-foreground">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-md">
-        <div className="container mx-auto flex h-16 flex-row-reverse items-center justify-between px-4">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={logo.url} alt="جوابي" width={36} height={36} className="h-9 w-9" />
-            <span className="text-xl font-bold">جوابي</span>
-          </Link>
-          <nav className="hidden items-center gap-8 md:flex">
-            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground">المميزات</a>
-            <a href="#how" className="text-sm text-muted-foreground hover:text-foreground">كيف يعمل</a>
-            <a href="#cta" className="text-sm text-muted-foreground hover:text-foreground">ابدأ الآن</a>
-          </nav>
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/auth">تسجيل الدخول</Link>
-            </Button>
             <Button asChild size="sm">
               <Link to="/auth?mode=signup">تجربة مجانية</Link>
             </Button>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/auth">تسجيل الدخول</Link>
+            </Button>
           </div>
+          <nav className="hidden items-center gap-8 md:flex">
+            <a href="#cta" className="text-sm text-muted-foreground hover:text-foreground">ابدأ الآن</a>
+            <a href="#how" className="text-sm text-muted-foreground hover:text-foreground">كيف يعمل</a>
+            <a href="#features" className="text-sm text-muted-foreground hover:text-foreground">المميزات</a>
+          </nav>
+          <Link to="/" className="flex items-center gap-2">
+            <span className="text-xl font-bold">جوابي</span>
+            <img src={logo.url} alt="جوابي" width={36} height={36} className="h-9 w-9" />
+          </Link>
         </div>
       </header>
 
@@ -112,7 +112,7 @@ export default function Landing() {
             alt="مساعد جوابي يلوّح بالترحيب"
             loading="eager"
             aria-hidden
-            className="pointer-events-none absolute top-6 left-4 h-20 w-20 origin-bottom animate-wave drop-shadow-xl sm:top-8 sm:left-10 sm:h-24 sm:w-24 md:h-32 md:w-32"
+            className="pointer-events-none absolute top-6 right-4 h-20 w-20 origin-bottom animate-wave drop-shadow-xl sm:top-8 sm:right-10 sm:h-24 sm:w-24 md:h-32 md:w-32"
           />
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground">
