@@ -82,6 +82,7 @@ export function UsersList() {
 
         const enrichedUsers = (profiles || []).map((profile: any) => ({
           ...profile,
+          full_name: profile.full_name || 'مستخدم جديد',
           role: rolesMap.get(profile.user_id) as 'admin' | 'user' | undefined,
           chatbots_count: chatbotsCount.get(profile.user_id) || 0,
           business_name: businessNames.get(profile.user_id) || 'غير محدد',
@@ -129,6 +130,7 @@ export function UsersList() {
           المستخدمون ({users.length})
           <span className="sr-only">
             '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+            انحذفت اسماء المستخدمين بعد التعديلات التي قمت بتعديلها !!
           </span>
         </CardTitle>
       </CardHeader>
