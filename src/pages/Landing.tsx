@@ -112,7 +112,7 @@ export default function Landing() {
             alt="مساعد جوابي يلوّح بالترحيب"
             loading="eager"
             aria-hidden
-            className="pointer-events-none absolute top-6 right-4 h-20 w-20 origin-bottom animate-wave drop-shadow-xl sm:top-8 sm:right-10 sm:h-24 sm:w-24 md:h-32 md:w-32"
+            className="pointer-events-none absolute top-6 left-4 h-20 w-20 origin-bottom animate-wave drop-shadow-xl sm:top-8 sm:left-10 sm:h-24 sm:w-24 md:h-32 md:w-32"
           />
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground">
