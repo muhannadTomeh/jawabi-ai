@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { ChannelIcon } from '@/components/ChannelIcon';
 
 type Tag = 'new' | 'prospect' | 'regular' | 'vip' | 'blocked';
+type AIClassification = 'committed_satisfied' | 'important' | 'has_problems' | 'prospect' | 'blacklist' | 'new';
 
 interface Customer {
   id: string;
@@ -36,10 +37,30 @@ interface Customer {
   message_count: number;
   last_message: string | null;
   tag: Tag;
+  ai_classification: AIClassification | null;
+  last_classification_at: string | null;
   notes: string | null;
   first_seen_at: string;
   last_seen_at: string;
 }
+
+const aiClassLabels: Record<AIClassification, string> = {
+  committed_satisfied: 'راضٍ وملتزم',
+  important: 'عميل مهم',
+  has_problems: 'لديه مشاكل',
+  prospect: 'محتمل',
+  blacklist: 'قائمة سوداء',
+  new: 'جديد (ذكاء اصطناعي)',
+};
+
+const aiClassColors: Record<AIClassification, string> = {
+  committed_satisfied: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  important: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  has_problems: 'bg-red-500/10 text-red-600 border-red-500/20',
+  prospect: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  blacklist: 'bg-slate-900/10 text-slate-900 border-slate-900/20',
+  new: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+};
 
 const tagLabels: Record<Tag, string> = {
   new: 'جديد',
@@ -251,6 +272,11 @@ export default function CustomersPage() {
                       {c.name || c.username || c.phone || c.external_id}
                     </span>
                     <Badge variant="outline" className={tagColors[c.tag]}>{tagLabels[c.tag]}</Badge>
+                    {c.ai_classification && (
+                      <Badge variant="secondary" className={aiClassColors[c.ai_classification]}>
+                        🤖 {aiClassLabels[c.ai_classification]}
+                      </Badge>
+                    )}
                     <Badge variant="outline">{channelLabels[c.channel] || c.channel}</Badge>
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
@@ -321,6 +347,11 @@ export default function CustomersPage() {
                 <div>المعرّف: <span dir="ltr">{editing.external_id}</span></div>
                 <div>عدد الرسائل: {editing.message_count}</div>
                 <div>أول تواصل: {new Date(editing.first_seen_at).toLocaleString('ar-SA')}</div>
+                {editing.last_classification_at && (
+                  <div className="mt-1 text-primary">
+                    آخر تصنيف ذكي: {new Date(editing.last_classification_at).toLocaleString('ar-SA')}
+                  </div>
+                )}
               </div>
             </div>
           )}
