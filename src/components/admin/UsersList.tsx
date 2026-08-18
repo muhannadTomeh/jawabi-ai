@@ -42,7 +42,7 @@ export function UsersList() {
         // Fetch profiles using the new function to get emails
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
-          .select('*, email:get_user_email(user_id)')
+          .select('*')
           .order('created_at', { ascending: false });
 
         if (profilesError) throw profilesError;
