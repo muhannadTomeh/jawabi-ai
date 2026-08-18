@@ -19,10 +19,10 @@ Deno.serve(async (req) => {
     const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     
     const historyText = conversation_history
-      ?.map((m: any) => \`\${m.role === 'assistant' ? 'Bot' : 'User'}: \${m.content}\`)
-      .join('\\n') || '';
+      ?.map((m: any) => `${m.role === 'assistant' ? 'Bot' : 'User'}: ${m.content}`)
+      .join('\n') || '';
 
-    const systemPrompt = \`أنت خبير في تحليل سلوك العملاء وتصنيفهم.
+    const systemPrompt = `أنت خبير في تحليل سلوك العملاء وتصنيفهم.
 مهمتك هي تصنيف العميل بناءً على سياق المحادثة الأخيرة.
 يجب أن تختار تصنيفاً واحداً فقط من القائمة التالية:
 - "committed_satisfied": عميل ملتزم وراضي (منتظم أو VIP).
@@ -32,27 +32,27 @@ Deno.serve(async (req) => {
 - "blacklist": عميل مسيء أو يجب حظره.
 - "new": عميل جديد لم يحدد اهتمامه بعد.
 
-أجب بالكلمة البرمجية للتصنيف فقط (مثال: prospect).\`;
+أجب بالكلمة البرمجية للتصنيف فقط (مثال: prospect).`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: \`Bearer \${lovableApiKey}\`,
+        Authorization: `Bearer ${lovableApiKey}`,
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: \`تاريخ المحادثة:\\n\${historyText}\\n\\nآخر رسالة: \${last_message}\` },
+          { role: "user", content: "تاريخ المحادثة:\n" + historyText + "\n\nآخر رسالة: " + last_message },
         ],
         max_tokens: 20,
       }),
     });
 
     if (response.ok) {
-      const data = await response.json();
-      const classification = data.choices?.[0]?.message?.content?.trim().toLowerCase();
+      const aiData = await response.json();
+      const classification = aiData.choices?.[0]?.message?.content?.trim().toLowerCase();
       
       const validClassifications = ["committed_satisfied", "important", "has_problems", "prospect", "blacklist", "new"];
       let finalClass = "new";
