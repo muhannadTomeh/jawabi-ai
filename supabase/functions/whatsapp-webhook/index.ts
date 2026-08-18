@@ -439,6 +439,19 @@ Deno.serve(async (req) => {
           // Save messages to database
           await saveMessages(supabase, chatbot.id, senderPhone, userMessage, responseText);
 
+          // Trigger AI classification in the background
+          try {
+            supabase.functions.invoke("classify-customer", {
+              body: {
+                chatbot_id: chatbot.id,
+                channel: "whatsapp",
+                external_id: senderPhone,
+                last_message: userMessage,
+                conversation_history: history.slice(-5),
+              },
+            }).catch(e => console.error("WhatsApp classification error:", e));
+          } catch (e) {}
+
           // Parse [IMAGE:url] tokens and send images + remaining text
           const imageRegex = /\[IMAGE:(https?:\/\/[^\s\]]+)\]/g;
           const imageUrls: string[] = [];

@@ -357,6 +357,22 @@ ${knowledgeContext ? `\n# قاعدة المعرفة المتاحة:\n${knowledge
       ]);
     }
 
+    // Trigger AI classification in the background
+    if (user_id) {
+      try {
+        supabase.functions.invoke("classify-customer", {
+          body: {
+            chatbot_id,
+            channel: "web",
+            external_id: user_id,
+            last_message: message,
+            conversation_history: mergedHistory.slice(-5),
+          },
+        }).catch(err => console.error("Classification trigger error:", err));
+      } catch (e) {
+        console.error("Classification invoke failed:", e);
+      }
+
     return new Response(
       JSON.stringify({ response: finalReply, handover: didHandover }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
