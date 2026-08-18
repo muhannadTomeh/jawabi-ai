@@ -39,7 +39,6 @@ export function UsersList() {
   useEffect(() => {
     async function fetchUsers() {
       try {
-        // Fetch profiles using the new function to get emails
         const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('*')
@@ -47,29 +46,19 @@ export function UsersList() {
 
         if (profilesError) throw profilesError;
 
-        // Fetch user roles
         const { data: roles, error: rolesError } = await supabase
           .from('user_roles')
           .select('user_id, role');
 
         if (rolesError) throw rolesError;
 
-        // Fetch chatbots info per user
         const { data: chatbots, error: chatbotsError } = await supabase
           .from('chatbots')
           .select('user_id, business_name');
 
         if (chatbotsError) throw chatbotsError;
 
-        // Fetch user emails from auth (requires service role, but we can try to get them from a custom table if we had one, 
-        // since we don't, we'll focus on what we have)
-        // Note: profiles in this project don't have email, but we might have it in metadata or wait for future implementation.
-        // For now, let's use the business name from chatbots as requested.
-
-        // Map roles to users
         const rolesMap = new Map(roles?.map((r: any) => [r.user_id, r.role]) || []);
-        
-        // Count chatbots per user and store business name
         const chatbotsCount = new Map<string, number>();
         const businessNames = new Map<string, string>();
         
@@ -80,11 +69,26 @@ export function UsersList() {
           }
         });
 
-        const enrichedUsers = (profiles || []).map((profile: any) => ({
-          ...profile,
-          role: rolesMap.get(profile.user_id) as 'admin' | 'user' | undefined,
-          chatbots_count: chatbotsCount.get(profile.user_id) || 0,
-          business_name: businessNames.get(profile.user_id) || 'غير محدد',
+        // Fetch emails for all users using the RPC function
+        const enrichedUsers = await Promise.all((profiles || []).map(async (profile: any) => {
+          let email = profile.email;
+          if (!email) {
+            try {
+              const { data: emailData, error: emailError } = await supabase
+                .rpc('get_user_email', { p_user_id: profile.user_id });
+              if (!emailError) email = emailData;
+            } catch (err) {
+              console.error('Error fetching email for user:', profile.user_id, err);
+            }
+          }
+
+          return {
+            ...profile,
+            role: rolesMap.get(profile.user_id) as 'admin' | 'user' | undefined,
+            chatbots_count: chatbotsCount.get(profile.user_id) || 0,
+            business_name: businessNames.get(profile.user_id) || 'غير محدد',
+            email: email || 'غير متوفر'
+          };
         }));
 
         setUsers(enrichedUsers);
@@ -129,7 +133,7 @@ export function UsersList() {
           المستخدمون ({users.length})
           <span className="sr-only">
             '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-            انحذفت اسماء المستخدمين بعد التعديلات التي قمت بتعديلها !!
+            لكن لماذا البريد الاكتروني غير متوفر ؟
           </span>
         </CardTitle>
       </CardHeader>
