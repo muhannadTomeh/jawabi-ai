@@ -29,9 +29,6 @@ interface UserProfile {
   email?: string;
 }
 
-interface UsersListProps {
-  onViewUser?: (userId: string) => void;
-}
 
 export function UsersList() {
   const [users, setUsers] = useState<UserProfile[]>([]);
