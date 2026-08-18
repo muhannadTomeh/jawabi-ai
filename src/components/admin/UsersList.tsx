@@ -67,20 +67,20 @@ export function UsersList() {
         // For now, let's use the business name from chatbots as requested.
 
         // Map roles to users
-        const rolesMap = new Map(roles?.map(r => [r.user_id, r.role]) || []);
+        const rolesMap = new Map(roles?.map((r: any) => [r.user_id, r.role]) || []);
         
         // Count chatbots per user and store business name
         const chatbotsCount = new Map<string, number>();
         const businessNames = new Map<string, string>();
         
-        chatbots?.forEach(c => {
+        chatbots?.forEach((c: any) => {
           chatbotsCount.set(c.user_id, (chatbotsCount.get(c.user_id) || 0) + 1);
           if (c.business_name && !businessNames.has(c.user_id)) {
             businessNames.set(c.user_id, c.business_name);
           }
         });
 
-        const enrichedUsers = (profiles || []).map(profile => ({
+        const enrichedUsers = (profiles || []).map((profile: any) => ({
           ...profile,
           role: rolesMap.get(profile.user_id) as 'admin' | 'user' | undefined,
           chatbots_count: chatbotsCount.get(profile.user_id) || 0,
