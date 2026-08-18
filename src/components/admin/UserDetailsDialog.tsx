@@ -71,7 +71,7 @@ export function UserDetailsDialog({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm">{user.email || "غير متوفر"}</p>
+                <p className="text-sm select-all">{user.email || "غير متوفر"}</p>
               </CardContent>
             </Card>
 
