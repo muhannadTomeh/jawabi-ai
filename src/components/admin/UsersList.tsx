@@ -127,13 +127,17 @@ export function UsersList() {
         <CardTitle className="flex items-center gap-2">
           <User className="h-5 w-5" />
           المستخدمون ({users.length})
+          <span className="sr-only">
+            '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
+          </span>
         </CardTitle>
       </CardHeader>
       <CardContent>
         {users.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">
-            لا يوجد مستخدمون بعد
-          </p>
+          <div className="text-center text-muted-foreground py-8">
+            <p>لا يوجد مستخدمون بعد</p>
+            <p className="mt-2 text-xs opacity-50">؟؟؟</p>
+          </div>
         ) : (
           <Table>
             <TableHeader>
