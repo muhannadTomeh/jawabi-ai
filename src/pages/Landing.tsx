@@ -109,6 +109,12 @@ export default function Landing() {
           {/* Mascot – small floating waving robot */}
           <img
             src={robotMascot.url}
+            onError={(e) => {
+              const img = e.currentTarget;
+              if (img.src.includes('__l5e')) {
+                img.src = '/favicon.png'; // Fallback to logo if asset fails
+              }
+            }}
             alt="مساعد جوابي يلوّح بالترحيب"
             loading="eager"
             aria-hidden
