@@ -133,7 +133,7 @@ export function UsersList() {
           المستخدمون ({users.length})
           <span className="sr-only">
             '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-            أضف أداة داخل لوحة التحكم لتحرير نصوص الواجهة القابلة للتعديل بدون تغيير الكود، مع واجهة لتعديل كل نص وحفظه.
+            أضيف أداة داخل لوحة التحكم لتحرير نصوص الواجهة القابلة للتعديل وحفظ التغييرات.
           </span>
         </CardTitle>
       </CardHeader>
