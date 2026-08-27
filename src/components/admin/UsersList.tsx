@@ -133,7 +133,7 @@ export function UsersList() {
           المستخدمون ({users.length})
           <span className="sr-only">
             '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-            اجعل الموقع متوافق مع الهاتف
+            أضف أداة داخل لوحة التحكم لإدارة نصوص الواجهة القابلة للتعديل دون تغيير الكود.
           </span>
         </CardTitle>
       </CardHeader>
