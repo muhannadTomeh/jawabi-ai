@@ -133,7 +133,7 @@ export function UsersList() {
           المستخدمون ({users.length})
           <span className="sr-only">
             '''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''
-            أضف محرر ترجمة خفيف داخل لوحة الإدارة لإدارة نصوص الواجهة لكل لغة.
+            أنشئ واجهة حقيقية داخل لوحة الإدارة لتحرير نصوص الواجهة لكل لغة، واحفظ التغييرات واعرضها في الواجهة.
           </span>
         </CardTitle>
       </CardHeader>
