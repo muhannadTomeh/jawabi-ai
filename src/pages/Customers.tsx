@@ -91,10 +91,15 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [tagFilter, setTagFilter] = useState<string>('all');
-  const [channelFilter, setChannelFilter] = useState<string>('all');
+  const [tagFilter, setTagFilter] = useState<Tag[]>([]);
+  const [aiFilter, setAiFilter] = useState<AIClassification[]>([]);
+  const [channelFilter, setChannelFilter] = useState<string[]>([]);
+  const [dateFilter, setDateFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('recent');
   const [editing, setEditing] = useState<Customer | null>(null);
+
+  const toggleIn = <T,>(arr: T[], v: T, set: (x: T[]) => void) =>
+    set(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
 
   const load = async () => {
     if (!chatbot) return;
