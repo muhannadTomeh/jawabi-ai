@@ -91,10 +91,15 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [tagFilter, setTagFilter] = useState<string>('all');
-  const [channelFilter, setChannelFilter] = useState<string>('all');
+  const [tagFilter, setTagFilter] = useState<Tag[]>([]);
+  const [aiFilter, setAiFilter] = useState<AIClassification[]>([]);
+  const [channelFilter, setChannelFilter] = useState<string[]>([]);
+  const [dateFilter, setDateFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('recent');
   const [editing, setEditing] = useState<Customer | null>(null);
+
+  const toggleIn = <T,>(arr: T[], v: T, set: (x: T[]) => void) =>
+    set(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
 
   const load = async () => {
     if (!chatbot) return;
@@ -115,8 +120,16 @@ export default function CustomersPage() {
 
   const filtered = useMemo(() => {
     let list = [...customers];
-    if (tagFilter !== 'all') list = list.filter((c) => c.tag === tagFilter);
-    if (channelFilter !== 'all') list = list.filter((c) => c.channel === channelFilter);
+    if (tagFilter.length) list = list.filter((c) => tagFilter.includes(c.tag));
+    if (aiFilter.length) list = list.filter((c) => c.ai_classification && aiFilter.includes(c.ai_classification));
+    if (channelFilter.length) list = list.filter((c) => channelFilter.includes(c.channel));
+    if (dateFilter !== 'all') {
+      const days = dateFilter === 'today' ? 0 : Number(dateFilter);
+      const cutoff = new Date();
+      if (dateFilter === 'today') cutoff.setHours(0, 0, 0, 0);
+      else cutoff.setDate(cutoff.getDate() - days);
+      list = list.filter((c) => new Date(c.last_seen_at) >= cutoff);
+    }
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(
@@ -137,17 +150,28 @@ export default function CustomersPage() {
       case 'messages':
         list.sort((a, b) => b.message_count - a.message_count);
         break;
+      case 'ai_recent':
+        list.sort((a, b) => (b.last_classification_at || '').localeCompare(a.last_classification_at || ''));
+        break;
       case 'name':
         list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         break;
     }
     return list;
-  }, [customers, search, tagFilter, channelFilter, sortBy]);
+  }, [customers, search, tagFilter, aiFilter, channelFilter, dateFilter, sortBy]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: customers.length };
     (['new', 'prospect', 'regular', 'vip', 'blocked'] as Tag[]).forEach((t) => {
       c[t] = customers.filter((x) => x.tag === t).length;
+    });
+    return c;
+  }, [customers]);
+
+  const aiCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    customers.forEach((x) => {
+      if (x.ai_classification) c[x.ai_classification] = (c[x.ai_classification] || 0) + 1;
     });
     return c;
   }, [customers]);
@@ -199,12 +223,14 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Tag pills */}
+      {/* Tag pills (multi-select) */}
       <div className="flex flex-wrap gap-2">
         <button
-          onClick={() => setTagFilter('all')}
+          onClick={() => { setTagFilter([]); setAiFilter([]); setChannelFilter([]); setDateFilter('all'); }}
           className={`rounded-full border px-3 py-1 text-sm transition ${
-            tagFilter === 'all' ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'
+            !tagFilter.length && !aiFilter.length && !channelFilter.length && dateFilter === 'all'
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-border bg-background'
           }`}
         >
           الكل ({counts.all})
@@ -212,12 +238,44 @@ export default function CustomersPage() {
         {(['new', 'prospect', 'regular', 'vip', 'blocked'] as Tag[]).map((t) => (
           <button
             key={t}
-            onClick={() => setTagFilter(t)}
+            onClick={() => toggleIn(tagFilter, t, setTagFilter)}
             className={`rounded-full border px-3 py-1 text-sm transition ${
-              tagFilter === t ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'
+              tagFilter.includes(t) ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'
             }`}
           >
             {tagLabels[t]} ({counts[t]})
+          </button>
+        ))}
+      </div>
+
+      {/* AI classification pills (multi-select) */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">التصنيف الذكي:</span>
+        {(Object.keys(aiClassLabels) as AIClassification[]).map((k) => (
+          <button
+            key={k}
+            onClick={() => toggleIn(aiFilter, k, setAiFilter)}
+            className={`rounded-full border px-3 py-1 text-xs transition ${
+              aiFilter.includes(k) ? 'border-primary bg-primary text-primary-foreground' : `${aiClassColors[k]}`
+            }`}
+          >
+            🤖 {aiClassLabels[k]} ({aiCounts[k] || 0})
+          </button>
+        ))}
+      </div>
+
+      {/* Channel pills (multi-select) */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">القنوات:</span>
+        {Object.entries(channelLabels).map(([k, v]) => (
+          <button
+            key={k}
+            onClick={() => toggleIn(channelFilter, k, setChannelFilter)}
+            className={`rounded-full border px-3 py-1 text-xs transition ${
+              channelFilter.includes(k) ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'
+            }`}
+          >
+            {v}
           </button>
         ))}
       </div>
@@ -233,13 +291,14 @@ export default function CustomersPage() {
             className="pr-9"
           />
         </div>
-        <Select value={channelFilter} onValueChange={setChannelFilter}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="القناة" /></SelectTrigger>
+        <Select value={dateFilter} onValueChange={setDateFilter}>
+          <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">كل القنوات</SelectItem>
-            {Object.entries(channelLabels).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v}</SelectItem>
-            ))}
+            <SelectItem value="all">كل الفترات</SelectItem>
+            <SelectItem value="today">نشاط اليوم</SelectItem>
+            <SelectItem value="7">آخر 7 أيام</SelectItem>
+            <SelectItem value="30">آخر 30 يوماً</SelectItem>
+            <SelectItem value="90">آخر 90 يوماً</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
@@ -248,10 +307,14 @@ export default function CustomersPage() {
             <SelectItem value="recent">الأحدث تواصلاً</SelectItem>
             <SelectItem value="oldest">الأقدم تواصلاً</SelectItem>
             <SelectItem value="messages">الأكثر رسائل</SelectItem>
+            <SelectItem value="ai_recent">الأحدث تصنيفاً ذكياً</SelectItem>
             <SelectItem value="name">الاسم (أبجدي)</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
+      <p className="text-sm text-muted-foreground">عدد النتائج: {filtered.length}</p>
+
 
       {/* List */}
       {filtered.length === 0 ? (
