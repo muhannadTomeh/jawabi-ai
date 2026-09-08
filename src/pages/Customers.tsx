@@ -215,12 +215,14 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Tag pills */}
+      {/* Tag pills (multi-select) */}
       <div className="flex flex-wrap gap-2">
         <button
-          onClick={() => setTagFilter('all')}
+          onClick={() => { setTagFilter([]); setAiFilter([]); setChannelFilter([]); setDateFilter('all'); }}
           className={`rounded-full border px-3 py-1 text-sm transition ${
-            tagFilter === 'all' ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'
+            !tagFilter.length && !aiFilter.length && !channelFilter.length && dateFilter === 'all'
+              ? 'border-primary bg-primary text-primary-foreground'
+              : 'border-border bg-background'
           }`}
         >
           الكل ({counts.all})
@@ -228,12 +230,44 @@ export default function CustomersPage() {
         {(['new', 'prospect', 'regular', 'vip', 'blocked'] as Tag[]).map((t) => (
           <button
             key={t}
-            onClick={() => setTagFilter(t)}
+            onClick={() => toggleIn(tagFilter, t, setTagFilter)}
             className={`rounded-full border px-3 py-1 text-sm transition ${
-              tagFilter === t ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'
+              tagFilter.includes(t) ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'
             }`}
           >
             {tagLabels[t]} ({counts[t]})
+          </button>
+        ))}
+      </div>
+
+      {/* AI classification pills (multi-select) */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">التصنيف الذكي:</span>
+        {(Object.keys(aiClassLabels) as AIClassification[]).map((k) => (
+          <button
+            key={k}
+            onClick={() => toggleIn(aiFilter, k, setAiFilter)}
+            className={`rounded-full border px-3 py-1 text-xs transition ${
+              aiFilter.includes(k) ? 'border-primary bg-primary text-primary-foreground' : `${aiClassColors[k]}`
+            }`}
+          >
+            🤖 {aiClassLabels[k]} ({aiCounts[k] || 0})
+          </button>
+        ))}
+      </div>
+
+      {/* Channel pills (multi-select) */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">القنوات:</span>
+        {Object.entries(channelLabels).map(([k, v]) => (
+          <button
+            key={k}
+            onClick={() => toggleIn(channelFilter, k, setChannelFilter)}
+            className={`rounded-full border px-3 py-1 text-xs transition ${
+              channelFilter.includes(k) ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background'
+            }`}
+          >
+            {v}
           </button>
         ))}
       </div>
@@ -249,13 +283,14 @@ export default function CustomersPage() {
             className="pr-9"
           />
         </div>
-        <Select value={channelFilter} onValueChange={setChannelFilter}>
-          <SelectTrigger className="w-[160px]"><SelectValue placeholder="القناة" /></SelectTrigger>
+        <Select value={dateFilter} onValueChange={setDateFilter}>
+          <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">كل القنوات</SelectItem>
-            {Object.entries(channelLabels).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v}</SelectItem>
-            ))}
+            <SelectItem value="all">كل الفترات</SelectItem>
+            <SelectItem value="today">نشاط اليوم</SelectItem>
+            <SelectItem value="7">آخر 7 أيام</SelectItem>
+            <SelectItem value="30">آخر 30 يوماً</SelectItem>
+            <SelectItem value="90">آخر 90 يوماً</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
@@ -264,10 +299,14 @@ export default function CustomersPage() {
             <SelectItem value="recent">الأحدث تواصلاً</SelectItem>
             <SelectItem value="oldest">الأقدم تواصلاً</SelectItem>
             <SelectItem value="messages">الأكثر رسائل</SelectItem>
+            <SelectItem value="ai_recent">الأحدث تصنيفاً ذكياً</SelectItem>
             <SelectItem value="name">الاسم (أبجدي)</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
+      <p className="text-sm text-muted-foreground">عدد النتائج: {filtered.length}</p>
+
 
       {/* List */}
       {filtered.length === 0 ? (
