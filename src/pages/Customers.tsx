@@ -168,6 +168,14 @@ export default function CustomersPage() {
     return c;
   }, [customers]);
 
+  const aiCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    customers.forEach((x) => {
+      if (x.ai_classification) c[x.ai_classification] = (c[x.ai_classification] || 0) + 1;
+    });
+    return c;
+  }, [customers]);
+
   const updateTag = async (id: string, tag: Tag) => {
     const { error } = await supabase.from('customers').update({ tag }).eq('id', id);
     if (error) return toast.error('فشل التحديث');
