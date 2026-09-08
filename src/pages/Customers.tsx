@@ -120,8 +120,16 @@ export default function CustomersPage() {
 
   const filtered = useMemo(() => {
     let list = [...customers];
-    if (tagFilter !== 'all') list = list.filter((c) => c.tag === tagFilter);
-    if (channelFilter !== 'all') list = list.filter((c) => c.channel === channelFilter);
+    if (tagFilter.length) list = list.filter((c) => tagFilter.includes(c.tag));
+    if (aiFilter.length) list = list.filter((c) => c.ai_classification && aiFilter.includes(c.ai_classification));
+    if (channelFilter.length) list = list.filter((c) => channelFilter.includes(c.channel));
+    if (dateFilter !== 'all') {
+      const days = dateFilter === 'today' ? 0 : Number(dateFilter);
+      const cutoff = new Date();
+      if (dateFilter === 'today') cutoff.setHours(0, 0, 0, 0);
+      else cutoff.setDate(cutoff.getDate() - days);
+      list = list.filter((c) => new Date(c.last_seen_at) >= cutoff);
+    }
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(
@@ -142,12 +150,15 @@ export default function CustomersPage() {
       case 'messages':
         list.sort((a, b) => b.message_count - a.message_count);
         break;
+      case 'ai_recent':
+        list.sort((a, b) => (b.last_classification_at || '').localeCompare(a.last_classification_at || ''));
+        break;
       case 'name':
         list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
         break;
     }
     return list;
-  }, [customers, search, tagFilter, channelFilter, sortBy]);
+  }, [customers, search, tagFilter, aiFilter, channelFilter, dateFilter, sortBy]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: customers.length };
