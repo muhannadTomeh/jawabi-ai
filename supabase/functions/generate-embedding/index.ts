@@ -7,32 +7,32 @@ const corsHeaders = {
 };
 
 async function embed(text: string): Promise<number[] | null> {
-  const apiKey = Deno.env.get("OPENAI_API_KEY");
+  const apiKey = Deno.env.get("GEMINI_API_KEY");
   if (!apiKey) {
-    console.error("OPENAI_API_KEY is not configured; cannot generate embedding");
+    console.error("GEMINI_API_KEY is not configured; cannot generate embedding");
     return null;
   }
   const cleaned = (text || "").trim();
   if (!cleaned) return null;
   try {
-    const res = await fetch("https://api.openai.com/v1/embeddings", {
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
+        "x-goog-api-key": apiKey,
       },
       body: JSON.stringify({
-        model: "text-embedding-3-small",
-        input: cleaned.slice(0, 8000),
-        dimensions: 1536,
+        model: "models/gemini-embedding-001",
+        content: { parts: [{ text: cleaned.slice(0, 8000) }] },
+        outputDimensionality: 1536,
       }),
     });
     if (!res.ok) {
-      console.error("OpenAI embeddings error:", res.status, await res.text());
+      console.error("Gemini embeddings error:", res.status, await res.text());
       return null;
     }
     const data = await res.json();
-    return data?.data?.[0]?.embedding ?? null;
+    return data?.embedding?.values ?? null;
   } catch (e) {
     console.error("Embedding call failed:", e);
     return null;

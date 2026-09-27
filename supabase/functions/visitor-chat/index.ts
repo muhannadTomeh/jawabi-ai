@@ -11,7 +11,7 @@ const SYSTEM_PROMPT = `أنت "مساعد جوابي"، مساعد ودود يج
 - بوت ذكي يرد بالعربية وبجميع اللهجات على مدار الساعة.
 - قاعدة معرفة قابلة للتدريب من نصوص، أسئلة شائعة، ملفات (حتى 10MB)، روابط مواقع، صور، وصفحات السوشال ميديا (فيسبوك/انستجرام).
 - ربط مع قنوات: واتساب، تيليجرام، فيسبوك ماسنجر، انستجرام.
-- محرك RAG يعتمد على Gemini عبر Lovable AI Gateway.
+- محرك RAG يعتمد على Gemini API مباشرة.
 - إدارة عملاء تلقائية، تحليلات، وتحويل المحادثة لموظف بشري عند الحاجة.
 - تجربة مجانية بدون بطاقة ائتمان.
 
@@ -38,9 +38,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: "missing LOVABLE_API_KEY" }), {
+      return new Response(JSON.stringify({ error: "missing GEMINI_API_KEY" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -49,14 +49,14 @@ Deno.serve(async (req) => {
     // Cap context to last 20 messages
     const trimmed = messages.slice(-20);
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "gemini-3.5-flash-lite",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           ...trimmed,

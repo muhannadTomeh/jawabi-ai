@@ -48,7 +48,6 @@ const NotificationsPage = lazyWithReload(() => import("@/pages/Notifications"));
 const CustomersPage = lazyWithReload(() => import("@/pages/Customers"));
 const NotFound = lazyWithReload(() => import("@/pages/NotFound"));
 const PublicChat = lazyWithReload(() => import("@/pages/PublicChat"));
-const OAuthConsent = lazyWithReload(() => import("@/pages/OAuthConsent"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,9 +80,6 @@ const App = () => (
             {/* Auth route */}
             <Route path="/auth" element={<AuthPage />} />
 
-            {/* OAuth consent screen for MCP / agent integrations */}
-            <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
-            
             {/* Public landing */}
             <Route path="/" element={<Landing />} />
 

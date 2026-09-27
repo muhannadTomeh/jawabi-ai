@@ -1,7 +1,7 @@
 
 CREATE TABLE IF NOT EXISTS public.llm_settings (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  model text NOT NULL DEFAULT 'google/gemini-2.5-flash',
+  model text NOT NULL DEFAULT 'gpt-4.1-mini',
   custom_api_key text,
   updated_at timestamptz NOT NULL DEFAULT now(),
   updated_by uuid REFERENCES auth.users(id)
@@ -17,15 +17,15 @@ CREATE POLICY "Admins insert llm settings" ON public.llm_settings FOR INSERT TO 
 CREATE POLICY "Admins update llm settings" ON public.llm_settings FOR UPDATE TO authenticated USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
 CREATE POLICY "Admins delete llm settings" ON public.llm_settings FOR DELETE TO authenticated USING (public.has_role(auth.uid(), 'admin'));
 
-INSERT INTO public.llm_settings (model) SELECT 'google/gemini-2.5-flash' WHERE NOT EXISTS (SELECT 1 FROM public.llm_settings);
+INSERT INTO public.llm_settings (model) SELECT 'gpt-4.1-mini' WHERE NOT EXISTS (SELECT 1 FROM public.llm_settings);
 
-UPDATE public.chatbots SET public_slug = encode(gen_random_bytes(8), 'hex') WHERE public_slug IS NULL;
+UPDATE public.chatbots SET public_slug = encode(extensions.gen_random_bytes(8), 'hex') WHERE public_slug IS NULL;
 
 CREATE OR REPLACE FUNCTION public.set_chatbot_public_slug()
 RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
 BEGIN
   IF NEW.public_slug IS NULL THEN
-    NEW.public_slug := encode(gen_random_bytes(8), 'hex');
+    NEW.public_slug := encode(extensions.gen_random_bytes(8), 'hex');
   END IF;
   RETURN NEW;
 END;

@@ -97,8 +97,8 @@ async function generateAIResponse(
     .limit(1)
     .maybeSingle();
 
-  const model = (llmCfg as any)?.model || "google/gemini-2.5-flash";
-  const apiKey = (llmCfg as any)?.custom_api_key || Deno.env.get("LOVABLE_API_KEY");
+  const model = (llmCfg as any)?.model || "gemini-3.5-flash-lite";
+  const apiKey = (llmCfg as any)?.custom_api_key || Deno.env.get("GEMINI_API_KEY");
   if (!apiKey) {
     console.error("No AI API key configured, using fallback");
     return chatbot.fallback_message;
@@ -141,7 +141,7 @@ ${knowledgeContext ? `قاعدة المعرفة:\n${knowledgeContext}` : ""}
   ];
 
   try {
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,

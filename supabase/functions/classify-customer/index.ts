@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    const openAiApiKey = Deno.env.get("GEMINI_API_KEY");
     
     const historyText = conversation_history
       ?.map((m: any) => `${m.role === 'assistant' ? 'Bot' : 'User'}: ${m.content}`)
@@ -34,14 +34,14 @@ Deno.serve(async (req) => {
 
 أجب بالكلمة البرمجية للتصنيف فقط (مثال: prospect).`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${lovableApiKey}`,
+        Authorization: `Bearer ${openAiApiKey}`,
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: "gemini-3.5-flash-lite",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: "تاريخ المحادثة:\n" + historyText + "\n\nآخر رسالة: " + last_message },

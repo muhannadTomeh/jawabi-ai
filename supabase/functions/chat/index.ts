@@ -117,12 +117,12 @@ Deno.serve(async (req) => {
     const salesEnabled = botMode === "inquiries_sales" || botMode === "inquiries_sales_followup";
     if (handover?.enabled && salesEnabled) {
       try {
-        const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-        const intentRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        const openAiApiKey = Deno.env.get("GEMINI_API_KEY");
+        const intentRes = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${lovableApiKey}` },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${openAiApiKey}` },
           body: JSON.stringify({
-            model: "google/gemini-2.5-flash-lite",
+            model: "gemini-3.5-flash-lite",
             messages: [
               {
                 role: "system",
@@ -168,7 +168,7 @@ Deno.serve(async (req) => {
 
     // Build knowledge context
     // Try semantic retrieval first (RAG) — falls back to dumping everything
-    // when no rows have embeddings yet (e.g. OPENAI_API_KEY missing).
+    // when no rows have embeddings yet (e.g. GEMINI_API_KEY missing).
     let retrievedItems: any[] | null = null;
     try {
       const embRes = await supabase.functions.invoke("generate-embedding", {
@@ -292,10 +292,10 @@ ${knowledgeContext ? `\n# قاعدة المعرفة المتاحة:\n${knowledge
       .limit(1)
       .maybeSingle();
 
-    const model = llmCfg?.model || "google/gemini-2.5-flash";
-    const apiKey = llmCfg?.custom_api_key || Deno.env.get("LOVABLE_API_KEY");
+    const model = llmCfg?.model || "gemini-3.5-flash-lite";
+    const apiKey = llmCfg?.custom_api_key || Deno.env.get("GEMINI_API_KEY");
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResponse = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -372,6 +372,7 @@ ${knowledgeContext ? `\n# قاعدة المعرفة المتاحة:\n${knowledge
       } catch (e) {
         console.error("Classification invoke failed:", e);
       }
+    }
 
     return new Response(
       JSON.stringify({ response: finalReply, handover: didHandover }),

@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 /**
  * Fire-and-forget: ask the generate-embedding edge function to compute and
  * store the embedding for a knowledge_items row. Never throws — failures are
- * logged only, so the calling UI keeps working even if OPENAI_API_KEY is not
+ * logged only, so the calling UI keeps working even if GEMINI_API_KEY is not
  * configured.
  */
 export async function embedKnowledgeItem(itemId: string): Promise<void> {

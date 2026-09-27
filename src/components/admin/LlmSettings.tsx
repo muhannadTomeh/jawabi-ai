@@ -14,20 +14,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const MODELS = [
-  { value: 'google/gemini-3-flash-preview', label: 'Gemini 3 Flash (Preview)' },
-  { value: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-  { value: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-  { value: 'google/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite' },
-  { value: 'openai/gpt-5', label: 'GPT-5' },
-  { value: 'openai/gpt-5-mini', label: 'GPT-5 mini' },
-  { value: 'openai/gpt-5-nano', label: 'GPT-5 nano' },
+  { value: 'gemini-3.5-flash-lite', label: 'Gemini 3.5 Flash Lite' },
+  { value: 'gemini-3.8-flash', label: 'Gemini 3.8 Flash' },
+  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
 ];
 
 export function LlmSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [id, setId] = useState<string | null>(null);
-  const [model, setModel] = useState(MODELS[2].value);
+  const [model, setModel] = useState(MODELS[0].value);
   const [apiKey, setApiKey] = useState('');
 
   useEffect(() => {
@@ -100,7 +96,7 @@ export function LlmSettings() {
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          المزوّد الافتراضي عبر Lovable AI Gateway. غيّر النموذج حسب الحاجة بين السرعة والجودة.
+          المزوّد الافتراضي هو Google Gemini API المباشر. غيّر النموذج حسب الحاجة بين السرعة والجودة.
         </p>
       </div>
 
@@ -114,7 +110,7 @@ export function LlmSettings() {
           type="password"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          placeholder="اتركه فارغاً لاستخدام مفتاح Lovable AI الافتراضي"
+          placeholder="اتركه فارغاً لاستخدام مفتاح Gemini الافتراضي"
           className="font-mono"
         />
         <p className="text-xs text-muted-foreground">

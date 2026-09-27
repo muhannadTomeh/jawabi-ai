@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Loader2, Sparkles, MessageSquare, Bot, Globe, ArrowLeft, CheckCircle2 } from 'lucide-react';
-import { lovable } from '@/integrations/lovable';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AuthPage() {
   const { user, loading, signIn, signUp } = useAuth();
@@ -104,13 +104,16 @@ export default function AuthPage() {
     setOauthLoading(provider);
     try {
       sessionStorage.setItem('oauth_pending', provider);
-      const result = await lovable.auth.signInWithOAuth(provider, {
-        redirect_uri:
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo:
           window.location.origin +
           '/auth' +
           (rawNext ? `?next=${encodeURIComponent(nextPath)}` : ''),
+        },
       });
-      if (result.error) {
+      const result = { error, redirected: !error };
+      if (error) {
         toast.error('فشل تسجيل الدخول', { description: result.error.message });
         sessionStorage.removeItem('oauth_pending');
         setOauthLoading(null);

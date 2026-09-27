@@ -49,8 +49,8 @@ async function generateAIResponse(
     .limit(1)
     .maybeSingle();
 
-  const model = (llmCfg as any)?.model || "google/gemini-2.5-flash";
-  const apiKey = (llmCfg as any)?.custom_api_key || Deno.env.get("LOVABLE_API_KEY");
+  const model = (llmCfg as any)?.model || "gemini-3.5-flash-lite";
+  const apiKey = (llmCfg as any)?.custom_api_key || Deno.env.get("GEMINI_API_KEY");
   if (!apiKey) {
     console.error("No AI API key configured, using fallback");
     return chatbot.fallback_message;
@@ -83,7 +83,7 @@ ${knowledgeContext || "لا توجد معلومات في قاعدة المعرف
   ];
 
   try {
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ model, messages }),
@@ -467,12 +467,12 @@ Deno.serve(async (req) => {
         // Sale-intent detection
         if (handover?.enabled) {
           try {
-            const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-            const intentRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            const openAiApiKey = Deno.env.get("GEMINI_API_KEY");
+            const intentRes = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
               method: "POST",
-              headers: { "Content-Type": "application/json", Authorization: `Bearer ${lovableApiKey}` },
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${openAiApiKey}` },
               body: JSON.stringify({
-                model: "google/gemini-2.5-flash-lite",
+                model: "gemini-3.5-flash-lite",
                 messages: [
                   { role: "system", content: 'صنّف الرسالة. أجب فقط بكلمة واحدة: "sale" إذا كان الزبون يريد إجراء عملية شراء حقيقية الآن، أو "no" في غير ذلك.' },
                   { role: "user", content: userMessage },

@@ -1,4 +1,4 @@
-project_id = "uatmgqwqdnqlwpyduhwn"
+project_id = "sywuciyhimfvqwzevcdy"
 
 [functions.telegram-webhook]
 verify_jwt = false
@@ -19,9 +19,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.visitor-chat]
-verify_jwt = false
-
-[functions.mcp]
 verify_jwt = false
 
 [functions.generate-embedding]
