@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { consumeRateLimit, getClientFingerprint } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,9 +7,25 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+type KnowledgeContextItem = {
+  type?: string | null;
+  title?: string | null;
+  question?: string | null;
+  answer?: string | null;
+  content?: string | null;
+  file_url?: string | null;
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json", Allow: "POST" },
+    });
   }
 
   try {
@@ -19,6 +36,12 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "message and chatbot_id or public_slug are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+    if (typeof message !== "string" || message.trim().length > 4000) {
+      return new Response(JSON.stringify({ error: "Message is too long" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -42,6 +65,78 @@ Deno.serve(async (req) => {
       chatbot_id = bySlug.id;
     }
 
+    // Fetch settings before doing any write or paid AI work.
+    const { data: chatbot, error: chatbotError } = await supabase
+      .from("chatbots")
+      .select("*")
+      .eq("id", chatbot_id)
+      .single();
+
+    if (chatbotError || !chatbot) {
+      return new Response(
+        JSON.stringify({ error: "Chatbot not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Direct chatbot IDs are reserved for the authenticated owner (dashboard test chat).
+    // Public visitors must use an active public_slug instead.
+    if (chatbotIdIn) {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const bearerToken = authHeader.replace(/^Bearer\s+/i, "");
+      const isServiceRole = bearerToken.length > 0 && bearerToken === supabaseServiceKey;
+      if (!isServiceRole) {
+        const userClient = createClient(
+          supabaseUrl,
+          Deno.env.get("SUPABASE_ANON_KEY")!,
+          { global: { headers: { Authorization: authHeader } } },
+        );
+        const { data: userData, error: userError } = await userClient.auth.getUser();
+        if (userError || !userData.user || userData.user.id !== chatbot.user_id) {
+          return new Response(JSON.stringify({ error: "Forbidden" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    }
+
+    const fingerprint = await getClientFingerprint(req);
+    const minuteLimit = await consumeRateLimit(supabase, {
+      bucketKey: `chat_ip_minute:${chatbot_id}:${fingerprint}`,
+      maxRequests: 20,
+      windowSeconds: 60,
+      limitType: "ip_minute",
+      chatbotId: chatbot_id,
+      channel: "web",
+      identifier: fingerprint,
+    });
+    if (!minuteLimit.allowed) {
+      return new Response(JSON.stringify({ error: "Too many requests. Try again shortly." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" },
+      });
+    }
+
+    const configuredDailyLimit = chatbot.daily_message_limit;
+    const dailyLimit = typeof configuredDailyLimit === "number" && Number.isFinite(configuredDailyLimit)
+      ? configuredDailyLimit
+      : 300;
+    const chatbotDaily = await consumeRateLimit(supabase, {
+      bucketKey: `chatbot_daily:${chatbot_id}`,
+      maxRequests: dailyLimit,
+      windowSeconds: 86400,
+      limitType: "chatbot_daily",
+      chatbotId: chatbot_id,
+      channel: "web",
+    });
+    if (!chatbotDaily.allowed) {
+      return new Response(JSON.stringify({ error: "Daily message limit reached." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" },
+      });
+    }
+
     // Record customer profile for web channel (if identifiable)
     if (user_id) {
       await supabase.rpc("record_customer_contact", {
@@ -53,20 +148,6 @@ Deno.serve(async (req) => {
         _phone: null,
         _last_message: message,
       });
-    }
-
-    // Fetch chatbot settings
-    const { data: chatbot, error: chatbotError } = await supabase
-      .from("chatbots")
-      .select("*")
-      .eq("id", chatbot_id)
-      .single();
-
-    if (chatbotError || !chatbot) {
-      return new Response(
-        JSON.stringify({ error: "Chatbot not found" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
 
     // Fetch knowledge base items
@@ -113,7 +194,7 @@ Deno.serve(async (req) => {
     }
 
     // Detect sale intent via AI classifier — gated by chatbot.bot_mode
-    const botMode: string = (chatbot as any).bot_mode || "inquiries_sales";
+    const botMode: string = chatbot.bot_mode || "inquiries_sales";
     const salesEnabled = botMode === "inquiries_sales" || botMode === "inquiries_sales_followup";
     if (handover?.enabled && salesEnabled) {
       try {
@@ -169,19 +250,21 @@ Deno.serve(async (req) => {
     // Build knowledge context
     // Try semantic retrieval first (RAG) — falls back to dumping everything
     // when no rows have embeddings yet (e.g. GEMINI_API_KEY missing).
-    let retrievedItems: any[] | null = null;
+    let retrievedItems: KnowledgeContextItem[] | null = null;
     try {
       const embRes = await supabase.functions.invoke("generate-embedding", {
         body: { text: message },
       });
-      const embedding = (embRes.data as any)?.embedding;
+      const embedding = (embRes.data as { embedding?: unknown } | null)?.embedding;
       if (Array.isArray(embedding)) {
         const { data: matches } = await supabase.rpc("match_knowledge_items", {
           p_chatbot_id: chatbot_id,
           query_embedding: embedding,
           match_count: 5,
         });
-        if (matches && matches.length > 0) retrievedItems = matches as any[];
+        if (matches && matches.length > 0) {
+          retrievedItems = matches as unknown as KnowledgeContextItem[];
+        }
       }
     } catch (e) {
       console.error("Semantic retrieval failed, falling back:", e);

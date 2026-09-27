@@ -1,3 +1,6 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { consumeRateLimit, getClientFingerprint } from "../_shared/rateLimit.ts";
+
 // Public chat for landing-page visitors. Answers questions about Jawabi platform.
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,12 +32,68 @@ interface ChatMessage {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json", Allow: "POST" },
+    });
+  }
+
   try {
     const { messages } = (await req.json()) as { messages: ChatMessage[] };
     if (!Array.isArray(messages) || messages.length === 0) {
       return new Response(JSON.stringify({ error: "messages required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const totalCharacters = messages.reduce(
+      (total, message) => total + (typeof message?.content === "string" ? message.content.length : 0),
+      0,
+    );
+    if (
+      messages.some((message) =>
+        !message || !["user", "assistant"].includes(message.role) || typeof message.content !== "string"
+      ) || totalCharacters > 6000
+    ) {
+      return new Response(JSON.stringify({ error: "Invalid or oversized messages" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const fingerprint = await getClientFingerprint(req);
+    const minuteLimit = await consumeRateLimit(admin, {
+      bucketKey: `visitor_ip_minute:${fingerprint}`,
+      maxRequests: 8,
+      windowSeconds: 60,
+      limitType: "visitor_ip_minute",
+      channel: "landing",
+      identifier: fingerprint,
+    });
+    if (!minuteLimit.allowed) {
+      return new Response(JSON.stringify({ error: "Too many requests. Try again shortly." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "60" },
+      });
+    }
+
+    const dailyLimit = await consumeRateLimit(admin, {
+      bucketKey: `visitor_ip_daily:${fingerprint}`,
+      maxRequests: 50,
+      windowSeconds: 86400,
+      limitType: "visitor_ip_daily",
+      channel: "landing",
+      identifier: fingerprint,
+    });
+    if (!dailyLimit.allowed) {
+      return new Response(JSON.stringify({ error: "Daily message limit reached." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" },
       });
     }
 
@@ -61,6 +120,7 @@ Deno.serve(async (req) => {
           { role: "system", content: SYSTEM_PROMPT },
           ...trimmed,
         ],
+        max_tokens: 512,
       }),
     });
 
