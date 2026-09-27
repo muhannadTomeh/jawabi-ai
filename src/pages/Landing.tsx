@@ -2,8 +2,6 @@ import { Link } from "react-router-dom";
 import { VisitorChat } from "@/components/landing/VisitorChat";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import robotMascot from "@/assets/robot-mascot.png.asset.json";
-import logo from "@/assets/logo.png.asset.json";
 import {
   Bot,
   MessageSquare,
@@ -75,7 +73,7 @@ export default function Landing() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-xl font-bold">جوابي</span>
-            <img src={logo.url} alt="جوابي" width={36} height={36} className="h-9 w-9" />
+            <img src="/assets/logo.png" alt="جوابي" width={36} height={36} className="h-9 w-9" />
           </Link>
           <nav className="hidden items-center gap-8 md:flex">
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground">المميزات</a>
@@ -108,7 +106,7 @@ export default function Landing() {
         <div className="container relative mx-auto px-4 py-20 md:py-28">
           {/* Mascot – small floating waving robot */}
           <img
-            src={robotMascot.url}
+            src="/assets/robot-mascot.png"
             alt="مساعد جوابي يلوّح بالترحيب"
             loading="eager"
             aria-hidden
