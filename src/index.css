@@ -124,6 +124,11 @@
 
   body {
     @apply bg-background text-foreground;
+    min-width: 320px;
+  }
+
+  button, a, input, textarea, select {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 
   /* Typography system */
@@ -141,7 +146,7 @@
 
   /* Stat card styling */
   .stat-card {
-    @apply bg-card rounded-xl border border-border p-6 transition-all duration-200 hover:shadow-md hover:border-primary/20;
+    @apply bg-card rounded-xl border border-border p-5 sm:p-6 transition-all duration-200 hover:shadow-md hover:border-primary/20;
   }
 
   /* Nav item styling */

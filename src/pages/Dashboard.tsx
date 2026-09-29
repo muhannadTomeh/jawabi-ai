@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare, Users, TrendingUp, ArrowLeft, Share2, Bot, Settings, Loader2 } from 'lucide-react';
+import { MessageSquare, Users, ArrowLeft, Share2, Bot, Settings, Loader2, BookOpen, CheckCircle2, Circle, Rocket } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { StatusBadge } from '@/components/dashboard/StatusBadge';
 import { supabase } from '@/integrations/supabase/client';
 import { useChatbot } from '@/hooks/useChatbot';
 import { ChannelIcon } from '@/components/ChannelIcon';
+import { useAuth } from '@/hooks/useAuth';
 
 type PlatformKey = 'telegram' | 'facebook' | 'instagram' | 'whatsapp';
 
@@ -35,6 +36,7 @@ interface TopQuestion {
 }
 
 export default function DashboardPage() {
+  const { user } = useAuth();
   const { chatbot, loading: chatbotLoading } = useChatbot();
   const [loading, setLoading] = useState(true);
   const [channels, setChannels] = useState<ChannelRow[]>([]);
@@ -42,9 +44,13 @@ export default function DashboardPage() {
   const [userMessages, setUserMessages] = useState(0);
   const [uniqueContacts, setUniqueContacts] = useState(0);
   const [topQuestions, setTopQuestions] = useState<TopQuestion[]>([]);
+  const [knowledgeCount, setKnowledgeCount] = useState(0);
 
   useEffect(() => {
-    if (!chatbot) return;
+    if (!chatbot) {
+      if (!chatbotLoading) setLoading(false);
+      return;
+    }
     const load = async () => {
       setLoading(true);
       try {
@@ -65,6 +71,7 @@ export default function DashboardPage() {
           waUserMsgsRes,
           waContactsRes,
           tgUsersRes,
+          knowledgeCountRes,
         ] = await Promise.all([
           supabase.from('channels').select('platform, is_connected').eq('chatbot_id', chatbot.id),
           supabase.from('social_connections').select('platform').eq('chatbot_id', chatbot.id),
@@ -79,6 +86,7 @@ export default function DashboardPage() {
           supabase.from('whatsapp_messages').select('content').eq('chatbot_id', chatbot.id).eq('role', 'user').limit(500),
           supabase.from('whatsapp_contacts').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
           supabase.from('telegram_users').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
+          supabase.from('knowledge_items').select('id', { count: 'exact', head: true }).eq('chatbot_id', chatbot.id),
         ]);
 
         // Channels: combine legacy `channels` (telegram) with social_connections (fb/ig/wa)
@@ -88,10 +96,10 @@ export default function DashboardPage() {
           instagram: false,
           whatsapp: false,
         };
-        (tgChRes.data || []).forEach((c: any) => {
+        (tgChRes.data || []).forEach((c: { platform: string; is_connected: boolean | null }) => {
           if (c.platform === 'telegram') map.telegram = !!c.is_connected;
         });
-        (socialRes.data || []).forEach((c: any) => {
+        (socialRes.data || []).forEach((c: { platform: string }) => {
           if (c.platform in map) map[c.platform as PlatformKey] = true;
         });
         setChannels(
@@ -102,10 +110,11 @@ export default function DashboardPage() {
         setUserMessages((webUserCountRes.count || 0) + (tgUserCountRes.count || 0) + (waUserCountRes.count || 0));
 
         setUniqueContacts((waContactsRes.count || 0) + (tgUsersRes.count || 0));
+        setKnowledgeCount(knowledgeCountRes.count || 0);
 
         // Top questions: aggregate a bounded slice of recent user messages.
         const counts = new Map<string, number>();
-        const bucket = (rows: any[] | null | undefined) => {
+        const bucket = (rows: Array<{ content: string | null }> | null | undefined) => {
           (rows || []).forEach((m) => {
             const k = (m.content || '').trim();
             if (!k) return;
@@ -127,7 +136,7 @@ export default function DashboardPage() {
       }
     };
     load();
-  }, [chatbot]);
+  }, [chatbot, chatbotLoading]);
 
   if (chatbotLoading || loading) {
     return (
@@ -138,15 +147,107 @@ export default function DashboardPage() {
   }
 
   const connectedCount = channels.filter((c) => c.connected).length;
+  const setupSteps = [
+    {
+      label: 'أضف معلومات نشاطك',
+      description: 'عرّف المساعد باسم نشاطك وطريقة الرد المناسبة.',
+      done: Boolean(chatbot?.business_name && chatbot?.custom_instructions),
+      href: '/dashboard/settings',
+      action: 'إكمال الإعدادات',
+      icon: Settings,
+    },
+    {
+      label: 'درّب المساعد على معلوماتك',
+      description: knowledgeCount > 0 ? `${knowledgeCount.toLocaleString('ar-SA')} مصادر معرفة مضافة` : 'أضف نصاً، ملفاً أو أسئلة شائعة.',
+      done: knowledgeCount > 0,
+      href: '/dashboard/knowledge',
+      action: 'إضافة معرفة',
+      icon: BookOpen,
+    },
+    {
+      label: 'جرّب محادثة حقيقية',
+      description: 'تأكد من جودة الإجابات قبل مشاركة البوت.',
+      done: userMessages > 0,
+      href: '/dashboard/test',
+      action: 'تجربة البوت',
+      icon: MessageSquare,
+    },
+    {
+      label: 'اربط قناة تواصل',
+      description: connectedCount > 0 ? `${connectedCount.toLocaleString('ar-SA')} قنوات متصلة` : 'ابدأ بتيليجرام أو واتساب.',
+      done: connectedCount > 0,
+      href: '/dashboard/channels',
+      action: 'ربط قناة',
+      icon: Share2,
+    },
+  ];
+  const completedSetupSteps = setupSteps.filter((step) => step.done).length;
+  const setupProgress = Math.round((completedSetupSteps / setupSteps.length) * 100);
+  const displayName = user?.user_metadata?.full_name?.split(' ')[0] || 'بك';
 
   return (
     <div className="animate-fade-in space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">لوحة التحكم</h1>
-        <p className="mt-1 text-muted-foreground">إدارة الشات بوت ومتابعة الأداء</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="mb-1 text-sm font-medium text-primary">مرحباً {displayName} 👋</p>
+          <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">لوحة التحكم</h1>
+          <p className="mt-1 text-sm text-muted-foreground sm:text-base">تابع أداء مساعدك وأكمل تجهيزه للعملاء.</p>
+        </div>
+        <Button asChild className="w-full sm:w-auto">
+          <Link to="/dashboard/test">
+            <MessageSquare className="ml-2 h-4 w-4" />
+            جرّب المساعد
+          </Link>
+        </Button>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {completedSetupSteps < setupSteps.length && (
+        <section className="overflow-hidden rounded-2xl border border-primary/20 bg-card shadow-sm">
+          <div className="flex flex-col gap-5 border-b border-border bg-primary/[0.04] p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="flex items-start gap-3">
+              <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
+                <Rocket className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-foreground">جهّز مساعدك لاستقبال العملاء</h2>
+                <p className="mt-1 text-sm text-muted-foreground">أكملت {completedSetupSteps} من {setupSteps.length} خطوات أساسية.</p>
+              </div>
+            </div>
+            <div className="min-w-36">
+              <div className="mb-2 flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">نسبة التجهيز</span>
+                <span className="font-semibold text-primary">{setupProgress}%</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-primary/10" aria-label={`نسبة التجهيز ${setupProgress}%`}>
+                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${setupProgress}%` }} />
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-px bg-border sm:grid-cols-2">
+            {setupSteps.map((step) => (
+              <Link
+                key={step.label}
+                to={step.href}
+                className="group flex items-start gap-3 bg-card p-4 transition-colors hover:bg-muted/50 sm:p-5"
+              >
+                {step.done ? (
+                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" />
+                ) : (
+                  <Circle className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground/50" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className={step.done ? 'font-medium text-muted-foreground line-through' : 'font-medium text-foreground'}>{step.label}</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">{step.description}</p>
+                  {!step.done && <span className="mt-2 inline-flex text-xs font-semibold text-primary group-hover:underline">{step.action}</span>}
+                </div>
+                <step.icon className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="إجمالي الرسائل"
           value={totalMessages.toLocaleString('ar-SA')}
@@ -177,8 +278,8 @@ export default function DashboardPage() {
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">الشات بوت الخاص بك</h2>
           </div>
-          <div className="card-elevated p-6">
-            <div className="flex items-start justify-between">
+          <div className="card-elevated p-5 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-center gap-4">
                 <div className="rounded-xl bg-primary/10 p-3">
                   <Bot className="h-8 w-8 text-primary" />
@@ -192,7 +293,7 @@ export default function DashboardPage() {
               </div>
               <StatusBadge status={chatbot.is_active ? 'active' : 'inactive'} />
             </div>
-            <div className="mt-6 flex items-center gap-3">
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Button variant="outline" size="sm" asChild>
                 <Link to="/dashboard/settings">
                   <Settings className="ml-2 h-4 w-4" />
@@ -248,7 +349,14 @@ export default function DashboardPage() {
             </Button>
           </div>
           {topQuestions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">لا توجد رسائل بعد.</p>
+            <div className="rounded-xl border border-dashed border-border px-4 py-8 text-center">
+              <MessageSquare className="mx-auto h-7 w-7 text-muted-foreground/50" />
+              <p className="mt-3 text-sm font-medium text-foreground">لا توجد محادثات بعد</p>
+              <p className="mt-1 text-xs text-muted-foreground">جرّب البوت لتظهر أكثر الأسئلة تكراراً هنا.</p>
+              <Button variant="link" size="sm" asChild className="mt-2">
+                <Link to="/dashboard/test">ابدأ أول محادثة</Link>
+              </Button>
+            </div>
           ) : (
             <div className="space-y-3">
               {topQuestions.map((item, i) => (
