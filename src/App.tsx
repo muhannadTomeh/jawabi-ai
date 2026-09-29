@@ -14,7 +14,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 // After a new deploy, an open tab may still hold the previous index.html and
 // request chunk filenames that no longer exist. Retry once, then hard-reload
 // so the browser picks up the fresh manifest instead of showing a blank screen.
-function lazyWithReload<T extends { default: React.ComponentType<any> }>(
+function lazyWithReload<T extends { default: React.ComponentType<Record<string, never>> }>(
   factory: () => Promise<T>,
 ) {
   return lazy(async () => {
@@ -34,6 +34,8 @@ function lazyWithReload<T extends { default: React.ComponentType<any> }>(
 }
 
 const AuthPage = lazyWithReload(() => import("@/pages/Auth"));
+const ForgotPasswordPage = lazyWithReload(() => import("@/pages/ForgotPassword"));
+const ResetPasswordPage = lazyWithReload(() => import("@/pages/ResetPassword"));
 const Landing = lazyWithReload(() => import("@/pages/Landing"));
 const Onboarding = lazyWithReload(() => import("@/pages/Onboarding"));
 const DashboardPage = lazyWithReload(() => import("@/pages/Dashboard"));
@@ -79,6 +81,8 @@ const App = () => (
             <Routes>
             {/* Auth route */}
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             {/* Public landing */}
             <Route path="/" element={<Landing />} />

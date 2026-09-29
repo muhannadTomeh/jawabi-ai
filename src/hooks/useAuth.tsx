@@ -6,9 +6,11 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isPasswordRecovery: boolean;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  completePasswordRecovery: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,6 +19,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(
+    () => sessionStorage.getItem('jawabi_password_recovery') === 'true',
+  );
 
   useEffect(() => {
     // Set up auth state listener BEFORE getting initial session
@@ -25,7 +30,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        if (event === 'PASSWORD_RECOVERY') {
+          sessionStorage.setItem('jawabi_password_recovery', 'true');
+          setIsPasswordRecovery(true);
+        }
         if (event === 'SIGNED_OUT') {
+          sessionStorage.removeItem('jawabi_password_recovery');
+          setIsPasswordRecovery(false);
           // Always return to the landing page when the session ends
           if (window.location.pathname !== '/') {
             window.location.replace('/');
@@ -68,13 +79,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const completePasswordRecovery = () => {
+    sessionStorage.removeItem('jawabi_password_recovery');
+    setIsPasswordRecovery(false);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{
+      user,
+      session,
+      loading,
+      isPasswordRecovery,
+      signUp,
+      signIn,
+      signOut,
+      completePasswordRecovery,
+    }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
+// This module intentionally exports the provider and its paired hook together.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

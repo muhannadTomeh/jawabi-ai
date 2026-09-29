@@ -9,6 +9,10 @@ import { toast } from 'sonner';
 import { Loader2, Sparkles, MessageSquare, Bot, Globe, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 export default function AuthPage() {
   const { user, loading, signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -66,9 +70,9 @@ export default function AuthPage() {
           description: 'مرحباً بك في جوابي',
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error('فشل تسجيل الدخول', {
-        description: err?.message || 'حدث خطأ غير متوقع',
+        description: getErrorMessage(err, 'حدث خطأ غير متوقع'),
       });
     } finally {
       setIsSubmitting(false);
@@ -91,9 +95,9 @@ export default function AuthPage() {
           description: 'يرجى التحقق من بريدك الإلكتروني لتفعيل الحساب',
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error('فشل إنشاء الحساب', {
-        description: err?.message || 'حدث خطأ غير متوقع',
+        description: getErrorMessage(err, 'حدث خطأ غير متوقع'),
       });
     } finally {
       setIsSubmitting(false);
@@ -128,8 +132,10 @@ export default function AuthPage() {
       toast.success('تم تسجيل الدخول بنجاح', {
         description: 'مرحباً بك في جوابي',
       });
-    } catch (err: any) {
-      toast.error('فشل تسجيل الدخول', { description: err?.message || 'حدث خطأ غير متوقع' });
+    } catch (err: unknown) {
+      toast.error('فشل تسجيل الدخول', {
+        description: getErrorMessage(err, 'حدث خطأ غير متوقع'),
+      });
       sessionStorage.removeItem('oauth_pending');
       setOauthLoading(null);
     }
@@ -267,7 +273,15 @@ export default function AuthPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="login-password" className="block text-right">كلمة المرور</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="login-password">كلمة المرور</Label>
+                    <Link
+                      to="/forgot-password"
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      نسيت كلمة المرور؟
+                    </Link>
+                  </div>
                   <Input
                     id="login-password"
                     type="password"
