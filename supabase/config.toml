@@ -1,5 +1,16 @@
 project_id = "sywuciyhimfvqwzevcdy"
 
+[auth]
+site_url = "https://jawabi-ai.vercel.app"
+additional_redirect_urls = [
+  "https://jawabi-ai.vercel.app/**",
+  "http://localhost:8080/**",
+  "https://jawabi-ai-1x5k-muhannadtomeh22-7541s-projects.vercel.app/**",
+  "https://jawabi-*-ai-1x5k-muhannadtomeh22-7541s-projects.vercel.app/**",
+  "https://jawabi-ai-muhannadtomeh22-7541s-projects.vercel.app/**",
+  "https://jawabi-*-ai-muhannadtomeh22-7541s-projects.vercel.app/**",
+]
+
 [functions.telegram-webhook]
 verify_jwt = false
 
