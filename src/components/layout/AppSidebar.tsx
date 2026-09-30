@@ -3,13 +3,11 @@ import {
   Bot,
   BookOpen,
   Share2,
-  BarChart3,
   Settings,
-  MessageSquare,
+  Inbox,
   LogOut,
   User,
   ShieldCheck,
-  Bell,
   Users,
   UserCog,
 } from 'lucide-react';
@@ -22,15 +20,14 @@ import { Menu } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const navigation = [
-  { name: 'لوحة التحكم', href: '/dashboard', icon: Bot },
+  { name: 'نظرة عامة', href: '/dashboard', icon: Bot },
+  { name: 'المحادثات', href: '/dashboard/inbox', icon: Inbox },
   { name: 'قاعدة المعرفة', href: '/dashboard/knowledge', icon: BookOpen },
   { name: 'القنوات', href: '/dashboard/channels', icon: Share2 },
   { name: 'العملاء', href: '/dashboard/customers', icon: Users },
-  { name: 'الإحصائيات', href: '/dashboard/analytics', icon: BarChart3 },
-  { name: 'تجربة الشات', href: '/dashboard/test', icon: MessageSquare },
-  { name: 'الإشعارات', href: '/dashboard/notifications', icon: Bell },
-  { name: 'الإعدادات', href: '/dashboard/settings', icon: Settings },
 ];
+
+const botSettingsItem = { name: 'إعدادات المساعد', href: '/dashboard/settings', icon: Settings };
 
 const accountNavItem = { name: 'إعدادات الحساب', href: '/dashboard/account', icon: UserCog };
 
@@ -79,7 +76,7 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
               >
                 <item.icon className="h-5 w-5" />
                 <span className="flex-1">{item.name}</span>
-                {item.href === '/dashboard/notifications' && unreadCount > 0 && (
+                {item.href === '/dashboard/inbox' && unreadCount > 0 && (
                   <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </span>
@@ -87,6 +84,18 @@ function SidebarInner({ onNavigate }: { onNavigate?: () => void }) {
               </Link>
             );
           })}
+
+          <div className="px-3 pb-1 pt-5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            المساعد
+          </div>
+          <Link
+            to={botSettingsItem.href}
+            onClick={onNavigate}
+            className={cn('nav-item', isActive(botSettingsItem.href) ? 'nav-item-active' : 'nav-item-inactive')}
+          >
+            <botSettingsItem.icon className="h-5 w-5" />
+            <span>{botSettingsItem.name}</span>
+          </Link>
           
           {/* Admin Link */}
           {isAdmin && (

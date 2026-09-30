@@ -50,10 +50,10 @@ const features = [
 ];
 
 const steps = [
-  { n: "1", title: "أنشئ حسابك", desc: "سجّل مجاناً في أقل من دقيقة." },
+  { n: "1", title: "أنشئ حسابك", desc: "ابدأ إعداد مساحة عملك خلال دقيقة." },
   { n: "2", title: "درّب بوتك", desc: "أضف معلومات عملك ومنتجاتك بسهولة." },
   { n: "3", title: "اربط قنواتك", desc: "فعّل البوت على واتساب وتيليجرام وغيرها." },
-  { n: "4", title: "ابدأ البيع", desc: "دع البوت يجيب عملاءك 24/7 ويغلق الصفقات." },
+  { n: "4", title: "ابدأ استقبال العملاء", desc: "تابع المحادثات وتدخل عندما يحتاج العميل إلى موظف." },
 ];
 
 const benefits = [
@@ -62,7 +62,14 @@ const benefits = [
   "تكامل مباشر مع منصات التواصل الاجتماعي",
   "تحويل المحادثات لموظف بشري عند الحاجة",
   "تحديث المعرفة من صفحاتك تلقائياً",
-  "بدون رسوم خفية — جرّب مجاناً الآن",
+  "تحكم كامل بالمصادر والردود وحالة كل قناة",
+];
+
+const faqs = [
+  { question: "هل يحتاج جوابي إلى خبرة تقنية؟", answer: "لا. تبدأ بمعلومات نشاطك، تضيف المحتوى الذي تريد أن يعتمد عليه المساعد، ثم تختبر الإجابات قبل مشاركة الرابط مع العملاء." },
+  { question: "هل يجيب المساعد من معلوماتي؟", answer: "نعم. يعتمد على قاعدة المعرفة التي تضيفها، ويمكنك تعديل المصادر أو حذفها وإعادة اختبار الإجابات في أي وقت." },
+  { question: "ماذا يحدث عندما يحتاج العميل إلى موظف؟", answer: "تظهر المحادثة في صندوق الوارد مع تنبيه، ويمكنك إيقاف الرد الآلي والتدخل يدويًا في القنوات المدعومة." },
+  { question: "ما القنوات المتاحة الآن؟", answer: "دردشة الويب وتيليجرام هما مسار الإطلاق الأساسي. تظهر القنوات الأخرى فقط بعد اكتمال إعدادها واختبارها في حسابك." },
 ];
 
 export default function Landing() {
@@ -85,7 +92,7 @@ export default function Landing() {
               <Link to="/auth">تسجيل الدخول</Link>
             </Button>
             <Button asChild size="sm">
-              <Link to="/auth?mode=signup">تجربة مجانية</Link>
+              <Link to="/auth?mode=signup"><span className="sm:hidden">ابدأ</span><span className="hidden sm:inline">ابدأ الآن</span></Link>
             </Button>
           </div>
         </div>
@@ -104,14 +111,6 @@ export default function Landing() {
           style={{ background: "var(--gradient-primary)" }}
         />
         <div className="container relative mx-auto px-4 py-20 md:py-28">
-          {/* Mascot – small floating waving robot */}
-          <img
-            src="/assets/robot-mascot.png"
-            alt="مساعد جوابي يلوّح بالترحيب"
-            loading="eager"
-            aria-hidden
-            className="pointer-events-none absolute top-6 left-4 h-20 w-20 origin-bottom animate-wave drop-shadow-xl sm:top-8 sm:left-10 sm:h-24 sm:w-24 md:h-32 md:w-32"
-          />
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground">
               <Zap className="h-3.5 w-3.5 text-primary" />
@@ -130,7 +129,7 @@ export default function Landing() {
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button asChild size="lg" className="min-w-56 text-base">
                 <Link to="/auth?mode=signup">
-                  ابدأ تجربتك المجانية
+                  ابدأ إعداد مساعدك
                   <ArrowLeft className="ms-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -139,7 +138,7 @@ export default function Landing() {
               </Button>
             </div>
             <p className="mt-4 text-xs text-muted-foreground">
-              بدون بطاقة ائتمان • إعداد فوري • إلغاء في أي وقت
+              إعداد واضح خطوة بخطوة • تحكم كامل بالمحتوى • تدخل بشري عند الحاجة
             </p>
           </div>
         </div>
@@ -235,6 +234,27 @@ export default function Landing() {
       </section>
 
       {/* Final CTA */}
+      <section className="container mx-auto px-4 py-20">
+        <div className="mx-auto mb-10 max-w-2xl text-center">
+          <h2 className="text-3xl font-bold md:text-4xl">أسئلة شائعة</h2>
+          <p className="mt-3 text-muted-foreground">إجابات مختصرة قبل أن تبدأ إعداد مساعدك.</p>
+        </div>
+        <div className="mx-auto max-w-3xl divide-y overflow-hidden rounded-2xl border bg-card">
+          {faqs.map((item) => (
+            <details key={item.question} className="group p-5 open:bg-muted/20">
+              <summary className="cursor-pointer list-none font-semibold marker:hidden">
+                <span className="flex items-center justify-between gap-4">
+                  {item.question}
+                  <span className="text-xl font-normal text-primary transition group-open:rotate-45">+</span>
+                </span>
+              </summary>
+              <p className="mt-3 text-sm leading-7 text-muted-foreground">{item.answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* Final CTA */}
       <section id="cta" className="container mx-auto px-4 pb-24">
         <div
           className="relative overflow-hidden rounded-2xl px-8 py-16 text-center text-primary-foreground"
@@ -242,14 +262,14 @@ export default function Landing() {
         >
           <Globe className="absolute -bottom-10 -left-10 h-48 w-48 opacity-10" />
           <Sparkles className="absolute -top-6 -right-6 h-32 w-32 opacity-10" />
-          <h2 className="text-3xl font-bold md:text-4xl">جرّب جوابي مجاناً اليوم</h2>
+          <h2 className="text-3xl font-bold md:text-4xl">جهّز مساعدك لاستقبال العملاء</h2>
           <p className="mx-auto mt-4 max-w-xl opacity-90">
-            انضم لمئات الشركات التي تستخدم جوابي لخدمة عملاءها وزيادة مبيعاتها.
+            أضف معلومات نشاطك، اختبر الإجابات، ثم شارك رابط المحادثة أو اربط تيليجرام.
           </p>
           <div className="mt-8 flex justify-center">
             <Button asChild size="lg" variant="secondary" className="min-w-56 text-base">
               <Link to="/auth?mode=signup">
-                ابدأ تجربتك المجانية
+                ابدأ إعداد مساعدك
                 <ArrowLeft className="ms-2 h-4 w-4" />
               </Link>
             </Button>
@@ -266,9 +286,11 @@ export default function Landing() {
             </div>
             <span className="font-semibold">جوابي</span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} جوابي. جميع الحقوق محفوظة.
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+            <span>© {new Date().getFullYear()} جوابي. جميع الحقوق محفوظة.</span>
+            <Link to="/privacy" className="hover:text-foreground">الخصوصية</Link>
+            <Link to="/terms" className="hover:text-foreground">شروط الاستخدام</Link>
+          </div>
         </div>
       </footer>
       <VisitorChat />

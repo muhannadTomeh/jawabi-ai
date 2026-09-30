@@ -46,12 +46,12 @@ export default function SettingsPage() {
       setBotName(chatbot.name);
       setLanguage(chatbot.language);
       setTone(chatbot.tone);
-      setDialect((chatbot as any).dialect || 'formal');
+      setDialect(chatbot.dialect || 'formal');
       setFallbackMessage(chatbot.fallback_message);
-      setWelcomeMessage((chatbot as any).welcome_message || '');
-      setCustomInstructions((chatbot as any).custom_instructions || '');
-      setBotMode(((chatbot as any).bot_mode || 'inquiries_sales'));
-      setOwnerTelegramChatId(((chatbot as any).owner_telegram_chat_id || ''));
+      setWelcomeMessage(chatbot.welcome_message || '');
+      setCustomInstructions(chatbot.custom_instructions || '');
+      setBotMode(chatbot.bot_mode || 'inquiries_sales');
+      setOwnerTelegramChatId(chatbot.owner_telegram_chat_id || '');
       loadHandover(chatbot.id);
     }
   }, [chatbot]);
@@ -68,10 +68,10 @@ export default function SettingsPage() {
       setKeywords((data.trigger_keywords || []).join('، '));
       setHandoverMessage(data.handover_message);
       setFailedThreshold(data.failed_responses_threshold ?? 3);
-      setTriggerOnSale((data as any).trigger_on_sale ?? false);
-      setSaleMessage((data as any).sale_message ?? 'سأقوم بتحويلك إلى أحد موظفي المبيعات لإتمام طلبك.');
-      setTakeoverMode((data as any).takeover_mode_enabled ?? false);
-      setTakeoverTimeout((data as any).takeover_timeout_minutes ?? 60);
+      setTriggerOnSale(data.trigger_on_sale ?? false);
+      setSaleMessage(data.sale_message ?? 'سأقوم بتحويلك إلى أحد موظفي المبيعات لإتمام طلبك.');
+      setTakeoverMode(data.takeover_mode_enabled ?? false);
+      setTakeoverTimeout(data.takeover_timeout_minutes ?? 60);
     }
   };
 
@@ -87,7 +87,7 @@ export default function SettingsPage() {
       custom_instructions: customInstructions,
       bot_mode: botMode,
       owner_telegram_chat_id: ownerTelegramChatId.trim() || null,
-    } as any);
+    });
 
     let handoverOk = true;
     if (chatbot) {
@@ -104,7 +104,7 @@ export default function SettingsPage() {
         sale_message: saleMessage,
         takeover_mode_enabled: takeoverMode,
         takeover_timeout_minutes: takeoverTimeout,
-      } as any;
+      };
       if (handoverSettingsId) {
         const { error } = await supabase
           .from('handover_settings')
@@ -141,14 +141,15 @@ export default function SettingsPage() {
   return (
     <div className="animate-fade-in space-y-6" dir="rtl">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">الإعدادات</h1>
-          <p className="mt-1 text-muted-foreground">
-            تخصيص سلوك الشات بوت وردوده
+          <p className="mb-1 text-sm font-medium text-primary">هوية وسلوك المساعد</p>
+          <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">إعدادات المساعد</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            خصّص طريقة حديثه ومتى يطلب تدخل موظف.
           </p>
         </div>
-        <Button onClick={handleSave} disabled={saving}>
+        <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
           {saving ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <Save className="me-2 h-4 w-4" />}
           حفظ التغييرات
         </Button>
@@ -159,11 +160,11 @@ export default function SettingsPage() {
         <TabsList className="justify-start">
           <TabsTrigger value="general" className="gap-2">
             <Bot className="h-4 w-4" />
-            عام
+            الهوية والردود
           </TabsTrigger>
           <TabsTrigger value="handover" className="gap-2">
             <MessageSquare className="h-4 w-4" />
-            التحويل للدعم
+            التدخل البشري
           </TabsTrigger>
         </TabsList>
 
@@ -282,7 +283,6 @@ export default function SettingsPage() {
                   <SelectContent>
                     <SelectItem value="inquiries_only">استفسارات فقط</SelectItem>
                     <SelectItem value="inquiries_sales">استفسارات + مبيعات</SelectItem>
-                    <SelectItem value="inquiries_sales_followup">استفسارات + مبيعات + متابعة (قريباً)</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
@@ -290,22 +290,6 @@ export default function SettingsPage() {
                 </p>
               </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="ownerTg" className="flex items-center gap-2">
-                  <Send className="h-4 w-4" />
-                  معرّف محادثة المالك على تيليجرام
-                </Label>
-                <Input
-                  id="ownerTg"
-                  dir="ltr"
-                  value={ownerTelegramChatId}
-                  onChange={(e) => setOwnerTelegramChatId(e.target.value)}
-                  placeholder="123456789"
-                />
-                <p className="text-xs text-muted-foreground">
-                  عند اكتشاف نية شراء، سيرسل البوت ملخص الطلب على هذا المعرّف مع زر «تأكيد الطلب». يمكنك معرفة رقمك عبر @userinfobot.
-                </p>
-              </div>
             </div>
           </div>
         </TabsContent>
@@ -335,6 +319,23 @@ export default function SettingsPage() {
                 />
                 <p className="text-xs text-muted-foreground">
                   كلمات مفصولة بفواصل تؤدي إلى التحويل عند اكتشافها
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ownerTg" className="flex items-center gap-2">
+                  <Send className="h-4 w-4" />
+                  إرسال تنبيهات التدخل إلى تيليجرام
+                </Label>
+                <Input
+                  id="ownerTg"
+                  dir="ltr"
+                  value={ownerTelegramChatId}
+                  onChange={(e) => setOwnerTelegramChatId(e.target.value)}
+                  placeholder="معرّف المحادثة، مثال: 123456789"
+                />
+                <p className="text-xs leading-5 text-muted-foreground">
+                  اختياري. عند طلب موظف أو اكتشاف نية شراء، يرسل جوابي تنبيهًا إلى هذه المحادثة. يمكن معرفة المعرّف عبر @userinfobot.
                 </p>
               </div>
 

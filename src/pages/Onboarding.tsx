@@ -1,8 +1,21 @@
-import { useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import {
+  ArrowLeft,
+  Bot,
+  Building2,
+  CheckCircle2,
+  Globe,
+  Loader2,
+  MessageSquare,
+  Rocket,
+  Send,
+  Sparkles,
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useChatbot } from '@/hooks/useChatbot';
 import { supabase } from '@/integrations/supabase/client';
+import { embedKnowledgeItem } from '@/lib/knowledgeEmbedding';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,26 +23,31 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
-import {
-  Loader2, Sparkles, CheckCircle2, ArrowLeft, Building2, Upload, Link as LinkIcon,
-  MessageSquare, Bot, Share2, Rocket, SkipForward, Globe, FileText, Image as ImageIcon,
-} from 'lucide-react';
 
 const CATEGORIES = [
-  'متجر إلكتروني', 'مطعم', 'عيادة طبية', 'تعليم وتدريب',
-  'خدمات', 'سياحة وسفر', 'عقارات', 'أخرى',
+  'متجر إلكتروني',
+  'مطعم',
+  'عيادة طبية',
+  'تعليم وتدريب',
+  'خدمات',
+  'سياحة وسفر',
+  'عقارات',
+  'أخرى',
 ];
 
-const PRESETS = [
-  { id: 'support', label: 'دعم العملاء', prompt: 'أنت مساعد دعم العملاء لهذا النشاط. أجب عن أسئلة العملاء بدقة باستخدام البيانات المتوفرة، وحافظ على نبرة احترافية ومهذبة.' },
-  { id: 'sales', label: 'مساعد مبيعات', prompt: 'أنت مساعد مبيعات. ساعد العملاء على اختيار المنتج المناسب، اعرض المزايا والأسعار، واقترح المنتجات ذات الصلة بأسلوب ودود ومقنع.' },
-  { id: 'booking', label: 'مساعد حجوزات', prompt: 'أنت مساعد حجوزات. ساعد العملاء على حجز المواعيد، تأكيد التفاصيل، والإجابة على استفساراتهم حول الأوقات المتاحة والخدمات.' },
-  { id: 'tech', label: 'دعم تقني', prompt: 'أنت مساعد دعم تقني. ساعد المستخدمين على حل المشاكل التقنية خطوة بخطوة بأسلوب واضح ومبسط.' },
-  { id: 'restaurant', label: 'مساعد مطعم', prompt: 'أنت مساعد مطعم. ساعد العملاء على تصفح القائمة، تقديم الطلبات، الإجابة عن مكونات الأطباق، وحجز الطاولات.' },
-];
+const categoryQuestions: Record<string, string[]> = {
+  'متجر إلكتروني': ['ما المنتجات المتوفرة؟', 'ما سياسة الاستبدال والإرجاع؟'],
+  مطعم: ['ما ساعات العمل؟', 'ما أشهر الوجبات لديكم؟'],
+  'عيادة طبية': ['ما الخدمات المتوفرة؟', 'كيف أحجز موعدًا؟'],
+  'تعليم وتدريب': ['ما الدورات المتوفرة؟', 'كيف يمكنني التسجيل؟'],
+  خدمات: ['ما الخدمات التي تقدمونها؟', 'كيف أطلب الخدمة؟'],
+  'سياحة وسفر': ['ما العروض المتوفرة؟', 'كيف أحجز رحلة؟'],
+  عقارات: ['ما العقارات المتوفرة؟', 'كيف أتواصل مع مسؤول المبيعات؟'],
+  أخرى: ['ما الخدمات التي تقدمونها؟', 'كيف يمكنني التواصل معكم؟'],
+};
 
-function slugify(text: string) {
-  return (text || 'bot')
+function slugify(value: string) {
+  return value
     .toLowerCase()
     .trim()
     .replace(/[^\p{L}\p{N}]+/gu, '-')
@@ -37,291 +55,256 @@ function slugify(text: string) {
     .slice(0, 40) || 'bot';
 }
 
+function defaultInstructions(name: string, category: string, description: string) {
+  const context = description.trim() ? ` معلومات النشاط: ${description.trim()}` : '';
+  return `أنت المساعد الرقمي لنشاط ${name} (${category}). أجب بالعربية بأسلوب واضح وودود اعتمادًا على قاعدة المعرفة فقط. إذا لم تجد معلومة مؤكدة، وضّح ذلك واطلب من العميل التواصل مع الموظف.${context}`;
+}
+
 export default function Onboarding() {
   const { user, loading: authLoading } = useAuth();
-  const { chatbot, loading: botLoading, error: botError, updateChatbot, refetch } = useChatbot();
+  const { chatbot, loading: chatbotLoading, error: chatbotError, updateChatbot, refetch } = useChatbot();
   const navigate = useNavigate();
-
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
-
-  // Step 1
-  const [bizName, setBizName] = useState('');
-  const [bizCat, setBizCat] = useState('');
-  const [bizLoc, setBizLoc] = useState('');
-  const [bizDesc, setBizDesc] = useState('');
-
-  // Step 2
+  const [businessName, setBusinessName] = useState('');
+  const [category, setCategory] = useState('');
+  const [location, setLocation] = useState('');
+  const [description, setDescription] = useState('');
   const [knowledgeText, setKnowledgeText] = useState('');
   const [websiteUrl, setWebsiteUrl] = useState('');
-  const [socialLink, setSocialLink] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
-  const [trainingProgress, setTrainingProgress] = useState(0);
-
-  // Step 4
-  const [instructions, setInstructions] = useState('');
+  const [question, setQuestion] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [testing, setTesting] = useState(false);
 
   useEffect(() => {
-    if (chatbot) {
-      setBizName(chatbot.business_name || '');
-      setBizCat(chatbot.business_category || '');
-      setBizLoc(chatbot.business_location || '');
-      setBizDesc(chatbot.business_description || '');
-      setInstructions(chatbot.custom_instructions || '');
-      if (chatbot.onboarding_completed) {
-        navigate('/dashboard', { replace: true });
-      } else if (chatbot.onboarding_step && chatbot.onboarding_step > 1) {
-        setStep(chatbot.onboarding_step);
-      }
+    if (!chatbot) return;
+    if (chatbot.onboarding_completed) {
+      navigate('/dashboard', { replace: true });
+      return;
     }
+    setBusinessName(chatbot.business_name || '');
+    setCategory(chatbot.business_category || '');
+    setLocation(chatbot.business_location || '');
+    setDescription(chatbot.business_description || '');
+    setStep(Math.min(3, Math.max(1, chatbot.onboarding_step || 1)));
   }, [chatbot, navigate]);
 
-  const progress = useMemo(() => Math.min(100, (step - 1) * 25), [step]);
+  const progress = useMemo(() => Math.round((step / 3) * 100), [step]);
+  const suggestedQuestions = categoryQuestions[category] || categoryQuestions['أخرى'];
 
-  if (authLoading || botLoading) {
+  if (authLoading || chatbotLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="grid min-h-screen place-items-center bg-background">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+          <p className="mt-3 text-sm text-muted-foreground">نجهّز مساحة عملك…</p>
+        </div>
       </div>
     );
   }
-  if (!user) return <Navigate to="/" replace />;
+
+  if (!user) return <Navigate to="/auth?mode=login" replace />;
 
   if (!chatbot) {
     return (
-      <div dir="rtl" className="flex min-h-screen items-center justify-center bg-background p-6">
-        <Card className="w-full max-w-md p-6 text-center space-y-4">
-          <h2 className="text-lg font-semibold">تعذر تحميل البوت</h2>
-          <p className="text-sm text-muted-foreground">
-            {botError || 'حدث خطأ غير متوقع أثناء تحميل بيانات البوت.'}
-          </p>
+      <div dir="rtl" className="grid min-h-screen place-items-center bg-background p-6">
+        <Card className="w-full max-w-md space-y-4 p-6 text-center">
+          <Bot className="mx-auto h-10 w-10 text-muted-foreground" />
+          <h1 className="text-xl font-semibold">تعذر تجهيز المساعد</h1>
+          <p className="text-sm text-muted-foreground">{chatbotError || 'حدث خطأ غير متوقع. أعد المحاولة.'}</p>
           <Button onClick={() => refetch()} className="w-full">إعادة المحاولة</Button>
         </Card>
       </div>
     );
   }
 
-  const goNext = async (data: Partial<any> = {}, nextStep?: number) => {
-    if (!chatbot) {
-      toast.error('لم يتم تحميل البوت بعد، حاول مجدداً');
+  const saveBusiness = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!businessName.trim() || !category) {
+      toast.error('أدخل اسم النشاط واختر فئته');
       return;
     }
     setSaving(true);
-    const target = nextStep ?? step + 1;
-    const res = await updateChatbot({ ...data, onboarding_step: target });
-    setSaving(false);
-    if (res?.success) {
-      setStep(target);
-    } else {
-      const msg = (res?.error as any)?.message || 'فشل الحفظ، حاول مجدداً';
-      console.error('Onboarding goNext failed:', res?.error);
-      toast.error('فشل الحفظ', { description: msg });
-    }
-  };
-
-  const handleStep1 = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!bizName.trim() || !bizCat.trim()) {
-      toast.error('يرجى تعبئة الحقول المطلوبة');
-      return;
-    }
-    await goNext({
-      business_name: bizName.trim(),
-      business_category: bizCat,
-      business_location: bizLoc.trim() || null,
-      business_description: bizDesc.trim() || null,
-      name: bizName.trim(),
-      public_slug: chatbot?.public_slug || `${slugify(bizName)}-${(chatbot?.id || '').slice(0, 6)}`,
+    const result = await updateChatbot({
+      business_name: businessName.trim(),
+      business_category: category,
+      business_location: location.trim() || null,
+      business_description: description.trim() || null,
+      name: businessName.trim(),
+      public_slug: chatbot.public_slug || `${slugify(businessName)}-${chatbot.id.slice(0, 6)}`,
+      custom_instructions: defaultInstructions(businessName.trim(), category, description),
+      onboarding_step: 2,
     });
+    setSaving(false);
+    if (!result.success) {
+      toast.error('تعذر حفظ معلومات النشاط');
+      return;
+    }
+    setStep(2);
   };
 
-  const handleTrainingSave = async () => {
-    if (!chatbot) return;
+  const saveKnowledge = async (skip = false) => {
+    if (!skip && !knowledgeText.trim() && !websiteUrl.trim()) {
+      toast.error('أضف معلومات نصية أو رابط موقع، أو اختر الإضافة لاحقًا');
+      return;
+    }
     setSaving(true);
-    setTrainingProgress(25);
     try {
-      const items: any[] = [];
-      if (knowledgeText.trim()) items.push({ chatbot_id: chatbot.id, source_type: 'text', title: 'معلومات عامة', content: knowledgeText.trim(), status: 'ready' });
-      setTrainingProgress(50);
-      if (websiteUrl.trim()) items.push({ chatbot_id: chatbot.id, source_type: 'url', title: websiteUrl.trim(), content: websiteUrl.trim(), status: 'pending' });
-      if (socialLink.trim()) items.push({ chatbot_id: chatbot.id, source_type: 'social', title: socialLink.trim(), content: socialLink.trim(), status: 'pending' });
-      setTrainingProgress(75);
-      if (items.length) {
-        const { error } = await supabase.from('knowledge_items').insert(items);
+      if (knowledgeText.trim()) {
+        const { data, error } = await supabase
+          .from('knowledge_items')
+          .insert({
+            chatbot_id: chatbot.id,
+            type: 'text',
+            title: `معلومات ${businessName || 'النشاط'}`,
+            content: knowledgeText.trim(),
+          })
+          .select('id')
+          .single();
         if (error) throw error;
+        if (data?.id) void embedKnowledgeItem(data.id);
       }
-      setTrainingProgress(100);
-      await goNext();
-    } catch (err: any) {
-      toast.error('فشل حفظ بيانات التدريب', { description: err?.message });
+
+      if (websiteUrl.trim()) {
+        const { data, error } = await supabase.functions.invoke('fetch-url-content', {
+          body: {
+            url: websiteUrl.trim(),
+            chatbot_id: chatbot.id,
+            title: `موقع ${businessName || 'النشاط'}`,
+          },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+      }
+
+      const result = await updateChatbot({ onboarding_step: 3 });
+      if (!result.success) throw result.error;
+      setStep(3);
+      setQuestion(suggestedQuestions[0]);
+    } catch (knowledgeError) {
+      console.error('Onboarding knowledge error:', knowledgeError);
+      toast.error('تعذر حفظ مصدر المعرفة', { description: 'تحقق من الرابط أو حاول إضافة النص فقط.' });
+    } finally {
       setSaving(false);
     }
   };
 
-  const handleFinish = async () => {
-    if (!chatbot) return;
+  const testAssistant = async (event?: FormEvent) => {
+    event?.preventDefault();
+    if (!question.trim() || testing) return;
+    setTesting(true);
+    setAnswer('');
+    const { data, error } = await supabase.functions.invoke('chat', {
+      body: {
+        message: question.trim(),
+        chatbot_id: chatbot.id,
+        user_id: user.id,
+        conversation_history: [],
+      },
+    });
+    setTesting(false);
+    if (error) {
+      toast.error('تعذر اختبار المساعد الآن');
+      return;
+    }
+    setAnswer(data?.response || chatbot.fallback_message);
+  };
+
+  const finish = async () => {
     setSaving(true);
-    const res = await updateChatbot({
-      custom_instructions: instructions.trim() || chatbot.custom_instructions,
+    const result = await updateChatbot({
       onboarding_completed: true,
-      onboarding_step: 5,
+      onboarding_step: 3,
       is_active: true,
     });
     setSaving(false);
-    if (res?.success) setStep(5);
-    else toast.error('فشل التفعيل');
-  };
-
-  const publicUrl = chatbot?.public_slug
-    ? `${window.location.origin}/chat/${chatbot.public_slug}`
-    : '';
-
-  const copyLink = async () => {
-    if (!publicUrl) return;
-    await navigator.clipboard.writeText(publicUrl);
-    toast.success('تم نسخ الرابط');
+    if (!result.success) {
+      toast.error('تعذر إكمال الإعداد');
+      return;
+    }
+    toast.success('أصبح مساعدك جاهزًا');
+    navigate('/dashboard', { replace: true });
   };
 
   return (
-    <div dir="rtl" className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5">
-      <div className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg">
-            <Sparkles className="h-7 w-7" />
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            مساعدك الذكي جاهز
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-            تم إنشاء البوت تلقائياً. أكمل الإعداد لتفعيله بالكامل أو تابع لاحقاً.
-          </p>
-        </div>
-
-        {/* Progress */}
-        {step < 5 && (
-          <div className="mb-8">
-            <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-              <span>الخطوة {step} من 4</span>
-              <span className="font-medium text-foreground">{progress}%</span>
-            </div>
-            <Progress value={progress} className="h-2" />
-          </div>
-        )}
-
-        {/* Step 1 */}
-        {step === 1 && (
-          <Card className="p-6 sm:p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Building2 className="h-5 w-5" />
-              </span>
+    <main dir="rtl" className="min-h-screen bg-gradient-to-b from-background to-primary/[0.04] px-4 py-8 sm:py-12">
+      <div className="mx-auto max-w-3xl">
+        <header className="mb-8">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <img src="/assets/logo.png" alt="جوابي" className="h-11 w-11" />
               <div>
-                <h2 className="text-xl font-semibold">عرّفنا على نشاطك</h2>
-                <p className="text-sm text-muted-foreground">معلومات أساسية تساعد البوت على فهم سياق عملك</p>
+                <p className="font-semibold">جوابي</p>
+                <p className="text-xs text-muted-foreground">إعداد مساعدك الأول</p>
               </div>
             </div>
+            <span className="text-sm font-medium text-muted-foreground">{step} من 3</span>
+          </div>
+          <Progress value={progress} className="mt-5 h-2" />
+        </header>
 
-            <form onSubmit={handleStep1} className="space-y-5">
+        {step === 1 && (
+          <Card className="overflow-hidden border-primary/10 shadow-sm">
+            <div className="border-b bg-primary/[0.04] p-6 sm:p-8">
+              <span className="mb-4 inline-flex rounded-xl bg-primary/10 p-3 text-primary"><Building2 className="h-6 w-6" /></span>
+              <h1 className="text-2xl font-bold sm:text-3xl">لنبدأ بنشاطك</h1>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">سنستخدم هذه المعلومات لبناء شخصية المساعد تلقائيًا.</p>
+            </div>
+            <form onSubmit={saveBusiness} className="space-y-5 p-6 sm:p-8">
               <div className="space-y-2">
-                <Label htmlFor="bn">اسم النشاط <span className="text-destructive">*</span></Label>
-                <Input id="bn" value={bizName} onChange={(e) => setBizName(e.target.value)} placeholder="مثال: متجر النور" required maxLength={100} />
+                <Label htmlFor="business-name">اسم النشاط <span className="text-destructive">*</span></Label>
+                <Input id="business-name" value={businessName} onChange={(event) => setBusinessName(event.target.value)} placeholder="مثال: متجر النور" maxLength={100} autoFocus />
               </div>
               <div className="space-y-2">
-                <Label>فئة النشاط <span className="text-destructive">*</span></Label>
+                <Label>نوع النشاط <span className="text-destructive">*</span></Label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {CATEGORIES.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setBizCat(c)}
-                      className={`rounded-lg border px-3 py-2 text-sm transition ${
-                        bizCat === c
-                          ? 'border-primary bg-primary/10 text-primary font-medium'
-                          : 'border-border hover:bg-muted'
-                      }`}
-                    >
-                      {c}
+                  {CATEGORIES.map((item) => (
+                    <button key={item} type="button" onClick={() => setCategory(item)} className={`rounded-xl border px-3 py-2.5 text-sm transition ${category === item ? 'border-primary bg-primary/10 font-medium text-primary' : 'hover:border-primary/40 hover:bg-muted'}`}>
+                      {item}
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="bl">الموقع (المدينة / الدولة)</Label>
-                <Input id="bl" value={bizLoc} onChange={(e) => setBizLoc(e.target.value)} placeholder="الرياض، السعودية" maxLength={120} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="business-location">المدينة والدولة</Label>
+                  <Input id="business-location" value={location} onChange={(event) => setLocation(event.target.value)} placeholder="عمّان، الأردن" maxLength={120} />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="business-description">ماذا تقدم لعملائك؟</Label>
+                  <Textarea id="business-description" value={description} onChange={(event) => setDescription(event.target.value)} placeholder="صف نشاطك ومنتجاتك أو خدماتك بجملتين…" rows={3} maxLength={500} />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="bd">وصف مختصر</Label>
-                <Textarea id="bd" value={bizDesc} onChange={(e) => setBizDesc(e.target.value)} placeholder="نبذة قصيرة عن نشاطك ومنتجاتك..." maxLength={500} rows={3} />
-              </div>
-              <Button type="submit" className="w-full h-11" disabled={saving}>
-                {saving && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" size="lg" className="w-full" disabled={saving}>
+                {saving ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <ArrowLeft className="ml-2 h-4 w-4" />}
                 متابعة
-                <ArrowLeft className="mr-2 h-4 w-4" />
               </Button>
             </form>
           </Card>
         )}
 
-        {/* Step 2 */}
         {step === 2 && (
-          <Card className="p-6 sm:p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Upload className="h-5 w-5" />
-              </span>
-              <div>
-                <h2 className="text-xl font-semibold">درّب مساعدك</h2>
-                <p className="text-sm text-muted-foreground">كلما أضفت بيانات أكثر، أصبح مساعدك أذكى</p>
-              </div>
+          <Card className="overflow-hidden border-primary/10 shadow-sm">
+            <div className="border-b bg-primary/[0.04] p-6 sm:p-8">
+              <span className="mb-4 inline-flex rounded-xl bg-primary/10 p-3 text-primary"><Sparkles className="h-6 w-6" /></span>
+              <h1 className="text-2xl font-bold sm:text-3xl">علّم المساعد عن نشاطك</h1>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">ابدأ بأهم المعلومات التي يسأل عنها عملاؤك. يمكنك إضافة ملفات ومصادر أخرى لاحقًا.</p>
             </div>
-
-            <div className="space-y-5">
+            <div className="space-y-5 p-6 sm:p-8">
               <div className="space-y-2">
-                <Label htmlFor="kt" className="flex items-center gap-2"><FileText className="h-4 w-4" /> معلومات نصية</Label>
-                <Textarea id="kt" value={knowledgeText} onChange={(e) => setKnowledgeText(e.target.value)} placeholder="الأسئلة الشائعة، سياسات الإرجاع، ساعات العمل..." rows={4} maxLength={5000} />
+                <Label htmlFor="knowledge-text">معلومات أساسية</Label>
+                <Textarea id="knowledge-text" value={knowledgeText} onChange={(event) => setKnowledgeText(event.target.value)} placeholder="ساعات العمل، الخدمات، الأسعار، سياسة التوصيل والاستبدال، طرق التواصل…" rows={7} maxLength={5000} autoFocus />
+                <p className="text-xs text-muted-foreground">اكتبها بطريقتك؛ لا تحتاج إلى تنسيق خاص.</p>
               </div>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" /> أو <span className="h-px flex-1 bg-border" /></div>
               <div className="space-y-2">
-                <Label htmlFor="wu" className="flex items-center gap-2"><Globe className="h-4 w-4" /> رابط الموقع</Label>
-                <Input id="wu" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://example.com" dir="ltr" />
+                <Label htmlFor="website-url" className="flex items-center gap-2"><Globe className="h-4 w-4" /> رابط موقعك</Label>
+                <Input id="website-url" value={websiteUrl} onChange={(event) => setWebsiteUrl(event.target.value)} placeholder="https://example.com" dir="ltr" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="sl" className="flex items-center gap-2"><LinkIcon className="h-4 w-4" /> رابط وسائل التواصل</Label>
-                <Input id="sl" value={socialLink} onChange={(e) => setSocialLink(e.target.value)} placeholder="https://instagram.com/your-account" dir="ltr" />
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2"><ImageIcon className="h-4 w-4" /> ملفات (PDF، Word، صور)</Label>
-                <label className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-6 text-center text-sm text-muted-foreground transition hover:border-primary hover:bg-primary/5">
-                  <Upload className="mb-2 h-6 w-6" />
-                  <span>اسحب الملفات هنا أو اضغط للاختيار</span>
-                  <span className="mt-1 text-xs">يمكنك إضافة المزيد لاحقاً من قاعدة المعرفة</span>
-                  <input
-                    type="file"
-                    multiple
-                    accept=".pdf,.doc,.docx,image/*"
-                    className="hidden"
-                    onChange={(e) => setFiles(Array.from(e.target.files || []))}
-                  />
-                </label>
-                {files.length > 0 && (
-                  <p className="text-xs text-muted-foreground">{files.length} ملف محدد — سيتم رفعها من قاعدة المعرفة</p>
-                )}
-              </div>
-
-              {trainingProgress > 0 && (
-                <div>
-                  <Progress value={trainingProgress} className="h-2" />
-                  <p className="mt-1 text-xs text-muted-foreground">تجهيز البيانات... {trainingProgress}%</p>
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-2">
-                <Button variant="outline" className="flex-1" onClick={() => goNext()} disabled={saving}>
-                  <SkipForward className="ml-2 h-4 w-4" />
-                  تخطي الآن
-                </Button>
-                <Button className="flex-1" onClick={handleTrainingSave} disabled={saving}>
-                  {saving && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+              <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row">
+                <Button variant="ghost" className="sm:w-auto" onClick={() => saveKnowledge(true)} disabled={saving}>سأضيف المعلومات لاحقًا</Button>
+                <Button className="flex-1" size="lg" onClick={() => saveKnowledge(false)} disabled={saving}>
+                  {saving ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <ArrowLeft className="ml-2 h-4 w-4" />}
                   حفظ ومتابعة
                 </Button>
               </div>
@@ -329,151 +312,47 @@ export default function Onboarding() {
           </Card>
         )}
 
-        {/* Step 3 */}
         {step === 3 && (
-          <Card className="p-6 sm:p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <MessageSquare className="h-5 w-5" />
-              </span>
-              <div>
-                <h2 className="text-xl font-semibold">اربط قنواتك</h2>
-                <p className="text-sm text-muted-foreground">اختر القنوات التي تريد تشغيل البوت عليها</p>
-              </div>
+          <Card className="overflow-hidden border-primary/10 shadow-sm">
+            <div className="border-b bg-primary/[0.04] p-6 sm:p-8">
+              <span className="mb-4 inline-flex rounded-xl bg-primary/10 p-3 text-primary"><MessageSquare className="h-6 w-6" /></span>
+              <h1 className="text-2xl font-bold sm:text-3xl">جرّب أول محادثة</h1>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">اسأل كما يسأل عميلك. تستطيع تعديل المعلومات والإجابات لاحقًا.</p>
             </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                { name: 'واتساب', color: 'bg-green-500/10 text-green-600' },
-                { name: 'إنستجرام', color: 'bg-pink-500/10 text-pink-600' },
-                { name: 'مسنجر', color: 'bg-blue-500/10 text-blue-600' },
-                { name: 'تيليجرام', color: 'bg-sky-500/10 text-sky-600' },
-              ].map((ch) => (
-                <div key={ch.name} className="flex flex-col items-center gap-2 rounded-lg border border-border p-4 text-center">
-                  <span className={`flex h-10 w-10 items-center justify-center rounded-lg ${ch.color}`}>
-                    <MessageSquare className="h-5 w-5" />
-                  </span>
-                  <span className="text-sm font-medium">{ch.name}</span>
+            <div className="space-y-5 p-6 sm:p-8">
+              <div className="flex flex-wrap gap-2">
+                {suggestedQuestions.map((item) => (
+                  <button key={item} type="button" onClick={() => setQuestion(item)} className="rounded-full border bg-card px-3 py-1.5 text-xs transition hover:border-primary hover:text-primary">{item}</button>
+                ))}
+              </div>
+              <form onSubmit={testAssistant} className="flex gap-2">
+                <Input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="اكتب سؤالًا لتجربة المساعد…" className="flex-1" autoFocus />
+                <Button type="submit" size="icon" disabled={testing || !question.trim()} aria-label="إرسال السؤال">
+                  {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </form>
+              {(testing || answer) && (
+                <div className="rounded-2xl border bg-muted/30 p-4">
+                  <div className="mb-3 flex items-center gap-2 text-sm font-medium"><Bot className="h-4 w-4 text-primary" /> إجابة المساعد</div>
+                  {testing ? <div className="space-y-2"><div className="h-3 w-full animate-pulse rounded bg-muted" /><div className="h-3 w-4/5 animate-pulse rounded bg-muted" /></div> : <p className="whitespace-pre-wrap text-sm leading-7">{answer}</p>}
                 </div>
-              ))}
-            </div>
-
-            <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="h-px flex-1 bg-border" />
-              أو شارك رابطاً عاماً
-              <span className="h-px flex-1 bg-border" />
-            </div>
-
-            {publicUrl && (
-              <div className="rounded-lg border border-border bg-muted/30 p-4">
-                <p className="mb-2 text-xs text-muted-foreground">رابط الدردشة العام</p>
-                <div className="flex items-center gap-2">
-                  <code dir="ltr" className="flex-1 truncate rounded bg-background px-3 py-2 text-xs">{publicUrl}</code>
-                  <Button size="sm" variant="outline" onClick={copyLink}>نسخ</Button>
-                </div>
+              )}
+              <div className="rounded-xl border border-primary/15 bg-primary/[0.04] p-4 text-sm text-muted-foreground">
+                <p className="flex items-center gap-2 font-medium text-foreground"><CheckCircle2 className="h-4 w-4 text-success" /> بعد الإكمال</p>
+                <p className="mt-1 leading-6">ستتمكن من إضافة ملفات، ربط تيليجرام، ومشاركة رابط المحادثة مع عملائك.</p>
               </div>
-            )}
-
-            <div className="mt-6 flex gap-3">
-              <Button variant="outline" className="flex-1" onClick={() => goNext()} disabled={saving}>
-                <SkipForward className="ml-2 h-4 w-4" />
-                تخطي الآن
-              </Button>
-              <Button className="flex-1" onClick={() => navigate('/dashboard/channels')}>
-                ربط القنوات
-              </Button>
-            </div>
-            <div className="mt-3 text-center">
-              <button onClick={() => goNext()} className="text-sm text-primary hover:underline">
-                لقد ربطتها، متابعة →
-              </button>
-            </div>
-          </Card>
-        )}
-
-        {/* Step 4 */}
-        {step === 4 && (
-          <Card className="p-6 sm:p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Bot className="h-5 w-5" />
-              </span>
-              <div>
-                <h2 className="text-xl font-semibold">كيف تريد أن يتصرف مساعدك؟</h2>
-                <p className="text-sm text-muted-foreground">اختر قالباً جاهزاً أو اكتب تعليماتك الخاصة</p>
-              </div>
-            </div>
-
-            <div className="mb-4 flex flex-wrap gap-2">
-              {PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setInstructions(p.prompt)}
-                  className="rounded-full border border-border px-3 py-1.5 text-xs transition hover:border-primary hover:bg-primary/5 hover:text-primary"
-                >
-                  {p.label}
-                </button>
-              ))}
-            </div>
-
-            <Textarea
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
-              placeholder="أنت مساعد دعم العملاء لهذا النشاط. أجب عن أسئلة المستخدمين باستخدام البيانات المتوفرة وحافظ على نبرة احترافية."
-              rows={6}
-              maxLength={2000}
-            />
-
-            <Button className="mt-6 w-full h-11" onClick={handleFinish} disabled={saving}>
-              {saving && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-              <Rocket className="ml-2 h-4 w-4" />
-              حفظ وتفعيل
-            </Button>
-          </Card>
-        )}
-
-        {/* Step 5 - Final */}
-        {step === 5 && (
-          <Card className="p-8 text-center sm:p-12">
-            <div className="mx-auto mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <CheckCircle2 className="h-9 w-9" />
-            </div>
-            <h2 className="text-2xl font-bold sm:text-3xl">مساعدك يعمل الآن 🎉</h2>
-            <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-              تم تفعيل البوت بنجاح. ابدأ التجربة الآن أو شارك الرابط مع عملائك.
-            </p>
-
-            <Button size="lg" className="mt-8 h-12 px-8" onClick={() => navigate('/dashboard/test')}>
-              <MessageSquare className="ml-2 h-5 w-5" />
-              ابدأ المحادثة
-            </Button>
-
-            <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Button variant="outline" onClick={() => navigate('/dashboard/test')}>
-                <Bot className="ml-2 h-4 w-4" /> تجربة البوت
-              </Button>
-              <Button variant="outline" onClick={copyLink} disabled={!publicUrl}>
-                <Share2 className="ml-2 h-4 w-4" /> نسخ الرابط
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/dashboard/channels')}>
-                <MessageSquare className="ml-2 h-4 w-4" /> ربط القنوات
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/dashboard')}>
-                <ArrowLeft className="ml-2 h-4 w-4" /> لوحة التحكم
+              <Button size="lg" className="w-full" onClick={finish} disabled={saving}>
+                {saving ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Rocket className="ml-2 h-4 w-4" />}
+                تفعيل المساعد والذهاب للوحة التحكم
               </Button>
             </div>
           </Card>
         )}
 
-        {step < 5 && (
-          <div className="mt-6 text-center">
-            <button onClick={() => navigate('/dashboard')} className="text-xs text-muted-foreground hover:text-foreground">
-              تخطي الإعداد والذهاب للوحة التحكم
-            </button>
-          </div>
-        )}
+        <button onClick={() => navigate('/dashboard')} className="mx-auto mt-6 block text-xs text-muted-foreground transition hover:text-foreground">
+          الخروج إلى لوحة التحكم
+        </button>
       </div>
-    </div>
+    </main>
   );
 }

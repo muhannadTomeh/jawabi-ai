@@ -3,15 +3,13 @@ import { MessageCircle, X, Send, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
-
 const SUGGESTIONS = [
   "ما هي منصة جوابي؟",
-  "كيف أبدأ تجربة مجانية؟",
+  "كيف أبدأ إعداد مساعدي؟",
   "أي قنوات تدعمونها؟",
   "هل يدعم اللهجات العربية؟",
 ];
@@ -40,22 +38,16 @@ export function VisitorChat() {
     setInput("");
     setLoading(true);
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/visitor-chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${ANON_KEY}`,
-          apikey: ANON_KEY,
-        },
-        body: JSON.stringify({ messages: next }),
+      const { data, error } = await supabase.functions.invoke("visitor-chat", {
+        body: { messages: next },
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "حدث خطأ");
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
-    } catch (e: any) {
+    } catch (e: unknown) {
       setMessages((m) => [
         ...m,
-        { role: "assistant", content: `تعذّر الرد حالياً. ${e?.message ?? ""}`.trim() },
+        { role: "assistant", content: `تعذّر الرد حالياً. ${e instanceof Error ? e.message : ""}`.trim() },
       ]);
     } finally {
       setLoading(false);

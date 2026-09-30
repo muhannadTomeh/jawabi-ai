@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Plus, Search, FileText, MessageCircle, File, MoreHorizontal, Trash2, Edit, Upload, Loader2, Image as ImageIcon, Globe, Share2, RefreshCw } from 'lucide-react';
+import { useCallback, useState, useEffect } from 'react';
+import { Plus, Search, FileText, MessageCircle, File, MoreHorizontal, Trash2, Edit, Upload, Loader2, Image as ImageIcon, Globe, Share2, RefreshCw, CheckCircle2, Clock3, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,6 +25,8 @@ import { useToast } from '@/hooks/use-toast';
 import { AddContentDialog } from '@/components/knowledge/AddContentDialog';
 import { EditContentDialog } from '@/components/knowledge/EditContentDialog';
 import { FileUploadDialog } from '@/components/knowledge/FileUploadDialog';
+import { Badge } from '@/components/ui/badge';
+import { embedKnowledgeItem } from '@/lib/knowledgeEmbedding';
 
 interface KnowledgeItem {
   id: string;
@@ -70,6 +72,15 @@ export default function KnowledgeBasePage() {
   const [editItem, setEditItem] = useState<KnowledgeItem | null>(null);
   const { toast } = useToast();
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [embeddingId, setEmbeddingId] = useState<string | null>(null);
+
+  const handleRegenerateEmbedding = async (item: KnowledgeItem) => {
+    setEmbeddingId(item.id);
+    await embedKnowledgeItem(item.id);
+    await fetchItems();
+    setEmbeddingId(null);
+    toast({ title: 'تم تجهيز المصدر', description: `أصبح "${item.title}" جاهزاً للاستخدام في الإجابات.` });
+  };
 
   const handleSyncSocial = async (item: KnowledgeItem) => {
     if (!item.source_ref) return;
@@ -82,14 +93,14 @@ export default function KnowledgeBasePage() {
       if (data?.error) throw new Error(data.error);
       toast({ title: 'تمت المزامنة', description: `تم تحديث ${data?.inserted || 0} عنصر` });
       await fetchItems();
-    } catch (e: any) {
-      toast({ title: 'خطأ', description: e?.message || 'فشلت المزامنة', variant: 'destructive' });
+    } catch (e: unknown) {
+      toast({ title: 'خطأ', description: e instanceof Error ? e.message : 'فشلت المزامنة', variant: 'destructive' });
     } finally {
       setSyncingId(null);
     }
   };
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     if (!chatbot) return;
 
     try {
@@ -112,13 +123,13 @@ export default function KnowledgeBasePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [chatbot, toast]);
 
   useEffect(() => {
     if (chatbot) {
       fetchItems();
     }
-  }, [chatbot]);
+  }, [chatbot, fetchItems]);
 
   const handleDelete = async () => {
     if (!deleteItem) return;
@@ -185,25 +196,33 @@ export default function KnowledgeBasePage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">قاعدة المعرفة</h1>
-          <p className="mt-1 text-muted-foreground">
-            أضف محتوى ليتعلم منه الشات بوت
+          <p className="mb-1 text-sm font-medium text-primary">مصادر إجابات المساعد</p>
+          <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">قاعدة المعرفة</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {items.length > 0 ? `${items.length.toLocaleString('ar')} مصادر مضافة` : 'أضف معلومات نشاطك ليجيب المساعد بدقة.'}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setUploadDialogOpen(true)}>
-            <Upload className="me-2 h-4 w-4" />
-            رفع ملف
-          </Button>
-          <Button onClick={() => setAddDialogOpen(true)}>
-            <Plus className="me-2 h-4 w-4" />
-            إضافة محتوى
-          </Button>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="w-full sm:w-auto">
+              <Plus className="ml-2 h-4 w-4" />
+              إضافة مصدر
+              <ChevronDown className="mr-2 h-4 w-4 opacity-70" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem onClick={() => setAddDialogOpen(true)}>
+              <FileText className="ml-2 h-4 w-4" /> نص، سؤال أو رابط
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setUploadDialogOpen(true)}>
+              <Upload className="ml-2 h-4 w-4" /> ملف أو صورة
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Search */}
-      <div className="relative max-w-md">
+      <div className="relative max-w-xl">
         <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="البحث في قاعدة المعرفة..."
@@ -215,29 +234,35 @@ export default function KnowledgeBasePage() {
 
       {/* Content List */}
       {filteredItems.length > 0 ? (
-        <div className="space-y-3">
+        <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
           {filteredItems.map((item) => {
             const Icon = typeIcons[item.type] || FileText;
+            const ready = Boolean(item.embedding);
             return (
               <div
                 key={item.id}
-                className="card-elevated flex items-center gap-4 p-4 transition-all hover:shadow-md"
+                className="flex items-center gap-3 border-b p-4 transition-colors last:border-b-0 hover:bg-muted/30 sm:gap-4"
               >
                 <div className="rounded-lg bg-primary/10 p-2.5">
                   <Icon className="h-5 w-5 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="font-medium text-foreground">{item.title}</h3>
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {typeLabels[item.type]}
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    <span>{typeLabels[item.type]}</span>
                     {item.type === 'faq' && item.question && (
-                      <span className="ms-1">• {item.question}</span>
+                      <span className="max-w-64 truncate">• {item.question}</span>
                     )}
                     {item.type === 'file' && item.file_name && (
-                      <span className="ms-1">• {item.file_name}</span>
+                      <span className="max-w-64 truncate">• {item.file_name}</span>
                     )}
-                  </p>
+                    <span>• {new Date(item.created_at).toLocaleDateString('ar')}</span>
+                  </div>
                 </div>
+                <Badge variant="outline" className={ready ? 'hidden border-success/20 bg-success/10 text-success sm:inline-flex' : 'hidden border-amber-200 bg-amber-50 text-amber-700 sm:inline-flex'}>
+                  {ready ? <CheckCircle2 className="ml-1 h-3 w-3" /> : <Clock3 className="ml-1 h-3 w-3" />}
+                  {ready ? 'جاهز' : 'قيد التجهيز'}
+                </Badge>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="shrink-0">
@@ -258,6 +283,12 @@ export default function KnowledgeBasePage() {
                         مزامنة الآن
                       </DropdownMenuItem>
                     )}
+                    {!ready && (
+                      <DropdownMenuItem onClick={() => handleRegenerateEmbedding(item)} disabled={embeddingId === item.id}>
+                        <RefreshCw className={`me-2 h-4 w-4 ${embeddingId === item.id ? 'animate-spin' : ''}`} />
+                        إعادة التجهيز
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className="text-destructive"
@@ -273,7 +304,7 @@ export default function KnowledgeBasePage() {
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-border py-12">
+        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card px-6 py-14">
           <FileText className="h-12 w-12 text-muted-foreground" />
           <h3 className="mt-4 font-semibold text-foreground">
             {searchQuery ? 'لا توجد نتائج' : 'لا يوجد محتوى'}
@@ -284,14 +315,14 @@ export default function KnowledgeBasePage() {
               : 'أضف أسئلة شائعة أو محتوى نصي أو ملفات لتدريب الشات بوت'}
           </p>
           {!searchQuery && (
-            <div className="mt-4 flex gap-2">
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+              <Button onClick={() => setAddDialogOpen(true)}>
+                <Plus className="me-2 h-4 w-4" />
+                إضافة أول مصدر
+              </Button>
               <Button variant="outline" onClick={() => setUploadDialogOpen(true)}>
                 <Upload className="me-2 h-4 w-4" />
                 رفع ملف
-              </Button>
-              <Button onClick={() => setAddDialogOpen(true)}>
-                <Plus className="me-2 h-4 w-4" />
-                إضافة محتوى
               </Button>
             </div>
           )}

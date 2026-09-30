@@ -39,6 +39,7 @@ const ResetPasswordPage = lazyWithReload(() => import("@/pages/ResetPassword"));
 const Landing = lazyWithReload(() => import("@/pages/Landing"));
 const Onboarding = lazyWithReload(() => import("@/pages/Onboarding"));
 const DashboardPage = lazyWithReload(() => import("@/pages/Dashboard"));
+const InboxPage = lazyWithReload(() => import("@/pages/Inbox"));
 const KnowledgeBasePage = lazyWithReload(() => import("@/pages/KnowledgeBase"));
 const ChannelsPage = lazyWithReload(() => import("@/pages/Channels"));
 const AnalyticsPage = lazyWithReload(() => import("@/pages/Analytics"));
@@ -46,10 +47,11 @@ const TestChatPage = lazyWithReload(() => import("@/pages/TestChat"));
 const SettingsPage = lazyWithReload(() => import("@/pages/Settings"));
 const AccountSettingsPage = lazyWithReload(() => import("@/pages/AccountSettings"));
 const AdminPage = lazyWithReload(() => import("@/pages/Admin"));
-const NotificationsPage = lazyWithReload(() => import("@/pages/Notifications"));
 const CustomersPage = lazyWithReload(() => import("@/pages/Customers"));
 const NotFound = lazyWithReload(() => import("@/pages/NotFound"));
 const PublicChat = lazyWithReload(() => import("@/pages/PublicChat"));
+const PrivacyPage = lazyWithReload(() => import("@/pages/Privacy"));
+const TermsPage = lazyWithReload(() => import("@/pages/Terms"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -86,6 +88,8 @@ const App = () => (
 
             {/* Public landing */}
             <Route path="/" element={<Landing />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
 
             {/* Public shareable chat */}
             <Route path="/chat/:slug" element={<PublicChat />} />
@@ -96,12 +100,13 @@ const App = () => (
             {/* Dashboard routes with layout */}
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/dashboard/inbox" element={<InboxPage />} />
               <Route path="/dashboard/knowledge" element={<KnowledgeBasePage />} />
               <Route path="/dashboard/channels" element={<ChannelsPage />} />
               <Route path="/dashboard/customers" element={<CustomersPage />} />
               <Route path="/dashboard/analytics" element={<AnalyticsPage />} />
               <Route path="/dashboard/test" element={<TestChatPage />} />
-              <Route path="/dashboard/notifications" element={<NotificationsPage />} />
+              <Route path="/dashboard/notifications" element={<Navigate to="/dashboard/inbox" replace />} />
               <Route path="/dashboard/settings" element={<SettingsPage />} />
               <Route path="/dashboard/account" element={<AccountSettingsPage />} />
               <Route path="/dashboard/admin" element={<AdminPage />} />

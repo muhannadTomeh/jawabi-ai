@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -23,13 +23,15 @@ interface Chatbot {
   onboarding_completed?: boolean;
   onboarding_step?: number;
   public_slug?: string | null;
+  bot_mode?: 'inquiries_only' | 'inquiries_sales' | 'inquiries_sales_followup';
+  owner_telegram_chat_id?: string | null;
 }
 
 export function useChatbot() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const userId = user?.id;
-  const queryKey = ['chatbot', userId] as const;
+  const queryKey = useMemo(() => ['chatbot', userId] as const, [userId]);
 
   const query = useQuery<Chatbot | null, Error>({
     queryKey,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   User as UserIcon,
   Mail,
@@ -52,6 +52,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdminCheck } from '@/hooks/useAdminCheck';
+import type { TablesInsert } from '@/integrations/supabase/types';
 
 // ---------- helpers ----------
 
@@ -104,7 +105,9 @@ function applyTheme(pref: 'light' | 'dark' | 'system') {
   root.classList.toggle('dark', dark);
   try {
     localStorage.setItem('jawabi_theme', pref);
-  } catch {}
+  } catch {
+    return;
+  }
 }
 
 // ---------- page ----------
@@ -184,13 +187,25 @@ export default function AccountSettingsPage() {
         console.error(error);
         toast.error('تعذر تحميل بيانات الحساب');
       }
-      const meta: any = user.user_metadata || {};
-      const fn = data?.full_name ?? meta.full_name ?? '';
-      const un = (data as any)?.username ?? '';
-      const av = data?.avatar_url ?? meta.avatar_url ?? '';
-      const lang = ((data as any)?.language_preference as 'ar' | 'en') ?? 'ar';
-      const th = ((data as any)?.theme_preference as 'light' | 'dark' | 'system') ?? 'system';
-      const np = ((data as any)?.notification_preferences as any) || {};
+      const meta = user.user_metadata || {};
+      const metaFullName = typeof meta.full_name === 'string' ? meta.full_name : '';
+      const metaAvatar = typeof meta.avatar_url === 'string' ? meta.avatar_url : '';
+      const fn = data?.full_name ?? metaFullName;
+      const un = data?.username ?? '';
+      const av = data?.avatar_url ?? metaAvatar;
+      const lang = 'ar' as const;
+      const storedTheme = data?.theme_preference;
+      const th: 'light' | 'dark' | 'system' =
+        storedTheme === 'light' || storedTheme === 'dark' || storedTheme === 'system'
+          ? storedTheme
+          : 'system';
+      const notificationPreferences = data?.notification_preferences;
+      const np = notificationPreferences && typeof notificationPreferences === 'object' && !Array.isArray(notificationPreferences)
+        ? notificationPreferences
+        : {};
+      const emailNotifications = typeof np.email === 'boolean' ? np.email : true;
+      const inAppNotifications = typeof np.in_app === 'boolean' ? np.in_app : true;
+      const handoverNotifications = typeof np.handover === 'boolean' ? np.handover : true;
 
       setProfileId(data?.id ?? null);
       setFullName(fn);
@@ -200,15 +215,15 @@ export default function AccountSettingsPage() {
 
       setLanguage(lang);
       setTheme(th);
-      setNotifEmail(np.email ?? true);
-      setNotifInApp(np.in_app ?? true);
-      setNotifHandover(np.handover ?? true);
+      setNotifEmail(emailNotifications);
+      setNotifInApp(inAppNotifications);
+      setNotifHandover(handoverNotifications);
       setInitialPrefs({
         language: lang,
         theme: th,
-        notifEmail: np.email ?? true,
-        notifInApp: np.in_app ?? true,
-        notifHandover: np.handover ?? true,
+        notifEmail: emailNotifications,
+        notifInApp: inAppNotifications,
+        notifHandover: handoverNotifications,
       });
 
       setLoading(false);
@@ -255,7 +270,7 @@ export default function AccountSettingsPage() {
       return;
     }
     setSavingProfile(true);
-    const payload: any = {
+    const payload: TablesInsert<'profiles'> = {
       user_id: user.id,
       full_name: trimmedName,
       username: trimmedUser || null,
@@ -267,7 +282,7 @@ export default function AccountSettingsPage() {
       : supabase.from('profiles').insert(payload);
     const { error } = await query;
     if (error) {
-      if ((error as any).code === '23505') {
+      if (error.code === '23505') {
         toast.error('اسم المستخدم مستخدم مسبقًا');
       } else {
         toast.error(error.message);
@@ -374,7 +389,7 @@ export default function AccountSettingsPage() {
   const handleSavePrefs = async () => {
     if (!user) return;
     setSavingPrefs(true);
-    const payload: any = {
+    const payload: TablesInsert<'profiles'> = {
       user_id: user.id,
       language_preference: language,
       theme_preference: theme,
@@ -437,11 +452,11 @@ export default function AccountSettingsPage() {
   }
 
   const initials = (fullName || user?.email || 'U').trim().charAt(0).toUpperCase();
-  const lastSignInAt = (user as any)?.last_sign_in_at as string | undefined;
-  const createdAt = (user as any)?.created_at as string | undefined;
+  const lastSignInAt = user?.last_sign_in_at;
+  const createdAt = user?.created_at;
   const passwordChangedAt =
-    ((user as any)?.identities?.[0]?.last_sign_in_at as string | undefined) ||
-    (user as any)?.updated_at;
+    user?.identities?.[0]?.last_sign_in_at ||
+    user?.updated_at;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 text-right" dir="rtl">
@@ -854,7 +869,6 @@ export default function AccountSettingsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ar">العربية</SelectItem>
-                  <SelectItem value="en">English</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -905,16 +919,6 @@ export default function AccountSettingsPage() {
             <div className="space-y-3 rounded-lg border p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium">إشعارات البريد الإلكتروني</p>
-                  <p className="text-xs text-muted-foreground">
-                    استلام تنبيهات مهمة على بريدك.
-                  </p>
-                </div>
-                <Switch checked={notifEmail} onCheckedChange={setNotifEmail} />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between gap-3">
-                <div>
                   <p className="text-sm font-medium">إشعارات داخل المنصة</p>
                   <p className="text-xs text-muted-foreground">
                     عرض التنبيهات في جرس الإشعارات أعلى الصفحة.
@@ -933,6 +937,17 @@ export default function AccountSettingsPage() {
                 <Switch checked={notifHandover} onCheckedChange={setNotifHandover} />
               </div>
             </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Link to="/privacy" className="rounded-lg border p-4 transition hover:border-primary/30 hover:bg-muted/30">
+              <p className="text-sm font-medium">سياسة الخصوصية</p>
+              <p className="mt-1 text-xs text-muted-foreground">كيف نعالج بيانات حسابك ومحادثات العملاء.</p>
+            </Link>
+            <Link to="/terms" className="rounded-lg border p-4 transition hover:border-primary/30 hover:bg-muted/30">
+              <p className="text-sm font-medium">شروط الاستخدام</p>
+              <p className="mt-1 text-xs text-muted-foreground">مسؤوليات استخدام المساعد والقنوات الخارجية.</p>
+            </Link>
           </div>
 
           <div className="flex flex-wrap justify-end gap-2 border-t pt-4">

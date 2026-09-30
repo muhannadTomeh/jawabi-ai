@@ -32,7 +32,7 @@ export default function AnalyticsPage() {
 
         // Only unique-users lookup pulls rows (small columns). Everything
         // else uses head-count queries so no payload is downloaded.
-        const countFor = (table: 'telegram_messages' | 'whatsapp_messages' | 'messenger_messages') =>
+        const countFor = (table: 'telegram_messages' | 'whatsapp_messages' | 'messenger_messages' | 'web_chat_messages') =>
           [
             supabase.from(table).select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId),
             supabase.from(table).select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId).eq('role', 'user'),
@@ -44,29 +44,34 @@ export default function AnalyticsPage() {
           tgTotal, tgUser, tgToday, tgWeek,
           waTotal, waUser, waToday, waWeek,
           msTotal, msUser, msToday, msWeek,
+          webTotal, webUser, webToday, webWeek,
           tgUsersRes, waUsersRes, msUsersRes,
-          chRes,
+          webUsersRes, chRes, socialRes,
         ] = await Promise.all([
           ...countFor('telegram_messages'),
           ...countFor('whatsapp_messages'),
           ...countFor('messenger_messages'),
+          ...countFor('web_chat_messages'),
           supabase.from('telegram_users').select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId),
           supabase.from('whatsapp_contacts').select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId),
           supabase.from('messenger_users').select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId),
+          supabase.from('web_chat_messages').select('user_id').eq('chatbot_id', cbId).eq('role', 'user').limit(5000),
           supabase.from('channels').select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId).eq('is_connected', true),
+          supabase.from('social_connections').select('id', { count: 'exact', head: true }).eq('chatbot_id', cbId),
         ]);
 
-        const total = (tgTotal.count || 0) + (waTotal.count || 0) + (msTotal.count || 0);
-        const userCount = (tgUser.count || 0) + (waUser.count || 0) + (msUser.count || 0);
+        const total = (tgTotal.count || 0) + (waTotal.count || 0) + (msTotal.count || 0) + (webTotal.count || 0);
+        const userCount = (tgUser.count || 0) + (waUser.count || 0) + (msUser.count || 0) + (webUser.count || 0);
+        const uniqueWebUsers = new Set((webUsersRes.data || []).map((row) => row.user_id)).size;
 
-        setChannelCount(chRes.count || 0);
+        setChannelCount((chRes.count || 0) + (socialRes.count || 0));
         setAnalytics({
           totalMessages: total,
           userMessages: userCount,
           botMessages: Math.max(0, total - userCount),
-          uniqueUsers: (tgUsersRes.count || 0) + (waUsersRes.count || 0) + (msUsersRes.count || 0),
-          todayMessages: (tgToday.count || 0) + (waToday.count || 0) + (msToday.count || 0),
-          weekMessages: (tgWeek.count || 0) + (waWeek.count || 0) + (msWeek.count || 0),
+          uniqueUsers: (tgUsersRes.count || 0) + (waUsersRes.count || 0) + (msUsersRes.count || 0) + uniqueWebUsers,
+          todayMessages: (tgToday.count || 0) + (waToday.count || 0) + (msToday.count || 0) + (webToday.count || 0),
+          weekMessages: (tgWeek.count || 0) + (waWeek.count || 0) + (msWeek.count || 0) + (webWeek.count || 0),
         });
       } catch (err) {
         console.error('Error fetching analytics:', err);

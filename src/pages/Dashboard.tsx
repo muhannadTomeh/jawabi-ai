@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MessageSquare, Users, ArrowLeft, Share2, Bot, Settings, Loader2, BookOpen, CheckCircle2, Circle, Rocket } from 'lucide-react';
+import { MessageSquare, Users, ArrowLeft, Share2, Bot, Settings, Loader2, BookOpen, CheckCircle2, Circle, Rocket, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { StatusBadge } from '@/components/dashboard/StatusBadge';
@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useChatbot } from '@/hooks/useChatbot';
 import { ChannelIcon } from '@/components/ChannelIcon';
 import { useAuth } from '@/hooks/useAuth';
+import { useNotifications } from '@/hooks/useNotifications';
 
 type PlatformKey = 'telegram' | 'facebook' | 'instagram' | 'whatsapp';
 
@@ -37,6 +38,7 @@ interface TopQuestion {
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { notifications } = useNotifications();
   const { chatbot, loading: chatbotLoading } = useChatbot();
   const [loading, setLoading] = useState(true);
   const [channels, setChannels] = useState<ChannelRow[]>([]);
@@ -184,6 +186,7 @@ export default function DashboardPage() {
   const completedSetupSteps = setupSteps.filter((step) => step.done).length;
   const setupProgress = Math.round((completedSetupSteps / setupSteps.length) * 100);
   const displayName = user?.user_metadata?.full_name?.split(' ')[0] || 'بك';
+  const unresolvedNotifications = notifications.filter((notification) => !notification.is_resolved).length;
 
   return (
     <div className="animate-fade-in space-y-8">
@@ -200,6 +203,22 @@ export default function DashboardPage() {
           </Link>
         </Button>
       </div>
+
+      {unresolvedNotifications > 0 && (
+        <Link
+          to="/dashboard/inbox"
+          className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 transition hover:border-amber-300 dark:border-amber-900/40 dark:bg-amber-950/20 sm:flex-row sm:items-center"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+            <AlertCircle className="h-5 w-5" />
+          </span>
+          <span className="flex-1">
+            <span className="block font-semibold text-foreground">لديك {unresolvedNotifications.toLocaleString('ar')} محادثات تحتاج تدخلك</span>
+            <span className="mt-0.5 block text-sm text-muted-foreground">راجع طلبات الموظف والأسئلة التي لم يستطع المساعد إجابتها.</span>
+          </span>
+          <span className="inline-flex items-center text-sm font-semibold text-primary">فتح المحادثات <ArrowLeft className="mr-1 h-4 w-4" /></span>
+        </Link>
+      )}
 
       {completedSetupSteps < setupSteps.length && (
         <section className="overflow-hidden rounded-2xl border border-primary/20 bg-card shadow-sm">
@@ -342,8 +361,8 @@ export default function DashboardPage() {
           <div className="mb-4 flex items-center justify-between">
             <h3 className="font-semibold text-foreground">الأسئلة الأكثر شيوعاً</h3>
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/dashboard/analytics">
-                الإحصائيات
+              <Link to="/dashboard/inbox">
+                المحادثات
                 <ArrowLeft className="mr-1 h-4 w-4" />
               </Link>
             </Button>

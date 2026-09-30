@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ExternalLink, Settings, Loader2, Unlink, Copy, Check, Globe } from 'lucide-react';
 import { FaTelegram, FaFacebookMessenger, FaInstagram, FaWhatsapp } from 'react-icons/fa';
 import type { IconType } from 'react-icons';
@@ -88,7 +88,7 @@ export default function ChannelsPage() {
   const [togglingPlatform, setTogglingPlatform] = useState<Platform | null>(null);
   const { toast } = useToast();
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!chatbot) return;
 
     try {
@@ -123,11 +123,11 @@ export default function ChannelsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [chatbot]);
 
   useEffect(() => {
     if (chatbot) fetchData();
-  }, [chatbot]);
+  }, [chatbot, fetchData]);
 
   const isConnected = (platform: Platform): boolean => {
     if (platform === 'telegram') {
@@ -270,7 +270,10 @@ export default function ChannelsPage() {
     );
   }
 
-  const platforms: Platform[] = ['telegram', 'facebook', 'instagram', 'whatsapp'];
+  const metaChannelsEnabled = import.meta.env.VITE_ENABLE_META_CHANNELS === 'true';
+  const platforms: Platform[] = metaChannelsEnabled
+    ? ['telegram', 'facebook', 'instagram', 'whatsapp']
+    : ['telegram'];
   const publicUrl = chatbot?.public_slug
     ? `${window.location.origin}/chat/${chatbot.public_slug}`
     : null;
@@ -286,23 +289,27 @@ export default function ChannelsPage() {
   return (
     <div className="animate-fade-in space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">القنوات</h1>
-        <p className="mt-1 text-muted-foreground">اربط الشات بوت بمنصات المراسلة</p>
+        <p className="mb-1 text-sm font-medium text-primary">أماكن تواصل العملاء</p>
+        <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">القنوات</h1>
+        <p className="mt-1 text-sm text-muted-foreground">فعّل القنوات التي تم اختبارها واعرف حالة كل اتصال.</p>
       </div>
 
       {publicUrl && (
-        <div className="card-elevated p-6">
-          <div className="flex items-start gap-4">
+        <div className="overflow-hidden rounded-2xl border border-primary/15 bg-card shadow-sm">
+          <div className="flex flex-col items-start gap-4 p-5 sm:flex-row sm:p-6">
             <div className="rounded-xl bg-primary/10 p-3">
               <Globe className="h-6 w-6 text-primary" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-foreground">رابط الشات بوت العام</h3>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-semibold text-foreground">دردشة الموقع</h3>
+                <StatusBadge status="active" />
+              </div>
               <p className="mt-1 text-sm text-muted-foreground">
                 شارك هذا الرابط مع عملائك ليتمكنوا من التحدث مع البوت مباشرة من المتصفح
               </p>
-              <div className="mt-4 flex gap-2">
-                <Input value={publicUrl} readOnly dir="ltr" className="font-mono text-sm" />
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <Input value={publicUrl} readOnly dir="ltr" className="min-w-0 font-mono text-sm" />
                 <Button onClick={copyLink} variant="outline" className="shrink-0">
                   {copied ? <Check className="ml-2 h-4 w-4" /> : <Copy className="ml-2 h-4 w-4" />}
                   {copied ? 'تم النسخ' : 'نسخ'}
@@ -319,7 +326,7 @@ export default function ChannelsPage() {
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {platforms.map((platform) => {
           const info = channelInfo[platform];
           const connected = isConnected(platform);
@@ -329,7 +336,7 @@ export default function ChannelsPage() {
           const Icon = info.Icon;
 
           return (
-            <div key={platform} className="card-elevated p-6">
+            <div key={platform} className="rounded-2xl border bg-card p-5 shadow-sm sm:p-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
                   <div className={`rounded-xl p-3 ${info.color}`}>
@@ -405,13 +412,19 @@ export default function ChannelsPage() {
         })}
       </div>
 
+      {!metaChannelsEnabled && (
+        <div className="rounded-xl border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+          واتساب وماسنجر وإنستغرام مخفية مؤقتًا إلى أن يكتمل اختبار الربط والإرسال من البداية إلى النهاية. لن نعرض قناة للعميل قبل أن تصبح مستقرة.
+        </div>
+      )}
+
       {/* Telegram Dialog */}
       {chatbot && (
         <TelegramConnectDialog
           open={telegramDialogOpen}
           onOpenChange={setTelegramDialogOpen}
           chatbotId={chatbot.id}
-          existingChannel={channels.find((c) => c.platform === 'telegram') as any}
+          existingChannel={channels.find((c) => c.platform === 'telegram')}
           onSuccess={fetchData}
         />
       )}

@@ -190,7 +190,7 @@ export default function AuthPage() {
             بوت ذكي يخدم عملاءك<br />على مدار الساعة
           </h2>
           <p className="mt-4 text-base opacity-90">
-            انضم لمئات الأعمال التي تستخدم جوابي لأتمتة خدمة العملاء وزيادة المبيعات.
+            أنشئ مساعدًا يعتمد على معلومات نشاطك، وتابع محادثات العملاء من مكان واحد.
           </p>
 
           <ul className="mt-8 space-y-3 text-sm">
@@ -232,7 +232,7 @@ export default function AuthPage() {
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">مرحباً بك 👋</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              سجّل دخولك أو أنشئ حساباً جديداً وابدأ تجربتك المجانية.
+              سجّل دخولك أو أنشئ حساباً جديداً وابدأ إعداد مساعدك.
             </p>
           </div>
 
@@ -416,6 +416,9 @@ export default function AuthPage() {
                   ) : null}
                   إنشاء حساب
                 </Button>
+                <p className="text-center text-xs leading-5 text-muted-foreground">
+                  بإنشاء الحساب أنت توافق على <Link to="/terms" className="font-medium text-primary hover:underline">شروط الاستخدام</Link> و<Link to="/privacy" className="font-medium text-primary hover:underline">سياسة الخصوصية</Link>.
+                </p>
               </form>
               )}
             </TabsContent>

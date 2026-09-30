@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, Search, Users as UsersIcon, Trash2, Save } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,16 @@ import { supabase } from '@/integrations/supabase/client';
 import { useChatbot } from '@/hooks/useChatbot';
 import { toast } from 'sonner';
 import { ChannelIcon } from '@/components/ChannelIcon';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 type Tag = 'new' | 'prospect' | 'regular' | 'vip' | 'blocked';
 type AIClassification = 'committed_satisfied' | 'important' | 'has_problems' | 'prospect' | 'blacklist' | 'new';
@@ -97,11 +107,12 @@ export default function CustomersPage() {
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('recent');
   const [editing, setEditing] = useState<Customer | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Customer | null>(null);
 
   const toggleIn = <T,>(arr: T[], v: T, set: (x: T[]) => void) =>
     set(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     if (!chatbot) return;
     setLoading(true);
     const { data, error } = await supabase
@@ -110,13 +121,13 @@ export default function CustomersPage() {
       .eq('chatbot_id', chatbot.id)
       .order('last_seen_at', { ascending: false });
     if (error) toast.error('فشل تحميل العملاء');
-    else setCustomers((data || []) as any[]);
+    else setCustomers((data || []) as Customer[]);
     setLoading(false);
-  };
+  }, [chatbot]);
 
   useEffect(() => {
     load();
-  }, [chatbot?.id]);
+  }, [load]);
 
   const filtered = useMemo(() => {
     let list = [...customers];
@@ -214,9 +225,10 @@ export default function CustomersPage() {
   return (
     <div className="animate-fade-in space-y-6">
       <div className="flex items-center gap-3">
-        <UsersIcon className="h-7 w-7 text-primary" />
+        <span className="rounded-xl bg-primary/10 p-2.5"><UsersIcon className="h-6 w-6 text-primary" /></span>
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">العملاء</h1>
+          <p className="text-sm font-medium text-primary">دليل المتواصلين</p>
+          <h1 className="text-2xl font-semibold text-foreground sm:text-3xl">العملاء</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             كل من تواصل مع البوت يُسجَّل هنا تلقائياً بدون تكرار
           </p>
@@ -362,7 +374,7 @@ export default function CustomersPage() {
                     </SelectContent>
                   </Select>
                   <Button variant="outline" size="sm" onClick={() => setEditing(c)}>تفاصيل</Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(c.id)}>
+                  <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(c)} aria-label={`حذف ${c.name || c.username || 'العميل'}`}>
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>
@@ -424,6 +436,30 @@ export default function CustomersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader className="text-right">
+            <AlertDialogTitle>حذف العميل؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              سيتم حذف ملف {deleteTarget?.name || deleteTarget?.username || 'هذا العميل'} وملاحظاته من قائمة العملاء. لا يمكن التراجع عن ذلك.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:flex-row-reverse">
+            <AlertDialogCancel>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!deleteTarget) return;
+                await remove(deleteTarget.id);
+                setDeleteTarget(null);
+              }}
+            >
+              حذف العميل
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

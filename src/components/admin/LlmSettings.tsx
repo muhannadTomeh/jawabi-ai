@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Loader2, Save, Cpu, KeyRound } from 'lucide-react';
+import { Loader2, Save, Cpu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -24,20 +23,18 @@ export function LlmSettings() {
   const [saving, setSaving] = useState(false);
   const [id, setId] = useState<string | null>(null);
   const [model, setModel] = useState(MODELS[0].value);
-  const [apiKey, setApiKey] = useState('');
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase
         .from('llm_settings')
-        .select('*')
+        .select('id, model')
         .order('updated_at', { ascending: false })
         .limit(1)
         .maybeSingle();
       if (data) {
         setId(data.id);
         setModel(data.model);
-        setApiKey(data.custom_api_key || '');
       }
       setLoading(false);
     })();
@@ -47,7 +44,7 @@ export function LlmSettings() {
     setSaving(true);
     const payload = {
       model,
-      custom_api_key: apiKey.trim() ? apiKey.trim() : null,
+      custom_api_key: null,
       updated_at: new Date().toISOString(),
     };
     let error;
@@ -100,22 +97,8 @@ export function LlmSettings() {
         </p>
       </div>
 
-      <div className="space-y-2">
-        <Label className="flex items-center gap-2">
-          <KeyRound className="h-4 w-4" />
-          مفتاح API مخصص (اختياري)
-        </Label>
-        <Input
-          dir="ltr"
-          type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder="اتركه فارغاً لاستخدام مفتاح Gemini الافتراضي"
-          className="font-mono"
-        />
-        <p className="text-xs text-muted-foreground">
-          إذا تم تعبئته، سيتم استخدام هذا المفتاح بدلاً من المفتاح الافتراضي عند استدعاء النموذج.
-        </p>
+      <div className="rounded-xl border border-primary/15 bg-primary/[0.04] p-4 text-sm leading-6 text-muted-foreground">
+        مفتاح Gemini محفوظ كسرّ في بيئة Supabase ولا يظهر أو يُعدّل من المتصفح.
       </div>
 
       <div className="flex justify-end">

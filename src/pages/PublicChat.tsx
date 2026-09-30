@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Send, Loader2, Sparkles } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
+import { Send, Loader2, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
+
+const suggestions = ['ما الخدمات المتوفرة؟', 'ما ساعات العمل؟', 'أريد التحدث مع موظف'];
 
 function getGuestId(slug: string) {
   const key = `jawabi_guest_${slug}`;
@@ -65,8 +67,8 @@ export default function PublicChat() {
       });
       if (error) throw error;
       setMessages((m) => [...m, { role: 'assistant', content: data.response || bot.fallback_message }]);
-    } catch (e: any) {
-      setMessages((m) => [...m, { role: 'assistant', content: bot.fallback_message }]);
+    } catch {
+      setMessages((m) => [...m, { role: 'assistant', content: 'تعذر إرسال الرسالة الآن. حاول مرة أخرى بعد قليل.' }]);
     } finally {
       setSending(false);
     }
@@ -86,6 +88,7 @@ export default function PublicChat() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">الشات بوت غير متاح</h1>
           <p className="mt-2 text-muted-foreground">الرابط غير صحيح أو تم تعطيل البوت.</p>
+          <Link to="/" className="mt-5 inline-flex text-sm font-semibold text-primary hover:underline">العودة إلى جوابي</Link>
         </div>
       </div>
     );
@@ -97,14 +100,14 @@ export default function PublicChat() {
         className="flex items-center gap-3 px-4 py-3 text-primary-foreground shadow"
         style={{ background: 'var(--gradient-primary)' }}
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur">
-          <Sparkles className="h-5 w-5" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-lg font-bold backdrop-blur">
+          {bot.name.trim().charAt(0)}
         </div>
         <div className="flex-1">
           <div className="font-semibold">{bot.name}</div>
           <div className="flex items-center gap-1.5 text-xs opacity-90">
-            <span className="h-1.5 w-1.5 rounded-full bg-green-300" />
-            متصل الآن
+            <Bot className="h-3 w-3" />
+            مساعد آلي
           </div>
         </div>
       </header>
@@ -116,8 +119,8 @@ export default function PublicChat() {
               className={cn(
                 'max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm leading-relaxed shadow-sm',
                 m.role === 'user'
-                  ? 'rounded-tr-sm border border-border bg-card text-foreground'
-                  : 'rounded-tl-sm bg-primary text-primary-foreground'
+                  ? 'rounded-tr-sm bg-primary text-primary-foreground'
+                  : 'rounded-tl-sm border border-border bg-card text-foreground'
               )}
             >
               {m.content}
@@ -126,9 +129,18 @@ export default function PublicChat() {
         ))}
         {sending && (
           <div className="flex justify-end">
-            <div className="rounded-2xl rounded-tl-sm bg-primary px-4 py-2 text-primary-foreground">
+            <div className="rounded-2xl rounded-tl-sm border bg-card px-4 py-2 text-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
             </div>
+          </div>
+        )}
+        {messages.length === 1 && !sending && (
+          <div className="flex flex-wrap justify-end gap-2 pt-1">
+            {suggestions.map((suggestion) => (
+              <button key={suggestion} type="button" onClick={() => send(suggestion)} className="rounded-full border bg-card px-3 py-1.5 text-xs transition hover:border-primary hover:text-primary">
+                {suggestion}
+              </button>
+            ))}
           </div>
         )}
       </div>
@@ -151,6 +163,9 @@ export default function PublicChat() {
           <Send className="h-4 w-4" />
         </Button>
       </form>
+      <div className="border-t bg-card py-2 text-center text-[11px] text-muted-foreground">
+        مساعد آلي — قد تحتاج بعض الإجابات إلى مراجعة بشرية · <Link to="/" className="font-medium hover:text-foreground">مدعوم من جوابي</Link>
+      </div>
     </div>
   );
 }
